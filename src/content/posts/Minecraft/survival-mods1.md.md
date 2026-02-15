@@ -26,6 +26,9 @@ lang: ''
 *(各位也可自行前往原作者下载站下载)*
 **已验证版本**：基岩版 1.21.71  
 > ⚠️ 说明：视频中提及到的模组以及上述下载链接的模组文件皆来源于网络，若您觉得侵犯到了您的权利，或者您并不想让其他人转发您的作品，请联系作者予以致歉并删除。
+
+>说明：（给读者）此文档中引用的图片地址归属于 Github.com ，所以，如果你看不到任何图片，那就说明你被屏蔽了，有需要的请自行原帖查看。
+>（给作者）如果你使用了特殊手段也无法显示图片，说明链接地址失效了，请重新更换图片链接。
 #
 ## 🧩 模组介绍
 ### 1. What Am I Looking At? ——高亮显示
@@ -37,13 +40,13 @@ lang: ''
 >-   显示方块/实体的名称与命名空间，可明确其所属附加包
 >-   精准渲染方块/实体图标
 
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E9%AB%98%E4%BA%AE%E6%98%BE%E7%A4%BA2.png)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/dsMq102PHFYn1d78.png)
 >-   显示应使用的正确工具    
 >-   兼容大多数其他附加包和纹理包   
 >-   支持所有语言    
 >-   轻量化设计，易于使用
 >
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E9%AB%98%E4%BA%AE%E6%98%BE%E7%A4%BA1.png)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/qPqUzzXG7TdJu7mI.png)
 
 **安装须知**
 
@@ -64,21 +67,23 @@ lang: ''
 👤 原作者：Lord Raiyon
 
 #### 此Mods支持度
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E7%A7%BB%E5%8A%A8%E5%85%89%E6%BA%904.png)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/Ixu8TOjnQW7FBTSU.png)
 
 #### 效果展示
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E7%A7%BB%E5%8A%A8%E5%85%89%E6%BA%905.gif)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/0EtTtAIBR2N0ZvF8.gif)
 
 #### 有什么扩展内容吗？
-> - #### 新增了16种不同颜色的火把![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E7%A7%BB%E5%8A%A8%E5%85%89%E6%BA%902.png)
-> - #### 支持放到副手![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E7%A7%BB%E5%8A%A8%E5%85%89%E6%BA%901.png)
+> - #### 新增了16种不同颜色的火把
+> ![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/v6kkVdJqUjGREGji.png)
+> - #### 支持放到副手
+> ![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/DTxskd4SoYdfHylC.png)
 > - #### 另外新增了照明头盔[^照明头盔]和水中火把，详见原帖。
 
 ---
 ### 3. 区块小地图  
 🔗 来源贴：https://klpbbs.com/forum.php?mod=viewthread&tid=146916  
 👤 原作者：原作者未知，若有侵权，请联系作者予以致歉删除
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E5%8C%BA%E5%9D%97%E5%B0%8F%E5%9C%B0%E5%9B%BE.jpg)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/TELoaRcnUyZlKwfC.jpeg)
 > - 区块小地图可以显示你所在的区块，是否在区块边境，可以一目了然
 ---
 
@@ -92,7 +97,7 @@ lang: ''
 > 
 > 本模组实现了对农夫乐事原作的大部分内容的移植还原，其还原度较高且在生存模式中基本完善了大部分流程以便可以正常使用。
 
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/%E5%86%9C%E5%A4%AB%E4%B9%90%E4%BA%8B1.jpg)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/qOZinS1mUx0Vo7jx.jpeg)
 农夫乐事这款模组还挺火的，网上的教程视频也很多，我就不详细说明了，毕竟篇幅有限。
 
 ><iframe src="//player.bilibili.com/player.html?isOutside=true&aid=114560350559559&bvid=BV1cKjxzAE4b&cid=30119103519&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
@@ -104,25 +109,20 @@ lang: ''
 ### 5. Raiyon 的 3D 掉落物  
 🔗 原帖地址：https://mcpedl.com/raiyons-item-physics/  
 👤 原作者：Lord Raiyon
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/3d%E6%8E%89%E8%90%BD%E7%89%A91.jpg)
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/q51y7UrDB8AdwCVW.jpeg)
 > 这款Mods还是挺有意思的。
-
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/3d%E6%8E%89%E8%90%BD%E7%89%A92.jpg)
-
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/dgo32je1HtwZpMBo.jpeg)
 ---
-
 ### 6. Falling Minerals and Trees —— 连锁采集
 🔗 原帖地址：https://mcpedl.com/falling-minerals-and-trees/  
 👤 原作者：MJ ADDON
-
 > 这款附加包能让资源收集变得更加高效且富有动感。安装之后，当你砍伐树木时，只需破坏树干上的一个木头，整棵树的木头便会一同掉落，让砍树变得轻松简单。同样的原理也适用于矿石：当你开采一个矿石方块时，附近同类型的矿石也会随之一起掉落。这一特性极大地优化了挖矿与砍树的时间成本，带来更流畅、更便捷的游戏体验。
-
-![](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/Falling%20Minerals%20and%20Trees.png)
+> 
+![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/XYRgXw8sj2bNgTGX.png)
 
 ---
 ## 感谢支持
 制作不易，感谢支持。
-
 
 [^下载说明]:123云盘需要登录，各位如果觉得麻烦可以自行去原帖地址下载，或者联系作者[QQ](tencent://AddContact/?fromId=45&fromSubId=1&subcmd=all&uin=2223857511)获取。
 [^照明头盔]:这个功能是后来更新的，所以我给出的链接里下载的版本没有这个功能，你可以自行前往[原贴](https://mcpedl.com/raiyons-dynamic-light-addon)下载。
