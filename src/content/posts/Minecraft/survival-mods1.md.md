@@ -1,12 +1,13 @@
 ---
 title: 【生存模组推荐】基岩版生存模组必备合集1｜链接已附简介｜高亮显示、移动光源、小地图等等
-published: 2026-02-15
-description: '我的世界BE版Mods推荐1'
-image: 'https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/tuchuangs/模组推荐视频封面1.jpg'
+published: 2025-05-02
+description: '适用于我的世界基岩版1.21的Mods推荐，链接已附简介。'
+image: '/src/assets/images/cover/mc_mod1.jpg'
 tags: ["Bilibili", "我的世界", "Mods"]
-category: ''
+category: '我的世界'
 draft: false 
 lang: ''
+
 ---
 
 # 【生存模组推荐】基岩版生存模组必备合集1｜链接已附简介｜高亮显示、移动光源、小地图等等
