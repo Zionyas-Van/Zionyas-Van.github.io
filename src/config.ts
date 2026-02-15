@@ -9,7 +9,7 @@ import { LinkPreset } from "./types/config";
 
 // 网站基本配置
 export const siteConfig: SiteConfig = {
-	title: "ZionyasVan的博客",  // 网站标题
+	title: "ZionyasVan's ",  // 网站标题
 	subtitle: "谷",  // 网站副标题
 	lang: "zh_CN", // 语言代码，例如 'en'（英文）、'zh_CN'（中文）、'ja'（日文）等
 	themeColor: {  // 主题颜色设置
@@ -49,6 +49,11 @@ export const navBarConfig: NavBarConfig = {
 		{  // 自定义链接
 			name: "GitHub",  // 链接显示名称
 			url: "https://github.com/Zionyas-Van/Zionyas-Van.github.io", // 链接地址，内部链接不需要加基础路径，会自动添加
+			external: true, // 是否为外部链接，true会显示外部链接图标并在新标签页打开
+		},
+		{  // 自定义链接
+			name: "Bilibili",  // 链接显示名称
+			url: "https://space.bilibili.com/3493111443490971", // 链接地址，内部链接不需要加基础路径，会自动添加
 			external: true, // 是否为外部链接，true会显示外部链接图标并在新标签页打开
 		},
 	],
