@@ -1,6 +1,6 @@
 ---
 title: 【1.20+】MainlandRun 主世界跑酷跑酷地图
-published: 2026-02-03
+published: 2024-08-27
 description: '这是我发布的第一张地图'
 image: "https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/gDJ4581SqScYd1HL.jpeg"
 tags: ["地图发布", "Mods", "我的世界", "苦力怕论坛"]
@@ -8,8 +8,6 @@ category: '我的世界'
 draft: false 
 lang: ''
 ---
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/gDJ4581SqScYd1HL.jpeg)
-
 
 # **Mainland Run!!!**
 （第一次做地图，内容有残缺或简短请见谅，求支持。）
@@ -88,7 +86,7 @@ O **你的昵称** · 刚刚
 
 <div align="right">
 
-[📧 发表评论 — 发送邮件至 2223857511@qq.com](mailto:2223857511@qq.com?subject=来自Markdown评论区的反馈&body=你好，我看到你的仿评论面板，想和你交流：)
+[📧 发表评论 — 发送邮件至 2223857511@qq.com](mailto:2223857511@qq.com?subject=来自Markdown评论区的反馈&body=)
 
 </div>
 
