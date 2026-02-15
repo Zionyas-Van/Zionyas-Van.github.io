@@ -1,6 +1,7 @@
 本地预览 pnpm dev
 
 推送更新 cd C:\Users\ZionyasVan\Zionyas-Van.github.io
+git add 更新内容
 git status
 git add .
 git commit -m "更新文章：生存模组推荐"
