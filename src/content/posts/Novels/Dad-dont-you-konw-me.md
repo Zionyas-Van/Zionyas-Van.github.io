@@ -1,7 +1,7 @@
 ---
 title: 【小说转载】父亲：我们认识吗
 published: 2012-12-30
-description: '打开Xbox提示0x800错误，需要重试更新怎么办？'
+description: '那天，我紧紧地抱住床上的父亲，泣不成声。可他却像受不了我突来的亲热，推开我说：“你……是谁啊？我们认识吗？”'
 image: 'https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-16/myNxujC8sDyCDlSm.png'
 tags: ["转载", "小说", "感动卷"]
 category: '小说'
