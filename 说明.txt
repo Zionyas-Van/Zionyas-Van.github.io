@@ -7,3 +7,27 @@ git add .
 git commit -m "更新文章：生存模组推荐"
 git pull --no-edit
 git push
+
+# 1. 进入博客目录
+cd C:\Users\ZionyasVan\Zionyas-Van.github.io
+
+# 2. 创建新文章（把“新文章标题”换成你实际的文章名）
+pnpm new-post 新文章标题
+
+# 3. 用记事本打开编辑（上一步命令会自动打开，如果没有就手动执行）
+notepad src/content/posts/新文章标题.md
+
+# 4. 写完后保存，然后查看哪些文件被修改了
+git status
+
+# 5. 添加所有修改（包括新文章和可能的图片）
+git add .
+
+# 6. 提交修改
+git commit -m "添加新文章：新文章标题"
+
+# 7. 拉取远程更新（防止冲突）
+git pull --no-edit
+
+# 8. 推送到 GitHub
+git push
