@@ -2,7 +2,7 @@
 title: 【生存模组推荐】基岩版生存模组必备合集1｜链接已附简介｜高亮显示、移动光源、小地图等等
 published: 2025-05-02
 description: '适用于我的世界基岩版1.21的Mods推荐，链接已附简介。'
-image: 'https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/SOOxHn1nrtnPJjXc.jpeg'
+image: 'https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/SOOxHn1nrtnPJjXc.jpeg'
 tags: ["Bilibili", "我的世界", "Mods"]
 category: '我的世界'
 draft: false 
@@ -38,13 +38,13 @@ lang: ''
 >-   显示方块/实体的名称与命名空间，可明确其所属附加包
 >-   精准渲染方块/实体图标
 
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/dsMq102PHFYn1d78.png)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/dsMq102PHFYn1d78.png)
 >-   显示应使用的正确工具    
 >-   兼容大多数其他附加包和纹理包   
 >-   支持所有语言    
 >-   轻量化设计，易于使用
 >
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/qPqUzzXG7TdJu7mI.png)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/qPqUzzXG7TdJu7mI.png)
 
 **安装须知**
 
@@ -65,23 +65,23 @@ lang: ''
 👤 原作者：Lord Raiyon
 
 #### 此Mods支持度
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/Ixu8TOjnQW7FBTSU.png)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/Ixu8TOjnQW7FBTSU.png)
 
 #### 效果展示
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/0EtTtAIBR2N0ZvF8.gif)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/0EtTtAIBR2N0ZvF8.gif)
 
 #### 有什么扩展内容吗？
 > - #### 新增了16种不同颜色的火把
-> ![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/v6kkVdJqUjGREGji.png)
+> ![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/v6kkVdJqUjGREGji.png)
 > - #### 支持放到副手
-> ![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/DTxskd4SoYdfHylC.png)
+> ![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/DTxskd4SoYdfHylC.png)
 > - #### 另外新增了照明头盔[^照明头盔]和水中火把，详见原帖。
 
 ---
 ### 3. 区块小地图  
 🔗 来源贴：https://klpbbs.com/forum.php?mod=viewthread&tid=146916  
 👤 原作者：原作者未知，若有侵权，请联系作者予以致歉删除
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/TELoaRcnUyZlKwfC.jpeg)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/TELoaRcnUyZlKwfC.jpeg)
 > - 区块小地图可以显示你所在的区块，是否在区块边境，可以一目了然
 ---
 
@@ -95,7 +95,7 @@ lang: ''
 > 
 > 本模组实现了对农夫乐事原作的大部分内容的移植还原，其还原度较高且在生存模式中基本完善了大部分流程以便可以正常使用。
 
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/qOZinS1mUx0Vo7jx.jpeg)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/qOZinS1mUx0Vo7jx.jpeg)
 农夫乐事这款模组还挺火的，网上的教程视频也很多，我就不详细说明了，毕竟篇幅有限。
 
 ><iframe src="//player.bilibili.com/player.html?isOutside=true&aid=114560350559559&bvid=BV1cKjxzAE4b&cid=30119103519&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
@@ -107,16 +107,16 @@ lang: ''
 ### 5. Raiyon 的 3D 掉落物  
 🔗 原帖地址：https://mcpedl.com/raiyons-item-physics/  
 👤 原作者：Lord Raiyon
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/q51y7UrDB8AdwCVW.jpeg)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/q51y7UrDB8AdwCVW.jpeg)
 > 这款Mods还是挺有意思的。
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/dgo32je1HtwZpMBo.jpeg)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/dgo32je1HtwZpMBo.jpeg)
 ---
 ### 6. Falling Minerals and Trees —— 连锁采集
 🔗 原帖地址：https://mcpedl.com/falling-minerals-and-trees/  
 👤 原作者：MJ ADDON
 > 这款附加包能让资源收集变得更加高效且富有动感。安装之后，当你砍伐树木时，只需破坏树干上的一个木头，整棵树的木头便会一同掉落，让砍树变得轻松简单。同样的原理也适用于矿石：当你开采一个矿石方块时，附近同类型的矿石也会随之一起掉落。这一特性极大地优化了挖矿与砍树的时间成本，带来更流畅、更便捷的游戏体验。
 > 
-![输入图片说明](https://raw.githubusercontent.com/Zionyas-Van/TuChuang/main/imgs/2026-02-15/XYRgXw8sj2bNgTGX.png)
+![输入图片说明](https://cdn.jsdelivr.net/gh/Zionyas-Van/TuChuang@main/imgs/2026-02-15/XYRgXw8sj2bNgTGX.png)
 
 ---
 ## 感谢支持
