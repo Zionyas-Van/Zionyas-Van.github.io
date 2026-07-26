@@ -36,7 +36,7 @@ export const projects: Project[] = [
 			// "/projects/screenshot2.jpg",
 		],
 		type: "software",
-		tags: ["开发者：ZionyasVan（DXL）","类型：工具", "框架：Neutralionjs"],
+		tags: ["开发者：ZionyasVan（DXL）", "类型：工具", "框架：Neutralionjs"],
 		platform: "Windows",
 		status: "已发布 · 2026年7月16日",
 		downloadLinks: [
@@ -53,41 +53,36 @@ export const projects: Project[] = [
 		featured: true, // true = 显示在首页精选区
 	},
 
-
 	{
 		id: "neu-zionyasvan-neuroai",
 		title: "Neuro",
 		description: "Neuro 是一款轻量化的 DeepSeek API 客户端。",
-		longDescription:
-			"Neuro 目前正在测试。",
+		longDescription: "Neuro 目前正在测试。",
 		cover: "/projects/Neuro.jpg",
 		screenshots: [
-			// "/projects/Mark-post-01.png",
-			// "/projects/screenshot2.jpg",
+			"/projects/Neuro-screenshot-01.png",
+			"/projects/Neuro-screenshot-02.png",
 		],
 		type: "software",
-		tags: ["开发者：ZionyasVan（DXL）","类型：工具", "框架：Neutralionjs"],
+		tags: ["开发者：ZionyasVan（DXL）", "类型：工具", "框架：Neutralionjs"],
 		platform: "Windows",
 		status: "预发布 · 待发布日期",
-		downloadLinks: [
-		],
+		downloadLinks: [],
 		featured: true, // true = 显示在首页精选区
 	},
-
 
 	{
 		id: "codemao-zionyasvan-HoverOS",
 		title: "HoverOS",
 		description: "闲着无聊而随便做的小作品。",
-		longDescription:
-			"只是来凑数的，不建议尝试哦。",
+		longDescription: "只是来凑数的，不建议尝试哦。",
 		cover: "/projects/HoverOS.jpg",
 		screenshots: [
 			// "/projects/Mark-post-01.png",
 			// "/projects/screenshot2.jpg",
 		],
 		type: "game",
-		tags: ["开发者：ZionyasVan（DXL）","类型：模拟", "框架：CodeMao"],
+		tags: ["开发者：ZionyasVan（DXL）", "类型：模拟", "框架：CodeMao"],
 		platform: "CodeMao",
 		status: "已发布 · 2024年01月23日",
 		downloadLinks: [

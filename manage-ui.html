@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZionyasVan 管理工具</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh}
+.header{background:#1a1a2e;padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #2a2a4a}
+.header h1{font-size:20px;color:#a78bfa}
+.tabs{display:flex;gap:4px;padding:12px 24px;background:#12122a;border-bottom:1px solid #2a2a4a}
+.tab{padding:10px 20px;border:none;background:transparent;color:#888;cursor:pointer;border-radius:8px;font-size:14px;transition:.2s}
+.tab:hover{color:#ccc;background:#1a1a3a}
+.tab.active{background:#a78bfa;color:#fff}
+.panels{padding:24px;max-width:900px}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:#1a1a2e;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #2a2a4a}
+.card h3{font-size:16px;margin-bottom:16px;color:#c4b5fd}
+label{display:block;font-size:13px;color:#999;margin-bottom:4px;margin-top:12px}
+label:first-child{margin-top:0}
+input,textarea,select{width:100%;padding:10px 12px;border:1px solid #3a3a5a;border-radius:8px;background:#0f0f1a;color:#e0e0e0;font-size:14px;font-family:inherit;resize:vertical}
+textarea{min-height:120px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
+.row{display:flex;gap:12px}
+.row>*{flex:1}
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+.btn-primary{background:#a78bfa;color:#fff}
+.btn-primary:hover{background:#8b6fe0}
+.btn-success{background:#22c55e;color:#fff}
+.btn-success:hover{background:#16a34a}
+.btn-danger{background:#ef4444;color:#fff;padding:6px 12px;font-size:12px}
+.btns{margin-top:20px;display:flex;gap:8px}
+.result{padding:12px;border-radius:8px;margin-top:12px;font-size:13px;display:none}
+.result.success{display:block;background:#22c55e20;color:#4ade80;border:1px solid #22c55e40}
+.result.error{display:block;background:#ef444420;color:#f87171;border:1px solid #ef444440}
+.result pre{white-space:pre-wrap;margin:0;font-family:inherit}
+.tag-row{display:flex;gap:8px;align-items:center}
+.tag-row input{flex:1}
+.tag-row button{padding:8px 12px}
+.dl-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.dl-row input{flex:1}
+.dl-row select{width:120px;flex:none}
+.hint{font-size:12px;color:#666;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span style="font-size:24px">🛠️</span>
+  <h1>ZionyasVan 内容管理工具</h1>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-panel="blog">📝 发布博客</button>
+  <button class="tab" data-panel="project">🎮💻 新建作品</button>
+  <button class="tab" data-panel="video">🎬 新建视频</button>
+  <button class="tab" data-panel="push">🚀 推送</button>
+</div>
+
+<div class="panels">
+
+<!-- ========== 博客面板 ========== -->
+<div class="panel active" id="panel-blog">
+  <div class="card">
+    <h3>📝 发布新博客文章</h3>
+    <label>文章标题 *</label>
+    <input id="blog-title" placeholder="输入文章标题">
+
+    <label>简短描述</label>
+    <input id="blog-desc" placeholder="一句话描述（可选）">
+
+    <label>标签（用逗号分隔）</label>
+    <input id="blog-tags" placeholder="例如: Minecraft, 教程, 生存">
+
+    <div class="row">
+      <div>
+        <label>分类文件夹 *</label>
+        <select id="blog-category">
+          <option value="">加载中...</option>
+        </select>
+      </div>
+      <div>
+        <label>URL 标识 (slug) *</label>
+        <input id="blog-slug" placeholder="my-first-post">
+        <div class="hint">英文+连字符，如 my-first-post</div>
+      </div>
+    </div>
+
+    <label>文章内容 (Markdown) *</label>
+    <textarea id="blog-content" placeholder="在这里写 Markdown 内容..."></textarea>
+
+    <div class="btns">
+      <button class="btn btn-primary" onclick="createPost()">✅ 生成文章文件</button>
+    </div>
+    <div class="result" id="blog-result"></div>
+  </div>
+</div>
+
+<!-- ========== 作品面板 ========== -->
+<div class="panel" id="panel-project">
+  <div class="card">
+    <h3>🎮💻 新建作品（游戏/软件）</h3>
+    <div class="row">
+      <div><label>唯一 ID *</label><input id="proj-id" placeholder="my-awesome-game"></div>
+      <div><label>作品名称 *</label><input id="proj-title" placeholder="作品名称"></div>
+    </div>
+    <label>简短描述</label>
+    <input id="proj-desc" placeholder="一句话描述">
+    <label>详细介绍</label>
+    <textarea id="proj-long" placeholder="支持多行，详细描述作品的功能和特色" style="min-height:100px"></textarea>
+    <div class="row">
+      <div>
+        <label>类型 *</label>
+        <select id="proj-type"><option value="software">💻 软件</option><option value="game">🎮 游戏</option></select>
+      </div>
+      <div>
+        <label>平台</label>
+        <input id="proj-platform" placeholder="Windows / macOS / Web">
+      </div>
+      <div>
+        <label>状态</label>
+        <select id="proj-status"><option value="已发布">已发布</option><option value="开发中">开发中</option><option value="抢先体验">抢先体验</option><option value="已完结">已完结</option></select>
+      </div>
+    </div>
+    <label>标签（用逗号分隔）</label>
+    <input id="proj-tags" placeholder="Python, 工具, Windows">
+    <label>封面图</label>
+    <input type="file" id="proj-cover" accept="image/*">
+    <div class="hint">不上传则使用默认占位图</div>
+    <label>下载链接</label>
+    <div id="dl-list">
+      <div class="dl-row">
+        <select class="dl-icon"><option value="">无图标</option><option value="fa6-brands:github">GitHub</option><option value="fa6-brands:steam">Steam</option><option value="fa6-brands:google-drive">网盘</option></select>
+        <input class="dl-label" placeholder="按钮文字（如 GitHub / 百度网盘）">
+        <input class="dl-url" placeholder="链接地址 https://...">
+        <button class="btn btn-danger" onclick="this.closest('.dl-row').remove()">✕</button>
+      </div>
+    </div>
+    <button class="btn" style="background:#2a2a4a;color:#ccc;font-size:12px;margin-top:4px" onclick="addDlRow()">+ 添加下载链接</button>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input type="checkbox" id="proj-featured" checked style="width:auto"> 显示在首页精选区
+    </label>
+    <div class="btns">
+      <button class="btn btn-primary" onclick="createProject()">✅ 新建作品</button>
+    </div>
+    <div class="result" id="project-result"></div>
+  </div>
+</div>
+
+<!-- ========== 视频面板 ========== -->
+<div class="panel" id="panel-video">
+  <div class="card">
+    <h3>🎬 新建视频</h3>
+    <div class="row">
+      <div><label>唯一 ID *</label><input id="vid-id" placeholder="video-01"></div>
+      <div><label>视频标题 *</label><input id="vid-title" placeholder="视频标题"></div>
+    </div>
+    <label>B站 BV 号 *</label>
+    <input id="vid-bvid" placeholder="BV1xx411c7mD">
+    <label>简短描述</label>
+    <input id="vid-desc" placeholder="视频简介">
+    <label>封面图（选填）</label>
+    <input type="file" id="vid-cover" accept="image/*">
+    <div class="hint">不上传则自动使用B站封面</div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input type="checkbox" id="vid-featured" checked style="width:auto"> 显示在首页精选区
+    </label>
+    <div class="btns">
+      <button class="btn btn-primary" onclick="createVideo()">✅ 新建视频</button>
+    </div>
+    <div class="result" id="video-result"></div>
+  </div>
+</div>
+
+<!-- ========== 推送面板 ========== -->
+<div class="panel" id="panel-push">
+  <div class="card">
+    <h3>🚀 推送到 GitHub</h3>
+    <p style="color:#999;font-size:13px;margin-bottom:12px">将本地所有改动提交并推送到 GitHub，自动触发网站部署。</p>
+    <label>提交说明</label>
+    <input id="push-msg" placeholder="通过管理工具更新内容" value="通过管理工具更新内容">
+    <div class="btns">
+      <button class="btn btn-success" onclick="doPush()">🚀 一键推送</button>
+    </div>
+    <div class="result" id="push-result"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ========== 基础工具 ==========
+function $(id){return document.getElementById(id)}
+function showResult(id, ok, msg){
+  const el = $(id);
+  el.className = `result ${ok?'success':'error'}`;
+  el.innerHTML = ok ? `<pre>✅ ${msg}</pre>` : `<pre>❌ ${msg}</pre>`;
+}
+async function api(url, data){
+  const res = await fetch(url, {
+    method: data?'POST':'GET',
+    headers: data?{'Content-Type':'application/json'}:{},
+    body: data?JSON.stringify(data):undefined
+  });
+  return res.json();
+}
+
+// ========== 标签切换 ==========
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('panel-'+t.dataset.panel).classList.add('active');
+  };
+});
+
+// ========== 博客 ==========
+(async function loadCategories(){
+  try{const cats=await api('/api/categories');const sel=$('blog-category');
+    sel.innerHTML=cats.map(c=>`<option value="${c}">${c}</option>`).join('')||'<option value="">(手动输入)</option>';}
+  catch(e){$('blog-category').innerHTML='<option value="">加载失败</option>';}
+})();
+
+async function createPost(){
+  const title=$('blog-title').value.trim();
+  const content=$('blog-content').value.trim();
+  const category=$('blog-category').value.trim();
+  const slug=$('blog-slug').value.trim();
+  if(!title||!category||!slug||!content) return showResult('blog-result',false,'请填写所有带 * 的必填项');
+  const data={
+    title,
+    description:$('blog-desc').value.trim(),
+    tags:$('blog-tags').value.trim(),
+    category, slug, content
+  };
+  const r=await api('/api/create-post',data);
+  showResult('blog-result',r.ok, r.ok?`文章已创建: ${r.path}`:r.error);
+}
+
+// ========== 作品 ==========
+function addDlRow(){
+  const div=document.createElement('div');div.className='dl-row';
+  div.innerHTML=`<select class="dl-icon"><option value="">无图标</option><option value="fa6-brands:github">GitHub</option><option value="fa6-brands:steam">Steam</option><option value="fa6-brands:google-drive">网盘</option></select>
+    <input class="dl-label" placeholder="按钮文字"><input class="dl-url" placeholder="链接地址">
+    <button class="btn btn-danger" onclick="this.closest('.dl-row').remove()">✕</button>`;
+  $('dl-list').appendChild(div);
+}
+
+async function createProject(){
+  const id=$('proj-id').value.trim();
+  const title=$('proj-title').value.trim();
+  const type=$('proj-type').value;
+  if(!id||!title) return showResult('project-result',false,'请填写 ID 和名称');
+  const dlRows=document.querySelectorAll('#dl-list .dl-row');
+  const downloadLinks=[];
+  dlRows.forEach(r=>{
+    const label=r.querySelector('.dl-label').value.trim();
+    const url=r.querySelector('.dl-url').value.trim();
+    const icon=r.querySelector('.dl-icon').value;
+    if(label&&url) downloadLinks.push({label,url,icon:icon||undefined});
+  });
+  let coverBase64='';
+  const f=$('proj-cover').files[0];
+  if(f) coverBase64=await fileToBase64(f);
+  const r=await api('/api/create-project',{
+    id,title,
+    description:$('proj-desc').value.trim(),
+    longDescription:$('proj-long').value.trim(),
+    type,platform:$('proj-platform').value.trim(),
+    status:$('proj-status').value,
+    tags:$('proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    downloadLinks,featured:$('proj-featured').checked,coverBase64
+  });
+  showResult('project-result',r.ok, r.ok?`作品已创建: ${r.id}`:r.error);
+}
+
+// ========== 视频 ==========
+async function createVideo(){
+  const id=$('vid-id').value.trim();
+  const title=$('vid-title').value.trim();
+  const bvid=$('vid-bvid').value.trim();
+  if(!id||!title||!bvid) return showResult('video-result',false,'请填写所有带 * 的必填项');
+  let coverBase64='';
+  const f=$('vid-cover').files[0];
+  if(f) coverBase64=await fileToBase64(f);
+  const r=await api('/api/create-video',{
+    id,title,bvid,
+    description:$('vid-desc').value.trim(),
+    featured:$('vid-featured').checked,coverBase64
+  });
+  showResult('video-result',r.ok, r.ok?`视频已创建: ${r.id}`:r.error);
+}
+
+// ========== 推送 ==========
+async function doPush(){
+  $('push-result').className='result success';
+  $('push-result').innerHTML='<pre>⏳ 正在推送，请稍候...</pre>';
+  const r=await api('/api/push',{message:$('push-msg').value.trim()||'通过管理工具更新内容'});
+  showResult('push-result',r.ok, r.ok?`推送成功!\n${r.log}`:r.error);
+}
+
+// ========== 辅助 ==========
+function fileToBase64(file){
+  return new Promise((resolve)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>
