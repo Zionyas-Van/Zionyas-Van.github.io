@@ -1,12 +1,19 @@
----
-// ============================================
-// 旧博客分页 URL 重定向
-// 原来的 /2, /3, /4... 自动跳转到 /posts/2, /posts/3...
-// ============================================
+﻿---
+import type { GetStaticPaths } from "astro";
+
+export const getStaticPaths = (() => {
+  // 生成 /2 到 /20 的重定向页面（覆盖绝大部分分页需求）
+  const pages: { params: { page: string } }[] = [];
+  for (let i = 2; i <= 20; i++) {
+    pages.push({ params: { page: String(i) } });
+  }
+  return pages;
+}) satisfies GetStaticPaths;
+
 const { page } = Astro.params;
 
 if (page && /^\d+$/.test(page)) {
-	return Astro.redirect(`/posts/${page}`);
+  return Astro.redirect(`/posts/${page}`);
 }
 return Astro.redirect("/posts/");
 ---
