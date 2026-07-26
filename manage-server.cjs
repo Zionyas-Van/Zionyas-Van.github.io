@@ -15,6 +15,106 @@ const PROJECTS_FILE = path.join(ROOT, "src", "data", "projects.ts");
 const VIDEOS_FILE = path.join(ROOT, "src", "data", "videos.ts");
 const COVERS_DIR = path.join(ROOT, "public", "projects");
 
+const PROJECTS_HEADER = `import type {
+\tDownloadLink,
+\tProject,
+} from "./types/config";\n\n`;
+const VIDEOS_HEADER = `import type { Video } from "./types/config";\n\n`;
+
+// ========== 解析 TypeScript 数据文件 ==========
+function parseTsArray(filepath, arrayName) {
+  const content = fs.readFileSync(filepath, "utf-8");
+  const startMarker = `export const ${arrayName}`;
+  const startIdx = content.indexOf(startMarker);
+  if (startIdx === -1) return [];
+  // 跳过可能的类型注解，找到 = 号后的 [
+  const eqIdx = content.indexOf("=", startIdx);
+  const bracketStart = eqIdx !== -1 ? content.indexOf("[", eqIdx) : content.indexOf("[", startIdx);
+  if (bracketStart === -1) return [];
+  // 找到匹配的 ];
+  let depth = 0;
+  let i = bracketStart;
+  for (; i < content.length; i++) {
+    if (content[i] === "[" || content[i] === "{") depth++;
+    if (content[i] === "]" || content[i] === "}") depth--;
+    if (depth === 0 && content[i] === "]") break;
+  }
+  if (i >= content.length) return [];
+  const arrayStr = content.slice(bracketStart, i + 1);
+  try {
+    return eval("(" + arrayStr + ")");
+  } catch (e) {
+    console.error("解析失败:", filepath, e.message);
+    return [];
+  }
+}
+
+function rebuildArraySection(content, arrayName, items, itemFormatter) {
+  const startMarker = `export const ${arrayName}`;
+  const startIdx = content.indexOf(startMarker);
+  if (startIdx === -1) return content;
+  const eqIdx = content.indexOf("=", startIdx);
+  const bracketStart = eqIdx !== -1 ? content.indexOf("[", eqIdx) : content.indexOf("[", startIdx);
+  if (bracketStart === -1) return content;
+  let depth = 0;
+  let i = bracketStart;
+  for (; i < content.length; i++) {
+    if (content[i] === "[" || content[i] === "{") depth++;
+    if (content[i] === "]" || content[i] === "}") depth--;
+    if (depth === 0 && content[i] === "]") break;
+  }
+  if (i >= content.length) return content;
+  const before = content.slice(0, bracketStart + 1);
+  const after = content.slice(i);
+  const middle = items.length === 0
+    ? ""
+    : "\n" + items.map(itemFormatter).join(",\n") + "\n";
+  return before + middle + after;
+}
+
+function formatProject(p) {
+  const dl = (p.downloadLinks || []).map((d) => {
+    const parts = [];
+    if (d.icon) parts.push(`icon: "${d.icon}"`);
+    parts.push(`label: "${d.label}"`);
+    parts.push(`url: "${d.url}"`);
+    return `      { ${parts.join(", ")} }`;
+  }).join(",\n");
+  const tags = (p.tags || []).map((t) => `"${t}"`).join(", ");
+  const screenshots = (p.screenshots || []).map((s) => `"${s}"`).join(", ");
+  const desc = (p.description || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  const long = (p.longDescription || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+  return `  {
+    id: "${p.id}",
+    title: "${p.title}",
+    description: "${desc}",
+    longDescription: "${long}",
+    cover: "${p.cover || "/projects/placeholder-cover.jpg"}",
+    screenshots: [${screenshots}],
+    type: "${p.type}",
+    tags: [${tags}],
+    platform: "${p.platform || ""}",
+    status: "${p.status || "开发中"}",
+    downloadLinks: [
+${dl}
+    ],
+    featured: ${p.featured === true},
+  }`;
+}
+
+function formatVideo(v) {
+  const desc = (v.description || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return `  {
+    id: "${v.id}",
+    title: "${v.title}",
+    bvid: "${v.bvid}",
+    cover: "${v.cover || ""}",
+    description: "${desc}",
+    featured: ${v.featured === true},
+  }`;
+}
+
+
 // ========== 工具函数 ==========
 
 function sendJSON(res, data, status = 200) {
@@ -37,6 +137,81 @@ function scanPostCategories() {
     .filter((d) => d.isDirectory())
     .map((d) => d.name);
 }
+
+// ========== 扫描博客文章 ==========
+function scanAllPosts() {
+  if (!fs.existsSync(POSTS_DIR)) return [];
+  const results = [];
+  const dirs = fs.readdirSync(POSTS_DIR, { withFileTypes: true });
+  for (const dir of dirs) {
+    if (!dir.isDirectory()) continue;
+    const subdirs = fs.readdirSync(path.join(POSTS_DIR, dir.name), { withFileTypes: true });
+    for (const sub of subdirs) {
+      if (!sub.isDirectory()) continue;
+      // 同时支持: category/slug/index.md 和 category/slug.md 两种结构
+      const slugDir = path.join(POSTS_DIR, dir.name, sub.name);
+      let indexPath;
+      if (sub.isDirectory()) {
+        indexPath = path.join(slugDir, "index.md");
+      } else if (sub.name.endsWith(".md")) {
+        indexPath = slugDir; // sub 本身就是 .md 文件
+      } else {
+        continue;
+      }
+      if (!fs.existsSync(indexPath)) continue;
+      const slug = sub.name.replace(/\.md$/, "");
+      const raw = fs.readFileSync(indexPath, "utf-8");
+      const fm = parseFrontmatter(raw);
+      results.push({
+        category: dir.name,
+        slug: slug,
+        title: fm.title || sub.name,
+        description: fm.description || "",
+        tags: fm.tags || [],
+        published: fm.published || "",
+        rawContent: fm.body || "",
+        fullRaw: raw,
+      });
+    }
+  }
+  return results;
+}
+
+function parseFrontmatter(raw) {
+  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!match) return { body: raw };
+  const fmStr = match[1];
+  const body = match[2];
+  const result = { body };
+  const lines = fmStr.split("\n");
+  let currentKey = "";
+  for (const line of lines) {
+    const keyMatch = line.match(/^(\w+):\s*(.*)$/);
+    if (keyMatch) {
+      currentKey = keyMatch[1];
+      let val = keyMatch[2].trim();
+      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+      if (val.startsWith("[") && val.endsWith("]")) {
+        val = val.slice(1, -1).split(",").map((s) => s.trim().replace(/^"|"$/g, ""));
+      }
+      result[currentKey] = val;
+    }
+  }
+  return result;
+}
+
+function toFrontmatter(fm) {
+  const lines = [];
+  if (fm.title) lines.push(`title: "${fm.title}"`);
+  if (fm.published) lines.push(`published: ${fm.published}`);
+  if (fm.description !== undefined) lines.push(`description: "${(fm.description || "").replace(/"/g, '\\"')}"`);
+  if (fm.tags && fm.tags.length > 0) {
+    lines.push(`tags: [${fm.tags.map((t) => `"${t}"`).join(", ")}]`);
+  }
+  if (fm.category) lines.push(`category: "${fm.category}"`);
+  return "---\n" + lines.join("\n") + "\n---\n";
+}
+
 
 // 安全地将字符串转为 TypeScript 字符串字面量
 function tsString(str) {
@@ -230,6 +405,172 @@ ${dlStr}
       return sendJSON(res, { error: "Git 操作失败: " + stderr }, 500);
     }
   }
+
+  // ========== 管理 API ==========
+
+  // 列出所有博客文章
+  if (req.method === "GET" && req.url === "/api/posts/list") {
+    const posts = scanAllPosts().map((p) => ({
+      category: p.category,
+      slug: p.slug,
+      title: p.title,
+      description: p.description,
+      tags: p.tags,
+      published: p.published,
+    }));
+    return sendJSON(res, posts);
+  }
+
+  // 获取单篇文章详情
+  if (req.method === "GET" && req.url.startsWith("/api/posts/detail")) {
+    const u = new URL(req.url, `http://localhost:${PORT}`);
+    const category = u.searchParams.get("category");
+    const slug = u.searchParams.get("slug");
+    const indexPath = path.join(POSTS_DIR, category, slug, "index.md");
+    if (!fs.existsSync(indexPath)) return sendJSON(res, { error: "文章不存在" }, 404);
+    const raw = fs.readFileSync(indexPath, "utf-8");
+    const fm = parseFrontmatter(raw);
+    return sendJSON(res, { category, slug, title: fm.title, description: fm.description, tags: fm.tags, published: fm.published, content: fm.body });
+  }
+
+  // 更新文章
+  if (req.method === "PUT" && req.url === "/api/posts/update") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const { category, slug, title, description, tags, content } = body;
+      if (!category || !slug) return sendJSON(res, { error: "分类和slug不能为空" }, 400);
+      const indexPath = path.join(POSTS_DIR, category, slug, "index.md");
+      if (!fs.existsSync(indexPath)) return sendJSON(res, { error: "文章不存在" }, 404);
+      const fm = {
+        title: title || slug,
+        published: new Date().toISOString().replace("T", " ").slice(0, 19),
+        description: description || "",
+        tags: tags || [],
+        category,
+      };
+      const newMd = toFrontmatter(fm) + (content || "");
+      fs.writeFileSync(indexPath, newMd, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  // 删除文章
+  if (req.method === "DELETE" && req.url.startsWith("/api/posts/delete")) {
+    try {
+      const u = new URL(req.url, `http://localhost:${PORT}`);
+      const category = u.searchParams.get("category");
+      const slug = u.searchParams.get("slug");
+      if (!category || !slug) return sendJSON(res, { error: "参数不完整" }, 400);
+      const dirPath = path.join(POSTS_DIR, category, slug);
+      if (!fs.existsSync(dirPath)) return sendJSON(res, { error: "文章不存在" }, 404);
+      fs.rmSync(dirPath, { recursive: true, force: true });
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  // 列出所有项目
+  if (req.method === "GET" && req.url === "/api/projects/list") {
+    const projs = parseTsArray(PROJECTS_FILE, "projects");
+    return sendJSON(res, projs);
+  }
+
+  // 更新项目
+  if (req.method === "PUT" && req.url === "/api/projects/update") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const projs = parseTsArray(PROJECTS_FILE, "projects");
+      const idx = projs.findIndex((p) => p.id === body.id);
+      if (idx === -1) return sendJSON(res, { error: "项目不存在" }, 404);
+
+      // 处理封面图
+      let coverPath = projs[idx].cover;
+      if (body.coverBase64) {
+        const saved = saveCover(body.coverBase64, body.id);
+        if (saved) coverPath = saved;
+      }
+
+      projs[idx] = { ...projs[idx], ...body, cover: coverPath || projs[idx].cover };
+      delete projs[idx].coverBase64;
+
+      const content = fs.readFileSync(PROJECTS_FILE, "utf-8");
+      const newContent = rebuildArraySection(content, "projects", projs, formatProject);
+      fs.writeFileSync(PROJECTS_FILE, newContent, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  // 删除项目
+  if (req.method === "DELETE" && req.url.startsWith("/api/projects/delete")) {
+    try {
+      const u = new URL(req.url, `http://localhost:${PORT}`);
+      const id = u.searchParams.get("id");
+      const projs = parseTsArray(PROJECTS_FILE, "projects");
+      const filtered = projs.filter((p) => p.id !== id);
+      if (filtered.length === projs.length) return sendJSON(res, { error: "项目不存在" }, 404);
+      const content = fs.readFileSync(PROJECTS_FILE, "utf-8");
+      const newContent = rebuildArraySection(content, "projects", filtered, formatProject);
+      fs.writeFileSync(PROJECTS_FILE, newContent, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  // 列出所有视频
+  if (req.method === "GET" && req.url === "/api/videos/list") {
+    const vids = parseTsArray(VIDEOS_FILE, "videos");
+    return sendJSON(res, vids);
+  }
+
+  // 更新视频
+  if (req.method === "PUT" && req.url === "/api/videos/update") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const vids = parseTsArray(VIDEOS_FILE, "videos");
+      const idx = vids.findIndex((v) => v.id === body.id);
+      if (idx === -1) return sendJSON(res, { error: "视频不存在" }, 404);
+
+      let coverPath = vids[idx].cover;
+      if (body.coverBase64) {
+        const saved = saveCover(body.coverBase64, `video-${body.id}`);
+        if (saved) coverPath = saved;
+      }
+
+      vids[idx] = { ...vids[idx], ...body, cover: coverPath || vids[idx].cover };
+      delete vids[idx].coverBase64;
+
+      const content = fs.readFileSync(VIDEOS_FILE, "utf-8");
+      const newContent = rebuildArraySection(content, "videos", vids, formatVideo);
+      fs.writeFileSync(VIDEOS_FILE, newContent, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  // 删除视频
+  if (req.method === "DELETE" && req.url.startsWith("/api/videos/delete")) {
+    try {
+      const u = new URL(req.url, `http://localhost:${PORT}`);
+      const id = u.searchParams.get("id");
+      const vids = parseTsArray(VIDEOS_FILE, "videos");
+      const filtered = vids.filter((v) => v.id !== id);
+      if (filtered.length === vids.length) return sendJSON(res, { error: "视频不存在" }, 404);
+      const content = fs.readFileSync(VIDEOS_FILE, "utf-8");
+      const newContent = rebuildArraySection(content, "videos", filtered, formatVideo);
+      fs.writeFileSync(VIDEOS_FILE, newContent, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
 
   // 404
   res.writeHead(404);

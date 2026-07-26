@@ -53,10 +53,14 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
 </div>
 
 <div class="tabs">
-  <button class="tab active" data-panel="blog">📝 发布博客</button>
-  <button class="tab" data-panel="project">🎮💻 新建作品</button>
-  <button class="tab" data-panel="video">🎬 新建视频</button>
-  <button class="tab" data-panel="push">🚀 推送</button>
+  <button class="tab active" data-panel="blog">发布博客</button>
+  <button class="tab" data-panel="project">发布作品</button>
+  <button class="tab" data-panel="video">发布视频</button>
+  <button class="tab" data-panel="push">实时推送</button>
+  <button class="tab" data-panel="manage-posts">管理博客</button>
+  <button class="tab" data-panel="manage-projects">管理作品</button>
+  <button class="tab" data-panel="manage-videos">管理视频</button>
+
 </div>
 
 <div class="panels">
@@ -64,7 +68,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
 <!-- ========== 博客面板 ========== -->
 <div class="panel active" id="panel-blog">
   <div class="card">
-    <h3>📝 发布新博客文章</h3>
+    <h3>发布新博客文章</h3>
     <label>文章标题 *</label>
     <input id="blog-title" placeholder="输入文章标题">
 
@@ -101,7 +105,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
 <!-- ========== 作品面板 ========== -->
 <div class="panel" id="panel-project">
   <div class="card">
-    <h3>🎮💻 新建作品（游戏/软件）</h3>
+    <h3>新建作品（游戏/软件）</h3>
     <div class="row">
       <div><label>唯一 ID *</label><input id="proj-id" placeholder="my-awesome-game"></div>
       <div><label>作品名称 *</label><input id="proj-title" placeholder="作品名称"></div>
@@ -188,6 +192,69 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
   </div>
 </div>
 
+<!-- ========== 管理博客面板 ========== -->
+<div class="panel" id="panel-manage-posts">
+  <div class="card"><h3>📋 管理博客文章</h3>
+    <div id="posts-list"><p style="color:#888">加载中...</p></div>
+    <div id="posts-editor" style="display:none">
+      <input type="hidden" id="edit-post-cat">
+      <input type="hidden" id="edit-post-slug">
+      <label>标题</label><input id="edit-post-title">
+      <label>描述</label><input id="edit-post-desc">
+      <label>标签（逗号分隔）</label><input id="edit-post-tags">
+      <label>内容 (Markdown)</label><textarea id="edit-post-content" style="min-height:200px"></textarea>
+      <div class="btns">
+        <button class="btn btn-primary" onclick="savePostEdit()">💾 保存修改</button>
+        <button class="btn" style="background:#555" onclick="cancelPostEdit()">取消</button>
+      </div>
+      <div class="result" id="edit-post-result"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 管理作品面板 ========== -->
+<div class="panel" id="panel-manage-projects">
+  <div class="card"><h3>📋 管理作品</h3>
+    <div id="projects-admin-list"><p style="color:#888">加载中...</p></div>
+    <div id="projects-admin-editor" style="display:none">
+      <input type="hidden" id="admin-proj-id">
+      <div class="row"><div><label>名称</label><input id="admin-proj-title"></div><div><label>类型</label><select id="admin-proj-type"><option value="software">💻 软件</option><option value="game">🎮 游戏</option></select></div></div>
+      <label>描述</label><input id="admin-proj-desc">
+      <label>详细介绍</label><textarea id="admin-proj-long" style="min-height:80px"></textarea>
+      <div class="row"><div><label>平台</label><input id="admin-proj-platform"></div><div><label>状态</label><select id="admin-proj-status"><option value="已发布">已发布</option><option value="开发中">开发中</option><option value="抢先体验">抢先体验</option></select></div></div>
+      <label>标签（逗号分隔）</label><input id="admin-proj-tags">
+      <label>封面图（留空则不改）</label><input type="file" id="admin-proj-cover" accept="image/*">
+      <label>下载链接（格式：按钮文字|链接|图标名，每行一个。图标可选：github/steam/drive）</label>
+      <textarea id="admin-proj-dl" style="min-height:60px" placeholder="GitHub|https://...|github&#10;百度网盘|https://...|"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="admin-proj-featured" style="width:auto"> 首页精选</label>
+      <div class="btns">
+        <button class="btn btn-primary" onclick="saveProjectEdit()">💾 保存修改</button>
+        <button class="btn" style="background:#555" onclick="cancelProjectEdit()">取消</button>
+      </div>
+      <div class="result" id="edit-project-result"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 管理视频面板 ========== -->
+<div class="panel" id="panel-manage-videos">
+  <div class="card"><h3>管理视频</h3>
+    <div id="videos-admin-list"><p style="color:#888">加载中...</p></div>
+    <div id="videos-admin-editor" style="display:none">
+      <input type="hidden" id="admin-vid-id">
+      <div class="row"><div><label>标题</label><input id="admin-vid-title"></div><div><label>BV号</label><input id="admin-vid-bvid"></div></div>
+      <label>描述</label><input id="admin-vid-desc">
+      <label>封面图（留空则不改）</label><input type="file" id="admin-vid-cover" accept="image/*">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="admin-vid-featured" style="width:auto"> 首页精选</label>
+      <div class="btns">
+        <button class="btn btn-primary" onclick="saveVideoEdit()">💾 保存修改</button>
+        <button class="btn" style="background:#555" onclick="cancelVideoEdit()">取消</button>
+      </div>
+      <div class="result" id="edit-video-result"></div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -198,12 +265,14 @@ function showResult(id, ok, msg){
   el.className = `result ${ok?'success':'error'}`;
   el.innerHTML = ok ? `<pre>✅ ${msg}</pre>` : `<pre>❌ ${msg}</pre>`;
 }
-async function api(url, data){
-  const res = await fetch(url, {
-    method: data?'POST':'GET',
+async function api(url, data, method){
+  const m = method || (data?'POST':'GET');
+  const opts = {
+    method: m,
     headers: data?{'Content-Type':'application/json'}:{},
     body: data?JSON.stringify(data):undefined
-  });
+  };
+  const res = await fetch(url, opts);
   return res.json();
 }
 
@@ -216,6 +285,18 @@ document.querySelectorAll('.tab').forEach(t=>{
     $('panel-'+t.dataset.panel).classList.add('active');
   };
 });
+
+// 切换到管理页时自动加载列表
+document.querySelectorAll('.tab[data-panel="manage-posts"]').forEach(t=>{
+  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadPostsList();};
+});
+document.querySelectorAll('.tab[data-panel="manage-projects"]').forEach(t=>{
+  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadProjectsList();};
+});
+document.querySelectorAll('.tab[data-panel="manage-videos"]').forEach(t=>{
+  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadVideosList();};
+});
+
 
 // ========== 博客 ==========
 (async function loadCategories(){
@@ -301,6 +382,133 @@ async function doPush(){
   const r=await api('/api/push',{message:$('push-msg').value.trim()||'通过管理工具更新内容'});
   showResult('push-result',r.ok, r.ok?`推送成功!\n${r.log}`:r.error);
 }
+
+// ========== 管理博客 ==========
+async function loadPostsList(){
+  const el=$('posts-list');
+  try{const posts=await api('/api/posts/list');
+    if(posts.length===0){el.innerHTML='<p style="color:#666">暂无文章</p>';return;}
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr style="color:#999;font-size:12px;text-align:left"><th>标题</th><th>分类</th><th>日期</th><th style="width:120px">操作</th></tr></thead><tbody>`+
+      posts.map(p=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(p.title)}</td><td style="padding:8px 0;color:#888">${esc(p.category)}</td><td style="padding:8px 0;color:#666;font-size:12px">${esc(p.published||'')}</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editPost('${esc(p.category)}','${esc(p.slug)}')">编辑</button><button class="btn btn-danger" onclick="deletePost('${esc(p.category)}','${esc(p.slug)}')">删除</button></td></tr>`).join('')+
+      '</tbody></table>';
+  }catch(e){el.innerHTML='<p style="color:#f87171">加载失败</p>';}}
+async function editPost(cat,slug){
+  const r=await api(`/api/posts/detail?category=${encodeURIComponent(cat)}&slug=${encodeURIComponent(slug)}`);
+  $('edit-post-cat').value=cat;$('edit-post-slug').value=slug;
+  $('edit-post-title').value=r.title||'';
+  $('edit-post-desc').value=r.description||'';
+  $('edit-post-tags').value=(r.tags||[]).join(', ');
+  $('edit-post-content').value=r.content||'';
+  $('posts-list').style.display='none';$('posts-editor').style.display='block';
+}
+function cancelPostEdit(){$('posts-list').style.display='block';$('posts-editor').style.display='none';}
+async function savePostEdit(){
+  const data={
+    category:$('edit-post-cat').value,slug:$('edit-post-slug').value,
+    title:$('edit-post-title').value,description:$('edit-post-desc').value,
+    tags:$('edit-post-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    content:$('edit-post-content').value
+  };
+  const r=await api('/api/posts/update',data);
+  showResult('edit-post-result',r.ok,r.ok?'已保存':r.error);
+  if(r.ok){cancelPostEdit();loadPostsList();}
+}
+async function deletePost(cat,slug){
+  if(!confirm(`确认删除文章 "${slug}" 吗？此操作不可撤销！`)) return;
+  const r=await api(`/api/posts/delete?category=${encodeURIComponent(cat)}&slug=${encodeURIComponent(slug)}`,null,'DELETE');
+  if(r.ok) loadPostsList(); else alert('删除失败: '+r.error);
+}
+
+// ========== 管理作品 ==========
+async function loadProjectsList(){
+  const el=$('projects-admin-list');
+  try{const projs=await api('/api/projects/list');
+    if(projs.length===0){el.innerHTML='<p style="color:#666">暂无作品</p>';return;}
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr style="color:#999;font-size:12px;text-align:left"><th>名称</th><th>类型</th><th>状态</th><th style="width:120px">操作</th></tr></thead><tbody>`+
+      projs.map(p=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(p.title)}</td><td style="padding:8px 0;color:#888">${p.type==='game'?'🎮 游戏':'💻 软件'}</td><td style="padding:8px 0;color:#666;font-size:12px">${esc(p.status||'')}</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editProject('${esc(p.id)}')">编辑</button><button class="btn btn-danger" onclick="deleteProject('${esc(p.id)}')">删除</button></td></tr>`).join('')+
+      '</tbody></table>';
+  }catch(e){el.innerHTML='<p style="color:#f87171">加载失败</p>';}}
+async function editProject(id){
+  const projs=await api('/api/projects/list');
+  const p=projs.find(x=>x.id===id);
+  if(!p) return alert('找不到项目');
+  $('admin-proj-id').value=p.id;
+  $('admin-proj-title').value=p.title||'';
+  $('admin-proj-type').value=p.type||'software';
+  $('admin-proj-desc').value=p.description||'';
+  $('admin-proj-long').value=(p.longDescription||'').replace(/\\n/g,'\n');
+  $('admin-proj-platform').value=p.platform||'';
+  $('admin-proj-status').value=p.status||'开发中';
+  $('admin-proj-tags').value=(p.tags||[]).join(', ');
+  $('admin-proj-dl').value=(p.downloadLinks||[]).map(d=>`${d.label}|${d.url}|${d.icon||''}`).join('\n');
+  $('admin-proj-featured').checked=p.featured===true;
+  $('admin-proj-cover').value='';
+  $('projects-admin-list').style.display='none';$('projects-admin-editor').style.display='block';
+}
+function cancelProjectEdit(){$('projects-admin-list').style.display='block';$('projects-admin-editor').style.display='none';}
+async function saveProjectEdit(){
+  const dlRaw=$('admin-proj-dl').value.trim();
+  const downloadLinks=dlRaw?dlRaw.split('\n').map(line=>{const parts=line.split('|');return{label:parts[0]?.trim(),url:parts[1]?.trim(),icon:parts[2]?.trim()||undefined};}).filter(l=>l.label&&l.url):[];
+  let coverBase64='';const f=$('admin-proj-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const data={
+    id:$('admin-proj-id').value,title:$('admin-proj-title').value,
+    type:$('admin-proj-type').value,description:$('admin-proj-desc').value,
+    longDescription:$('admin-proj-long').value.replace(/\n/g,'\\n'),
+    platform:$('admin-proj-platform').value,status:$('admin-proj-status').value,
+    tags:$('admin-proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    downloadLinks,featured:$('admin-proj-featured').checked,coverBase64
+  };
+  const r=await api('/api/projects/update',data);
+  showResult('edit-project-result',r.ok,r.ok?'已保存':r.error);
+  if(r.ok){cancelProjectEdit();loadProjectsList();}
+}
+async function deleteProject(id){
+  if(!confirm(`确认删除作品 "${id}" 吗？此操作不可撤销！`)) return;
+  const r=await api(`/api/projects/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
+  if(r.ok) loadProjectsList(); else alert('删除失败: '+r.error);
+}
+
+// ========== 管理视频 ==========
+async function loadVideosList(){
+  const el=$('videos-admin-list');
+  try{const vids=await api('/api/videos/list');
+    if(vids.length===0){el.innerHTML='<p style="color:#666">暂无视频</p>';return;}
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr style="color:#999;font-size:12px;text-align:left"><th>标题</th><th>BV号</th><th style="width:120px">操作</th></tr></thead><tbody>`+
+      vids.map(v=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(v.title)}</td><td style="padding:8px 0;color:#888;font-size:12px">${esc(v.bvid)}</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editVideo('${esc(v.id)}')">编辑</button><button class="btn btn-danger" onclick="deleteVideo('${esc(v.id)}')">删除</button></td></tr>`).join('')+
+      '</tbody></table>';
+  }catch(e){el.innerHTML='<p style="color:#f87171">加载失败</p>';}}
+async function editVideo(id){
+  const vids=await api('/api/videos/list');
+  const v=vids.find(x=>x.id===id);
+  if(!v) return alert('找不到视频');
+  $('admin-vid-id').value=v.id;
+  $('admin-vid-title').value=v.title||'';
+  $('admin-vid-bvid').value=v.bvid||'';
+  $('admin-vid-desc').value=v.description||'';
+  $('admin-vid-featured').checked=v.featured===true;
+  $('admin-vid-cover').value='';
+  $('videos-admin-list').style.display='none';$('videos-admin-editor').style.display='block';
+}
+function cancelVideoEdit(){$('videos-admin-list').style.display='block';$('videos-admin-editor').style.display='none';}
+async function saveVideoEdit(){
+  let coverBase64='';const f=$('admin-vid-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const data={
+    id:$('admin-vid-id').value,title:$('admin-vid-title').value,
+    bvid:$('admin-vid-bvid').value,description:$('admin-vid-desc').value,
+    featured:$('admin-vid-featured').checked,coverBase64
+  };
+  const r=await api('/api/videos/update',data);
+  showResult('edit-video-result',r.ok,r.ok?'已保存':r.error);
+  if(r.ok){cancelVideoEdit();loadVideosList();}
+}
+async function deleteVideo(id){
+  if(!confirm(`确认删除视频 "${id}" 吗？此操作不可撤销！`)) return;
+  const r=await api(`/api/videos/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
+  if(r.ok) loadVideosList(); else alert('删除失败: '+r.error);
+}
+
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
 
 // ========== 辅助 ==========
 function fileToBase64(file){
