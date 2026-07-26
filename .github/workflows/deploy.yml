@@ -1,50 +1,42 @@
-name: Deploy to GitHub Pages
+name: 部署到 Cloudflare Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+  deployments: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout your repository using git
+      - name: 检出代码
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 安装 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20  # 使用 Node.js 20 而不是 22/23
-          
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Install dependencies
-        run: pnpm install
-        
-      - name: Build Astro site
-        run: pnpm build  # 只构建，不运行类型检查
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
+          node-version: 20
+          cache: pnpm
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建网站
+        run: pnpm run build
+
+      - name: 部署到 Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=zionyasvan
