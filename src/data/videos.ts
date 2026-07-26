@@ -1,7 +1,5 @@
 // ============================================
 // 视频数据文件
-// 支持 B站 视频（通过 BV 号）
-// 首页和视频专区会自动读取这里的数据
 // ============================================
 
 export interface Video {
@@ -15,11 +13,11 @@ export interface Video {
 
 export const videos: Video[] = [
 	{
-		id: "video-01",
+		id: "BV1ZHVVzQERz",
 		title: "我的第一个视频",
-		bvid: "BV1xx411c7mD",
+		bvid: "BV1ZHVVzQERz",
 		cover: "", // 留空就用B站自动封面
-		description: "这是一个关于XXX的视频",
+		description: "【生存模组推荐】基岩版生存模组必备合集｜链接已附简介｜高亮显示、移动光源、小地图等等",
 		featured: true,
 	},
 ];
