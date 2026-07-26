@@ -52,4 +52,23 @@ export const projects: Project[] = [
 		],
 		featured: true, // true = 显示在首页精选区
 	},
+	{
+		id: "neu-zionyasvan-neuroai",
+		title: "Neuro",
+		description: "Neuro 是一款轻量化的 DeepSeek API 客户端。",
+		longDescription:
+			"Neuro 目前正在测试。",
+		cover: "/projects/Mark.png",
+		screenshots: [
+			// "/projects/Mark-post-01.png",
+			// "/projects/screenshot2.jpg",
+		],
+		type: "software",
+		tags: ["工具", "Neutralionjs"],
+		platform: "Windows",
+		status: "预发布",
+		downloadLinks: [
+		],
+		featured: false, // true = 显示在首页精选区
+	},
 ];
