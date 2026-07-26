@@ -1,0 +1,62 @@
+---
+import { Icon } from "astro-icon/components";
+import { projects } from "../data/projects";
+// ============================================
+// 🎮 ZIONYASVAN PLAYS · 游戏专区
+// ============================================
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const games = projects.filter((p) => p.type === "game");
+---
+
+<MainGridLayout title="ZIONYASVAN PLAYS" description="我的游戏作品">
+  <div class="mb-6 onload-animation">
+    <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
+      <Icon name="material-symbols:sports-esports-outline-rounded" class="text-[var(--primary)] text-[1.75rem]" />
+      ZIONYASVAN PLAYS
+    </h1>
+    <p class="text-75 mt-1.5 text-sm">我的游戏作品</p>
+  </div>
+
+  {games.length > 0 ? (
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {games.map((game) => (
+        <a
+          href={`/projects/${game.id}/`}
+          class="card-base group rounded-[var(--radius-large)] overflow-hidden 
+                 hover:scale-[1.02] active:scale-100 transition-transform duration-200 onload-animation"
+        >
+          <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5">
+            <img
+              src={game.cover}
+              alt={game.title}
+              class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+              loading="lazy"
+            />
+          </div>
+          <div class="p-5">
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              {game.tags.map((tag) => (
+                <span class="text-xs px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
+              {game.title}
+            </h3>
+            <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
+              {game.description}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
+      <Icon name="material-symbols:sports-esports-outline-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
+      <p class="font-medium text-lg text-90 mb-2">暂无游戏作品</p>
+      <p class="text-sm">正在努力开发中，敬请期待～</p>
+    </div>
+  )}
+</MainGridLayout>

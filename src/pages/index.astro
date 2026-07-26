@@ -1,0 +1,198 @@
+---
+// ============================================
+// 首页
+// ============================================
+
+import { Icon } from "astro-icon/components";
+import PostCard from "../components/PostCard.astro";
+import { projects } from "../data/projects";
+import { videos } from "../data/videos";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { getSortedPosts } from "../utils/content-utils";
+import { getPostUrlBySlug } from "../utils/url-utils";
+
+// 获取最新 4 篇博客文章
+const latestPosts = (await getSortedPosts()).slice(0, 4);
+
+// 筛选需要在首页展示的精选内容
+const featuredProjects = projects.filter((p) => p.featured);
+const featuredVideos = videos.filter((v) => v.featured);
+
+// 混合精选列表（类型标记用于区分渲染）
+type FeaturedItem =
+	| {
+			kind: "project";
+			title: string;
+			description: string;
+			cover: string;
+			type: "game" | "software";
+			tags: string[];
+			url?: string;
+	  }
+	| {
+			kind: "video";
+			title: string;
+			description: string;
+			bvid: string;
+			cover: string;
+	  };
+
+const featuredItems: FeaturedItem[] = [
+	...featuredProjects.map((p) => ({ kind: "project" as const, ...p })),
+	...featuredVideos.map((v) => ({
+		kind: "video" as const,
+		cover: v.cover || "",
+		...v,
+	})),
+];
+
+const hasFeatured = featuredItems.length > 0;
+---
+
+<MainGridLayout>
+
+  <!-- ========== 精选展示区 ========== -->
+  {
+    hasFeatured && (
+      <div class="mb-10">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+            <Icon name="material-symbols:star-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+            猜你喜欢
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {featuredItems.map((item) => {
+            if (item.kind === "project") {
+              // --- 作品卡片 ---
+              return (
+                <a
+                  href={`/projects/${item.id}/`}
+                  class="card-base group rounded-[var(--radius-large)] overflow-hidden 
+                         hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+                >
+                  {/* 封面图 */}
+                  <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5">
+                    <img
+                      src={item.cover}
+                      alt={item.title}
+                      class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                  {/* 信息区 */}
+                  <div class="p-5">
+                    <span
+                      class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2
+                             bg-[var(--primary)]/10 text-[var(--primary)]"
+                    >
+                      {item.type === "game" ? "🎮 游戏" : "💻 软件"}
+                    </span>
+                    <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
+                      {item.title}
+                    </h3>
+                    <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
+                      {item.description}
+                    </p>
+                  </div>
+                </a>
+              );
+            } else {
+              // --- 视频卡片 ---
+              return (
+                <a
+                  href={`https://www.bilibili.com/video/${item.bvid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                         hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+                >
+                  {/* 封面图 + 播放按钮叠加层 */}
+                  <div class="aspect-video w-full overflow-hidden relative bg-black/10 dark:bg-white/5">
+                    {item.cover ? (
+                      <img
+                        src={item.cover}
+                        alt={item.title}
+                        class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-pink-900/40">
+                        <Icon name="material-symbols:smart-display-outline-rounded" class="text-white/40 text-5xl" />
+                      </div>
+                    )}
+                    {/* 播放按钮 */}
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
+                      <div class="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center 
+                                  group-hover:bg-white group-hover:scale-110 transition-all shadow-lg">
+                        <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-3xl ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+                  {/* 信息区 */}
+                  <div class="p-5">
+                    <span
+                      class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2
+                             bg-red-500/10 text-red-500 dark:text-red-400"
+                    >
+                      🎬 视频
+                    </span>
+                    <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
+                      {item.title}
+                    </h3>
+                    <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
+                      {item.description}
+                    </p>
+                  </div>
+                </a>
+              );
+            }
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  <!-- ========== 最新博客区 ========== -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+        <Icon name="material-symbols:article-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+        我的文章
+      </h2>
+      <a
+        href="/posts/"
+        class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
+      >
+        查看全部
+        <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+      </a>
+    </div>
+
+    {latestPosts.length > 0 ? (
+      <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
+        {latestPosts.map((entry) => (
+          <PostCard
+            entry={entry}
+            title={entry.data.title}
+            tags={entry.data.tags}
+            category={entry.data.category}
+            published={entry.data.published}
+            updated={entry.data.updated}
+            url={getPostUrlBySlug(entry.slug)}
+            image={entry.data.image}
+            description={entry.data.description}
+            draft={entry.data.draft}
+            class:list="onload-animation"
+            style=""
+          />
+        ))}
+      </div>
+    ) : (
+      <div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75">
+        <Icon name="material-symbols:edit-document-outline-rounded" class="text-4xl mx-auto mb-3 opacity-40" />
+        <p>还没有发布文章，敬请期待～</p>
+      </div>
+    )}
+  </div>
+</MainGridLayout>

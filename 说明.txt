@@ -9,7 +9,7 @@ git pull --no-edit
 git push
 
 # 1. 进入博客目录
-cd C:\Users\ZionyasVan\Zionyas-Van.github.io
+在当前目录按住 shift 右键，点击”在此处打开命令提示符“
 
 # 2. 创建新文章（把“新文章标题”换成你实际的文章名）
 pnpm new-post 新文章标题

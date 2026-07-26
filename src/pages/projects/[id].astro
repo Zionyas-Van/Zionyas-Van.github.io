@@ -1,0 +1,134 @@
+---
+import type { GetStaticPaths } from "astro";
+import { Icon } from "astro-icon/components";
+import { projects } from "../../data/projects";
+// ============================================
+// 作品详情页
+// URL: /projects/作品id/
+// ============================================
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+
+export const getStaticPaths = (() => {
+	return projects.map((p) => ({
+		params: { id: p.id },
+	}));
+}) satisfies GetStaticPaths;
+
+const { id } = Astro.params;
+const project = projects.find((p) => p.id === id);
+
+if (!project) {
+	return Astro.redirect("/404");
+}
+
+const typeLabel = project.type === "game" ? "🎮 游戏" : "💻 软件";
+const typeColorClass =
+	project.type === "game"
+		? "bg-green-500/10 text-green-600 dark:text-green-400"
+		: "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+---
+
+<MainGridLayout title={project.title} description={project.description}>
+  <!-- ===== 顶部横幅区（Steam 风格） ===== -->
+  <div class="onload-animation mb-8">
+    <!-- 封面大图 -->
+    <div class="aspect-video w-full rounded-[var(--radius-large)] overflow-hidden bg-black/10 dark:bg-white/5 mb-6">
+      <img
+        src={project.cover}
+        alt={project.title}
+        class="w-full h-full object-cover"
+      />
+    </div>
+
+    <!-- 标题 + 基本信息 -->
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      <div class="flex-1">
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+          <span class="text-xs font-medium px-2.5 py-1 rounded-full {typeColorClass}">
+            {typeLabel}
+          </span>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+            {project.status}
+          </span>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-gray-500/10 text-gray-600 dark:text-gray-400">
+            {project.platform}
+          </span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-bold text-90">{project.title}</h1>
+        <p class="text-75 mt-2 text-sm leading-relaxed">{project.description}</p>
+      </div>
+
+      <!-- 下载按钮区 -->
+      {project.downloadLinks.length > 0 && (
+        <div class="flex flex-wrap gap-3 md:min-w-[240px] md:justify-end">
+          {project.downloadLinks.map((link) => (
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-regular rounded-[var(--radius-large)] px-6 py-3 font-bold
+                     bg-[var(--primary)] text-white hover:opacity-90 active:scale-95
+                     transition-all duration-150 flex items-center gap-2"
+            >
+              {link.icon && <Icon name={link.icon} class="text-[1.25rem]" />}
+              {link.label}
+              <Icon name="material-symbols:arrow-outward-rounded" class="text-[1rem]" />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- ===== 标签区 ===== -->
+  {project.tags.length > 0 && (
+    <div class="card-base rounded-[var(--radius-large)] p-5 mb-4 onload-animation">
+      <div class="flex flex-wrap gap-2">
+        {project.tags.map((tag) => (
+          <span class="text-sm px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] font-medium">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- ===== 详细介绍区 ===== -->
+  <div class="card-base rounded-[var(--radius-large)] p-6 onload-animation">
+    <h2 class="text-lg font-bold text-90 mb-4 flex items-center gap-2">
+      <Icon name="material-symbols:description-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+      关于本作品
+    </h2>
+    <div class="text-75 leading-relaxed whitespace-pre-line text-sm">
+      {project.longDescription}
+    </div>
+  </div>
+
+  <!-- ===== 截图区 ===== -->
+  {project.screenshots.length > 0 && (
+    <div class="card-base rounded-[var(--radius-large)] p-6 mt-4 onload-animation">
+      <h2 class="text-lg font-bold text-90 mb-4 flex items-center gap-2">
+        <Icon name="material-symbols:screenshot-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+        截图
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {project.screenshots.map((src) => (
+          <div class="aspect-video rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
+            <img src={src} alt="截图" class="w-full h-full object-cover hover:scale-105 transition duration-300" loading="lazy" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- ===== 底部返回链接 ===== -->
+  <div class="mt-6 onload-animation">
+    <a
+      href={project.type === "game" ? "/plays/" : "/things/"}
+      class="inline-flex items-center gap-1 text-sm text-[var(--primary)] hover:underline"
+    >
+      <Icon name="material-symbols:arrow-back-rounded" class="text-[1rem]" />
+      返回{project.type === "game" ? "ZIONYASVAN PLAYS" : "ZIONYASVAN THINGS"}
+    </a>
+  </div>
+</MainGridLayout>

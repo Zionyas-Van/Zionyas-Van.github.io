@@ -1,0 +1,67 @@
+---
+import { Icon } from "astro-icon/components";
+import { videos } from "../data/videos";
+// ============================================
+// 🎬 @ZionyasVan · 视频专区
+// ============================================
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title="@ZionyasVan · 视频" description="我的视频作品">
+  <div class="mb-6 onload-animation">
+    <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
+      <Icon name="material-symbols:smart-display-outline-rounded" class="text-[var(--primary)] text-[1.75rem]" />
+      @ZionyasVan
+    </h1>
+    <p class="text-75 mt-1.5 text-sm">我的视频作品</p>
+  </div>
+
+  {videos.length > 0 ? (
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {videos.map((video) => (
+        <a
+          href={`https://www.bilibili.com/video/${video.bvid}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="card-base group rounded-[var(--radius-large)] overflow-hidden 
+                 hover:scale-[1.02] active:scale-100 transition-transform duration-200 onload-animation"
+        >
+          <!-- 封面 + 播放按钮 -->
+          <div class="aspect-video w-full overflow-hidden relative bg-black/10 dark:bg-white/5">
+            <img
+              src={video.cover || `https://api.bilibili.com/x/web-interface/view?bvid=${video.bvid}`}
+              alt={video.title}
+              class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+              loading="lazy"
+              onerror="this.style.display='none';this.parentElement.classList.add('bg-gradient-to-br','from-blue-900/40','to-pink-900/40');"
+            />
+            <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
+              <div class="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center 
+                          group-hover:bg-white group-hover:scale-110 transition-all shadow-lg">
+                <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-3xl ml-0.5" />
+              </div>
+            </div>
+          </div>
+          <div class="p-5">
+            <span class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2
+                         bg-red-500/10 text-red-500 dark:text-red-400">
+              🎬 视频
+            </span>
+            <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
+              {video.title}
+            </h3>
+            <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
+              {video.description}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
+      <Icon name="material-symbols:smart-display-outline-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
+      <p class="font-medium text-lg text-90 mb-2">暂无视频</p>
+      <p class="text-sm">B站视频即将上线，敬请期待～</p>
+    </div>
+  )}
+</MainGridLayout>
