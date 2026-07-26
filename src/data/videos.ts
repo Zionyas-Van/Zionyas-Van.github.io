@@ -16,7 +16,7 @@ export const videos: Video[] = [
 		id: "BV1ZHVVzQERz",
 		title: "【生存模组推荐】基岩版生存模组必备合集｜链接已附简介｜高亮显示、移动光源、小地图等等",
 		bvid: "BV1ZHVVzQERz",
-		cover: "", // 留空就用B站自动封面
+		cover: "/projects/BV1ZHVVzQERz.jpg", // 留空就用B站自动封面
 		description: "基岩版生成必备模组合集。",
 		featured: true,
 	},
