@@ -33,8 +33,9 @@ jobs:
         run: pnpm run build
 
       - name: 部署到 Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=zionyasvan
+          projectName: zionyasvan
+          directory: dist
