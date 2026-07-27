@@ -12,9 +12,39 @@ export interface Resource {
 
 export const resources: Resource[] = [
   {
-    id: "res-1785121002849",
-    name: "Gamemodd CS",
-    description: "CS1.6 模组、插件与地图包",
-    url: "https://www.gamemodd.com/cs/",
+    id: "res-1785121177991",
+    name: "哔哩哔哩",
+    description: "哔哩哔哩 (゜-゜)つロ 干杯~-bilibili",
+    url: "https://www.bilibili.com/",
+  },
+  {
+    id: "res-1785121225067",
+    name: "MnecraftSounds",
+    description: "我的世界音效收录网站。",
+    url: "https://o.xbottle.top/mcsounds/",
+  },
+  {
+    id: "res-1785121305574",
+    name: "Windows 12 网页版",
+    description: "用浏览器体验Win 12",
+    url: "https://win12.tech/boot",
+  },
+  {
+    id: "res-1785121394121",
+    name: "樱之空动漫",
+    description: "不多说。",
+    url: "https://skr.skr3.cc:666/",
+  },
+  {
+    id: "res-1785121434885",
+    name: "Steam",
+    description: "Steam官网。",
+    url: "https://store.steampowered.com/",
+  },
+  {
+    id: "res-1785121483512",
+    name: "网页里的电脑博物馆",
+    description: "收录了各种古董系统。",
+    url: "https://www.compumuseum.com/index.html?utm_source=xinquji",
   },
 ];
