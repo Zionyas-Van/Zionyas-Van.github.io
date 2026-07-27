@@ -80,6 +80,9 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
 
     <div class="row">
       <div>
+        <label>分类显示名</label>
+        <input id="blog-display-cat" placeholder="例如: 我的世界（用于页面显示）">
+        <div class="hint">和分类文件夹不同，这是给访客看的名字</div>
         <label>分类文件夹 *</label>
         <select id="blog-category">
           <option value="">加载中...</option>
@@ -311,11 +314,13 @@ async function createPost(){
   const category=$('blog-category').value.trim();
   const slug=$('blog-slug').value.trim();
   if(!title||!category||!slug||!content) return showResult('blog-result',false,'请填写所有带 * 的必填项');
-  const data={
+  const data = {
     title,
-    description:$('blog-desc').value.trim(),
-    tags:$('blog-tags').value.trim(),
-    category, slug, content
+    description: $('blog-desc').value.trim(),
+    tags: $('blog-tags').value.trim(),
+    category,
+    displayCategory: $('blog-display-cat').value.trim() || category,
+    slug, content
   };
   const r=await api('/api/create-post',data);
   showResult('blog-result',r.ok, r.ok?`文章已创建: ${r.path}`:r.error);
@@ -389,7 +394,8 @@ async function loadPostsList(){
   try{const posts=await api('/api/posts/list');
     if(posts.length===0){el.innerHTML='<p style="color:#666">暂无文章</p>';return;}
     el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr style="color:#999;font-size:12px;text-align:left"><th>标题</th><th>分类</th><th>日期</th><th style="width:120px">操作</th></tr></thead><tbody>`+
-      posts.map(p=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(p.title)}</td><td style="padding:8px 0;color:#888">${esc(p.category)}</td><td style="padding:8px 0;color:#666;font-size:12px">${esc(p.published||'')}</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editPost('${esc(p.category)}','${esc(p.slug)}')">编辑</button><button class="btn btn-danger" onclick="deletePost('${esc(p.category)}','${esc(p.slug)}')">删除</button></td></tr>`).join('')+
+      posts.map(p=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(p.title)}</td><td style="padding:8px 0;color:#888">${esc(p.displayCategory || p.category)}
+</td><td style="padding:8px 0;color:#666;font-size:12px">${esc(p.published||'')}</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editPost('${esc(p.category)}','${esc(p.slug)}')">编辑</button><button class="btn btn-danger" onclick="deletePost('${esc(p.category)}','${esc(p.slug)}')">删除</button></td></tr>`).join('')+
       '</tbody></table>';
   }catch(e){el.innerHTML='<p style="color:#f87171">加载失败</p>';}}
 async function editPost(cat,slug){
@@ -409,7 +415,7 @@ async function savePostEdit(){
     tags:$('edit-post-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     content:$('edit-post-content').value
   };
-  const r=await api('/api/posts/update',data);
+  const r=await api('/api/posts/update',data,'PUT');
   showResult('edit-post-result',r.ok,r.ok?'已保存':r.error);
   if(r.ok){cancelPostEdit();loadPostsList();}
 }
@@ -458,7 +464,7 @@ async function saveProjectEdit(){
     tags:$('admin-proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     downloadLinks,featured:$('admin-proj-featured').checked,coverBase64
   };
-  const r=await api('/api/projects/update',data);
+  const r=await api('/api/projects/update',data,'PUT');
   showResult('edit-project-result',r.ok,r.ok?'已保存':r.error);
   if(r.ok){cancelProjectEdit();loadProjectsList();}
 }
@@ -497,7 +503,7 @@ async function saveVideoEdit(){
     bvid:$('admin-vid-bvid').value,description:$('admin-vid-desc').value,
     featured:$('admin-vid-featured').checked,coverBase64
   };
-  const r=await api('/api/videos/update',data);
+  const r=await api('/api/videos/update',data,'PUT');
   showResult('edit-video-result',r.ok,r.ok?'已保存':r.error);
   if(r.ok){cancelVideoEdit();loadVideosList();}
 }
