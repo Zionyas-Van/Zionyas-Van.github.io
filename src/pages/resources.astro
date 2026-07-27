@@ -1,0 +1,51 @@
+---
+import { Icon } from "astro-icon/components";
+import { resources } from "../data/resources";
+// ============================================
+// 资源分享 · 全部资源
+// ============================================
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title="资源分享" description="实用资源与工具推荐">
+  <div class="mb-6 onload-animation">
+    <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
+      <Icon name="material-symbols:package-outline-rounded" class="text-[var(--primary)] text-[1.75rem]" />
+      资源分享
+    </h1>
+    <p class="text-75 mt-1.5 text-sm">实用资源与工具推荐</p>
+  </div>
+
+  {resources.length > 0 ? (
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {resources.map((r) => (
+        <a
+          href={r.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="card-base group rounded-[var(--radius-large)] p-5
+                 hover:scale-[1.01] active:scale-100 transition-transform duration-200
+                 flex items-start gap-3 onload-animation"
+        >
+          <div class="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0">
+            <Icon name="material-symbols:link-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          </div>
+          <div class="min-w-0">
+            <h3 class="font-semibold text-90 group-hover:text-[var(--primary)] transition-colors">
+              {r.name}
+            </h3>
+            <p class="text-sm text-75 mt-1 leading-relaxed">
+              {r.description}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
+      <Icon name="material-symbols:package-outline-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
+      <p class="font-medium text-lg text-90 mb-2">暂无资源</p>
+      <p class="text-sm">还没有分享任何资源，敬请期待～</p>
+    </div>
+  )}
+</MainGridLayout>

@@ -394,6 +394,89 @@ ${dlStr}
 		}
 	}
 
+	// ========== 资源管理 API ==========
+	const RESOURCES_FILE = path.join(ROOT, "src", "data", "resources.ts");
+
+	function formatResource(r) {
+		const desc = (r.description || "")
+			.replace(/\\/g, "\\\\")
+			.replace(/"/g, '\\"');
+		return `  {
+    id: "${r.id}",
+    name: "${r.name}",
+    description: "${desc}",
+    url: "${r.url}",
+  }`;
+	}
+
+	if (req.method === "GET" && req.url === "/api/resources/list") {
+		const items = parseTsArray(RESOURCES_FILE, "resources");
+		return sendJSON(res, items);
+	}
+
+	if (req.method === "POST" && req.url === "/api/resources/add") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const { name, description, url } = body;
+			if (!name || !url)
+				return sendJSON(res, { error: "名称和链接不能为空" }, 400);
+			const id = `res-${Date.now()}`;
+			const newItem = `  {
+    id: "${id}",
+    name: ${tsString(name)},
+    description: ${tsString(description || "")},
+    url: ${tsString(url)},
+  },`;
+			insertIntoArrayFile(RESOURCES_FILE, "resources", newItem);
+			return sendJSON(res, { ok: true, id });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	if (req.method === "PUT" && req.url === "/api/resources/update") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const items = parseTsArray(RESOURCES_FILE, "resources");
+			const idx = items.findIndex((r) => r.id === body.id);
+			if (idx === -1) return sendJSON(res, { error: "资源不存在" }, 404);
+			items[idx] = { ...items[idx], ...body };
+			const content = fs.readFileSync(RESOURCES_FILE, "utf-8");
+			const newContent = rebuildArraySection(
+				content,
+				"resources",
+				items,
+				formatResource,
+			);
+			fs.writeFileSync(RESOURCES_FILE, newContent, "utf-8");
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	if (req.method === "DELETE" && req.url.startsWith("/api/resources/delete")) {
+		try {
+			const u = new URL(req.url, `http://localhost:${PORT}`);
+			const id = u.searchParams.get("id");
+			const items = parseTsArray(RESOURCES_FILE, "resources");
+			const filtered = items.filter((r) => r.id !== id);
+			if (filtered.length === items.length)
+				return sendJSON(res, { error: "资源不存在" }, 404);
+			const content = fs.readFileSync(RESOURCES_FILE, "utf-8");
+			const newContent = rebuildArraySection(
+				content,
+				"resources",
+				filtered,
+				formatResource,
+			);
+			fs.writeFileSync(RESOURCES_FILE, newContent, "utf-8");
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
 	// API: 新建视频
 	if (req.method === "POST" && req.url === "/api/create-video") {
 		try {

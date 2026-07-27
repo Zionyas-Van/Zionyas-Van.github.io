@@ -6,6 +6,7 @@
 import { Icon } from "astro-icon/components";
 import PostCard from "../components/PostCard.astro";
 import { projects } from "../data/projects";
+import { resources } from "../data/resources";
 import { videos } from "../data/videos";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
@@ -152,6 +153,44 @@ const hasFeatured = featuredItems.length > 0;
       </div>
     )
   }
+
+  <!-- ========== 资源分享区 ========== -->
+  {resources.length > 0 && (
+    <div class="mb-10">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+          <Icon name="material-symbols:package-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          今日推荐
+        </h2>
+        <a
+          href="/resources/"
+          class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
+        >
+          查看全部
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+        </a>
+      </div>
+      <div class="flex flex-wrap gap-2 overflow-hidden" style="max-height: 88px">
+        {resources.map((r) => (
+          <a
+            href={r.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full
+                   bg-[var(--card-bg)] border border-black/5 dark:border-white/10
+                   hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/5
+                   active:scale-95 transition-all duration-150
+                   max-w-[280px]"
+            title={r.description}
+          >
+            <span class="text-sm font-medium text-90 truncate">{r.name}</span>
+            <span class="hidden md:inline text-xs text-75 truncate">{r.description}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
 
   <!-- ========== 最新博客区 ========== -->
   <div class="mb-8">

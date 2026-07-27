@@ -60,6 +60,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
   <button class="tab" data-panel="manage-posts">管理博客</button>
   <button class="tab" data-panel="manage-projects">管理作品</button>
   <button class="tab" data-panel="manage-videos">管理视频</button>
+  <button class="tab" data-panel="manage-resources">管理资源</button>
 
 </div>
 
@@ -258,6 +259,32 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
   </div>
 </div>
 
+<!-- ========== 管理资源面板 ========== -->
+<div class="panel" id="panel-manage-resources">
+  <div class="card"><h3>管理资源</h3>
+    <div id="resources-admin-list"><p style="color:#888">加载中...</p></div>
+    <div id="resources-admin-editor" style="display:none">
+      <input type="hidden" id="admin-res-id">
+      <div class="row"><div><label>名称</label><input id="admin-res-name"></div><div><label>链接</label><input id="admin-res-url"></div></div>
+      <label>描述</label><input id="admin-res-desc">
+      <div class="btns">
+        <button class="btn btn-primary" onclick="saveResourceEdit()">💾 保存修改</button>
+        <button class="btn" style="background:#555" onclick="cancelResourceEdit()">取消</button>
+      </div>
+      <div class="result" id="edit-resource-result"></div>
+    </div>
+    <!-- 新增资源表单 -->
+    <div class="card" style="margin-top:16px;background:#1e1e3a">
+      <h3 style="font-size:14px;color:#a78bfa;margin-bottom:12px">➕ 新增资源</h3>
+      <div class="row"><div><label>名称 *</label><input id="new-res-name"></div><div><label>链接 *</label><input id="new-res-url"></div></div>
+      <label>描述</label><input id="new-res-desc">
+      <div class="btns"><button class="btn btn-primary" onclick="addResource()">新增</button></div>
+      <div class="result" id="new-resource-result"></div>
+    </div>
+  </div>
+</div>
+
+
 </div>
 
 <script>
@@ -298,6 +325,9 @@ document.querySelectorAll('.tab[data-panel="manage-projects"]').forEach(t=>{
 });
 document.querySelectorAll('.tab[data-panel="manage-videos"]').forEach(t=>{
   const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadVideosList();};
+});
+document.querySelectorAll('.tab[data-panel="manage-resources"]').forEach(t=>{
+  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadResourcesList();};
 });
 
 
@@ -474,6 +504,7 @@ async function deleteProject(id){
   if(r.ok) loadProjectsList(); else alert('删除失败: '+r.error);
 }
 
+
 // ========== 管理视频 ==========
 async function loadVideosList(){
   const el=$('videos-admin-list');
@@ -514,6 +545,44 @@ async function deleteVideo(id){
 }
 
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ========== 管理资源 ==========
+async function loadResourcesList(){
+  const el=$('resources-admin-list');
+  try{const items=await api('/api/resources/list');
+    if(items.length===0){el.innerHTML='<p style="color:#666">暂无资源</p>';return;}
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr style="color:#999;font-size:12px;text-align:left"><th>名称</th><th>描述</th><th style="width:120px">操作</th></tr></thead><tbody>`+
+      items.map(r=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(r.name)}</td><td style="padding:8px 0;color:#888;font-size:12px">${esc(r.description||'')}</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editResource('${esc(r.id)}')">编辑</button><button class="btn btn-danger" onclick="deleteResource('${esc(r.id)}')">删除</button></td></tr>`).join('')+
+      '</tbody></table>';
+  }catch(e){el.innerHTML='<p style="color:#f87171">加载失败</p>';}}
+async function editResource(id){
+  const items=await api('/api/resources/list');
+  const r=items.find(x=>x.id===id);
+  if(!r) return alert('找不到资源');
+  $('admin-res-id').value=r.id;$('admin-res-name').value=r.name||'';
+  $('admin-res-url').value=r.url||'';$('admin-res-desc').value=r.description||'';
+  $('resources-admin-list').style.display='none';$('resources-admin-editor').style.display='block';
+}
+function cancelResourceEdit(){$('resources-admin-list').style.display='block';$('resources-admin-editor').style.display='none';}
+async function saveResourceEdit(){
+  const data={id:$('admin-res-id').value,name:$('admin-res-name').value,url:$('admin-res-url').value,description:$('admin-res-desc').value};
+  const r=await api('/api/resources/update',data,'PUT');
+  showResult('edit-resource-result',r.ok,r.ok?'已保存':r.error);
+  if(r.ok){cancelResourceEdit();loadResourcesList();}
+}
+async function deleteResource(id){
+  if(!confirm('确认删除此资源吗？')) return;
+  const r=await api(`/api/resources/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
+  if(r.ok) loadResourcesList(); else alert('删除失败: '+r.error);
+}
+async function addResource(){
+  const name=$('new-res-name').value.trim(),url=$('new-res-url').value.trim();
+  if(!name||!url) return showResult('new-resource-result',false,'名称和链接必填');
+  const r=await api('/api/resources/add',{name,url,description:$('new-res-desc').value.trim()});
+  showResult('new-resource-result',r.ok,r.ok?'资源已添加':r.error);
+  if(r.ok){$('new-res-name').value='';$('new-res-url').value='';$('new-res-desc').value='';loadResourcesList();}
+}
+
 
 
 // ========== 辅助 ==========

@@ -1,10 +1,4 @@
----
-title: "MineCodes-0.3.0-dairy"
-published: 2026-07-27 02:32:45
-description: ""
-category: "Record"
----
----
+﻿---
 title: MineCodes v0.3.0 开发日志：一个文科生的 Electron 探索之旅
 published: 2026-05-04
 description: 'MineCodes 是一个为 Minecraft 玩家准备的辅助工具 —— 查指令、找物品 ID、存笔记，一站式搞定。'
