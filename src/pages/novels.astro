@@ -1,0 +1,55 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { novels } from "../data/novels";
+import { Icon } from "astro-icon/components";
+---
+
+<MainGridLayout title="那些故事" description="我的小说作品">
+  <div class="mb-6 onload-animation">
+    <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
+      <Icon name="material-symbols:auto-stories-rounded" class="text-[var(--primary)] text-[1.75rem]" />
+      那些故事
+    </h1>
+    <p class="text-75 mt-1.5 text-sm">我的小说作品</p>
+  </div>
+
+  {novels.length > 0 ? (
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {novels.map((n) => (
+        <a
+          href={`/novels/${n.id}/`}
+          class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                 hover:scale-[1.02] active:scale-100 transition-transform duration-200 onload-animation"
+        >
+          <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+            <img
+              src={n.cover}
+              alt={n.title}
+              class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+              loading="lazy"
+            />
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+              {n.title}
+            </h3>
+            <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
+              {n.description}
+            </p>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-xs text-75/50">{n.author}</span>
+              <span class="text-xs text-75/30">·</span>
+              <span class="text-xs text-75/50">{n.chapters.length} 章</span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
+      <Icon name="material-symbols:auto-stories-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
+      <p class="font-medium text-lg text-90 mb-2">暂无小说</p>
+      <p class="text-sm">故事还在创作中，敬请期待～</p>
+    </div>
+  )}
+</MainGridLayout>

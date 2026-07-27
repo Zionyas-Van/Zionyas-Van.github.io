@@ -61,6 +61,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
   <button class="tab" data-panel="manage-projects">管理作品</button>
   <button class="tab" data-panel="manage-videos">管理视频</button>
   <button class="tab" data-panel="manage-resources">管理资源</button>
+  <button class="tab" data-panel="manage-novels">管理小说</button>
 
 </div>
 
@@ -105,6 +106,50 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
     <div class="result" id="blog-result"></div>
   </div>
 </div>
+
+<!-- ========== 管理小说面板 ========== -->
+<div class="panel" id="panel-manage-novels">
+  <div class="card"><h3>📋 小说列表</h3>
+    <div id="novels-admin-list"><p style="color:#888">加载中...</p></div>
+    <div class="btns"><button class="btn btn-primary" onclick="showNovelForm()">➕ 新建小说</button></div>
+    <div class="result" id="novels-list-result"></div>
+  </div>
+  <!-- 编辑表单（隐藏） -->
+  <div id="novel-editor" style="display:none">
+    <div class="card">
+      <h3 id="novel-editor-title">新建小说</h3>
+      <input type="hidden" id="admin-novel-id">
+      <div class="row"><div><label>小说名 *</label><input id="admin-novel-title"></div><div><label>作者</label><input id="admin-novel-author"></div></div>
+      <label>一句话描述</label><input id="admin-novel-desc">
+      <label>详细介绍</label><textarea id="admin-novel-intro" style="min-height:80px"></textarea>
+      <div class="row"><div><label>发布日期</label><input id="admin-novel-date" placeholder="2026-07-27"></div><div><label>发布平台</label><input id="admin-novel-platform" placeholder="B站专栏"></div></div>
+      <label>封面图（留空则不改）</label><input type="file" id="admin-novel-cover" accept="image/*">
+      <div class="btns">
+        <button class="btn btn-primary" onclick="saveNovel()">💾 保存基本信息</button>
+        <button class="btn" style="background:#555" onclick="cancelNovelEdit()">取消</button>
+        <button class="btn btn-danger" onclick="deleteNovelConfirm()" id="delete-novel-btn" style="display:none">🗑 删除整部小说</button>
+      </div>
+      <div class="result" id="edit-novel-result"></div>
+    </div>
+    <!-- 章节管理 -->
+    <div class="card" id="chapters-card" style="display:none">
+      <h3>📖 章节管理</h3>
+      <div id="chapters-list"></div>
+      <div class="btns"><button class="btn btn-primary" onclick="showChapterForm()">➕ 添加章节</button></div>
+      <div id="chapter-editor" style="display:none">
+        <input type="hidden" id="edit-chapter-slug-old">
+        <div class="row"><div><label>章节 slug</label><input id="edit-chapter-slug" placeholder="chapter-01"></div><div><label>章节标题</label><input id="edit-chapter-title" placeholder="第一章：开端"></div></div>
+        <label>正文（直接回车换行即可）</label><textarea id="edit-chapter-content" style="min-height:200px"></textarea>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="saveChapter()">💾 保存章节</button>
+          <button class="btn" style="background:#555" onclick="$('chapter-editor').style.display='none'">取消</button>
+        </div>
+        <div class="result" id="edit-chapter-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- ========== 作品面板 ========== -->
 <div class="panel" id="panel-project">
@@ -328,6 +373,9 @@ document.querySelectorAll('.tab[data-panel="manage-videos"]').forEach(t=>{
 });
 document.querySelectorAll('.tab[data-panel="manage-resources"]').forEach(t=>{
   const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadResourcesList();};
+});
+document.querySelectorAll('.tab[data-panel="manage-novels"]').forEach(t=>{
+  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadNovelsList();};
 });
 
 
@@ -593,6 +641,99 @@ function fileToBase64(file){
     reader.readAsDataURL(file);
   });
 }
+
+// ========== 管理小说 ==========
+let novelChapters=[];
+async function loadNovelsList(){
+  const el=$('novels-admin-list');
+  try{const items=await api('/api/novels/list');
+    if(items.length===0){el.innerHTML='<p style="color:#666">暂无小说</p>';return;}
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr style="color:#999;font-size:12px;text-align:left"><th>名称</th><th>作者</th><th>章节数</th><th style="width:160px">操作</th></tr></thead><tbody>`+
+      items.map(n=>`<tr style="border-bottom:1px solid #2a2a4a"><td style="padding:8px 0">${esc(n.title)}</td><td style="padding:8px 0;color:#888;font-size:12px">${esc(n.author||'')}</td><td style="padding:8px 0;color:#666;font-size:12px">${(n.chapters||[]).length} 章</td><td style="padding:8px 0"><button class="btn" style="background:#a78bfa;color:#fff;padding:4px 12px;font-size:12px;margin-right:4px" onclick="editNovel('${esc(n.id)}')">📝 编辑</button><button class="btn btn-danger" onclick="deleteNovelConfirm('${esc(n.id)}')">🗑</button></td></tr>`).join('')+
+      '</tbody></table>';
+  }catch(e){el.innerHTML='<p style="color:#f87171">加载失败: '+esc(e.message)+'</p>';}}
+function showNovelForm(){
+  $('admin-novel-id').value='';$('admin-novel-title').value='';$('admin-novel-author').value='';
+  $('admin-novel-desc').value='';$('admin-novel-intro').value='';$('admin-novel-date').value='';
+  $('admin-novel-platform').value='';$('admin-novel-cover').value='';
+  $('novel-editor-title').textContent='新建小说';$('delete-novel-btn').style.display='none';
+  $('chapters-card').style.display='none';novelChapters=[];
+  $('novels-admin-list').style.display='none';$('novel-editor').style.display='block';
+}
+async function editNovel(id){
+  const items=await api('/api/novels/list');
+  const n=items.find(x=>x.id===id);
+  if(!n) return alert('找不到小说');
+  $('admin-novel-id').value=n.id;$('admin-novel-title').value=n.title||'';
+  $('admin-novel-author').value=n.author||'';$('admin-novel-desc').value=n.description||'';
+  $('admin-novel-intro').value=(n.intro||'').replace(/\\n/g,'\n');
+  $('admin-novel-date').value=n.publishedDate||'';$('admin-novel-platform').value=n.platform||'';
+  $('admin-novel-cover').value='';novelChapters=[...(n.chapters||[])];
+  $('novel-editor-title').textContent='编辑: '+n.title;$('delete-novel-btn').style.display='inline-block';
+  $('chapters-card').style.display='block';renderChaptersList();
+  $('novels-admin-list').style.display='none';$('novel-editor').style.display='block';
+}
+function cancelNovelEdit(){$('novels-admin-list').style.display='block';$('novel-editor').style.display='none';}
+async function saveNovel(){
+  const id=$('admin-novel-id').value;
+  let coverBase64='';const f=$('admin-novel-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const data={title:$('admin-novel-title').value,description:$('admin-novel-desc').value,
+    author:$('admin-novel-author').value,publishedDate:$('admin-novel-date').value,
+    platform:$('admin-novel-platform').value,intro:$('admin-novel-intro').value.replace(/\n/g,'\\n'),
+    chapters:novelChapters,coverBase64};
+  if(!data.title) return showResult('edit-novel-result',false,'小说名不能为空');
+  if(id){
+    data.id=id;const r=await api('/api/novels/update',data,'PUT');
+    showResult('edit-novel-result',r.ok,r.ok?'已保存':r.error);
+  }else{
+    const r=await api('/api/novels/add',data);
+    showResult('edit-novel-result',r.ok,r.ok?'小说已创建':r.error);
+    if(r.ok){$('admin-novel-id').value=r.id;$('chapters-card').style.display='block';$('delete-novel-btn').style.display='inline-block';}
+  }
+}
+async function deleteNovelConfirm(id){
+  if(!id) id=$('admin-novel-id').value;
+  if(!confirm('确认删除这部小说及其所有章节吗？此操作不可撤销！')) return;
+  const r=await api(`/api/novels/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
+  if(r.ok){cancelNovelEdit();loadNovelsList();} else alert('删除失败: '+r.error);
+}
+function renderChaptersList(){
+  const el=$('chapters-list');
+  if(novelChapters.length===0){el.innerHTML='<p style="color:#666;font-size:13px">暂无章节</p>';return;}
+  el.innerHTML=novelChapters.map((ch,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+    <span style="font-size:13px"><span style="color:#888">#${i+1}</span> ${esc(ch.title)} <span style="color:#666;font-size:11px">(${esc(ch.slug)})</span></span>
+    <span><button class="btn" style="background:#a78bfa;color:#fff;padding:2px 10px;font-size:11px;margin-right:4px" onclick="editChapter(${i})">编辑</button><button class="btn btn-danger" style="padding:2px 8px;font-size:11px" onclick="deleteChapter(${i})">✕</button></span></div>`).join('');
+}
+function showChapterForm(){
+  $('edit-chapter-slug-old').value='';$('edit-chapter-slug').value='';
+  $('edit-chapter-title').value='';$('edit-chapter-content').value='';
+  $('chapter-editor').style.display='block';
+}
+function editChapter(idx){
+  const ch=novelChapters[idx];$('edit-chapter-slug-old').value=String(idx);
+  $('edit-chapter-slug').value=ch.slug;$('edit-chapter-title').value=ch.title;
+  $('edit-chapter-content').value=(ch.content||'').replace(/\\n/g,'\n');
+  $('chapter-editor').style.display='block';
+}
+function saveChapter(){
+  const slug=$('edit-chapter-slug').value.trim(),title=$('edit-chapter-title').value.trim();
+  const content=$('edit-chapter-content').value.replace(/\n/g,'\\n');
+  if(!slug||!title) return showResult('edit-chapter-result',false,'slug和标题不能为空');
+  const oldIdx=parseInt($('edit-chapter-slug-old').value);
+  if(!isNaN(oldIdx)&&$('edit-chapter-slug-old').value!==''){
+    novelChapters[oldIdx]={slug,title,content};
+  }else{
+    novelChapters.push({slug,title,content});
+  }
+  renderChaptersList();$('chapter-editor').style.display='none';
+  showResult('edit-chapter-result',true,'章节已保存（别忘了保存小说！）');
+}
+function deleteChapter(idx){
+  if(!confirm('删除这一章？')) return;
+  novelChapters.splice(idx,1);renderChaptersList();
+}
+
+
 </script>
 </body>
 </html>

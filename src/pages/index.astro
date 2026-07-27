@@ -7,6 +7,7 @@ import { Icon } from "astro-icon/components";
 import PostCard from "../components/PostCard.astro";
 import { projects } from "../data/projects";
 import { resources } from "../data/resources";
+import { novels } from "../data/novels";
 import { videos } from "../data/videos";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
@@ -191,6 +192,52 @@ const hasFeatured = featuredItems.length > 0;
     </div>
   )}
 
+  <!-- ========== 那些故事区 ========== -->
+  {novels.length > 0 && (
+    <div class="mb-10">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+          <Icon name="material-symbols:auto-stories-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          那些故事
+        </h2>
+        <a
+          href="/novels/"
+          class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
+        >
+          查看全部
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+        </a>
+      </div>
+      <div class="flex gap-4 overflow-x-auto pb-1" style="scrollbar-width: thin">
+        {novels.map((n) => (
+          <a
+            href={`/novels/${n.id}/`}
+            class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                   hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                   flex-shrink-0 w-[180px] md:w-[200px]"
+          >
+            <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+              <img
+                src={n.cover}
+                alt={n.title}
+                class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+                loading="lazy"
+              />
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                {n.title}
+              </h3>
+              <p class="text-xs text-75 mt-1 line-clamp-2 leading-relaxed">
+                {n.description}
+              </p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
 
   <!-- ========== 最新博客区 ========== -->
   <div class="mb-8">
@@ -233,5 +280,6 @@ const hasFeatured = featuredItems.length > 0;
         <p>还没有发布文章，敬请期待～</p>
       </div>
     )}
+  </div>
   </div>
 </MainGridLayout>

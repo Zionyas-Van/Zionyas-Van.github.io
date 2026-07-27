@@ -1,0 +1,82 @@
+---
+import type { GetStaticPaths } from "astro";
+import MainGridLayout from "../../../layouts/MainGridLayout.astro";
+import { novels } from "../../../data/novels";
+import { Icon } from "astro-icon/components";
+import MarkdownIt from "markdown-it";
+
+export const getStaticPaths = (() => {
+  const paths: { params: { id: string; chapter: string } }[] = [];
+  for (const n of novels) {
+    for (const ch of n.chapters) {
+      paths.push({ params: { id: n.id, chapter: ch.slug } });
+    }
+  }
+  return paths;
+}) satisfies GetStaticPaths;
+
+const { id, chapter } = Astro.params;
+const novel = novels.find((n) => n.id === id);
+if (!novel) return Astro.redirect("/novels/");
+
+const ch = novel.chapters.find((c) => c.slug === chapter);
+if (!ch) return Astro.redirect(`/novels/${novel.id}/`);
+
+const chapterIndex = novel.chapters.indexOf(ch);
+const prevChapter = chapterIndex > 0 ? novel.chapters[chapterIndex - 1] : null;
+const nextChapter = chapterIndex < novel.chapters.length - 1 ? novel.chapters[chapterIndex + 1] : null;
+
+const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
+const renderedContent = md.render(ch.content);
+---
+
+<MainGridLayout title={`${ch.title} - ${novel.title}`} description={novel.description}>
+  <div class="onload-animation">
+    <!-- 面包屑导航 -->
+    <div class="flex items-center gap-2 text-sm text-75/50 mb-6 flex-wrap">
+      <a href="/novels/" class="hover:text-[var(--primary)] transition-colors">那些故事</a>
+      <Icon name="material-symbols:chevron-right-rounded" class="text-[0.75rem]" />
+      <a href={`/novels/${novel.id}/`} class="hover:text-[var(--primary)] transition-colors">{novel.title}</a>
+      <Icon name="material-symbols:chevron-right-rounded" class="text-[0.75rem]" />
+      <span class="text-75">{ch.title}</span>
+    </div>
+
+    <!-- 章节标题 -->
+    <h1 class="text-xl md:text-2xl font-bold text-90 mb-8">{ch.title}</h1>
+
+    <!-- 正文 -->
+    <div class="card-base rounded-[var(--radius-large)] p-6 md:p-8 mb-8">
+      <article class="prose-a:text-[var(--primary)] text-90 leading-relaxed" set:html={renderedContent} />
+    </div>
+
+    <!-- 上下章导航 -->
+    <div class="flex justify-between gap-4">
+      {prevChapter ? (
+        <a
+          href={`/novels/${novel.id}/${prevChapter.slug}/`}
+          class="card-base rounded-[var(--radius-large)] px-5 py-3 flex items-center gap-2
+                 hover:bg-[var(--primary)]/5 transition-colors group"
+        >
+          <Icon name="material-symbols:chevron-left-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          <div class="text-left">
+            <div class="text-xs text-75/40">上一章</div>
+            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors">{prevChapter.title}</div>
+          </div>
+        </a>
+      ) : <div />}
+      {nextChapter ? (
+        <a
+          href={`/novels/${novel.id}/${nextChapter.slug}/`}
+          class="card-base rounded-[var(--radius-large)] px-5 py-3 flex items-center gap-2
+                 hover:bg-[var(--primary)]/5 transition-colors group text-right"
+        >
+          <div>
+            <div class="text-xs text-75/40">下一章</div>
+            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors">{nextChapter.title}</div>
+          </div>
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+        </a>
+      ) : <div />}
+    </div>
+  </div>
+</MainGridLayout>

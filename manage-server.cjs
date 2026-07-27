@@ -777,6 +777,99 @@ ${dlStr}
 		}
 	}
 
+  // ========== 小说管理 API ==========
+  const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
+
+  function formatNovel(n) {
+    const intro = (n.intro || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+    const desc = (n.description || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const chapters = (n.chapters || []).map((ch) => {
+      const chContent = (ch.content || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+      const chTitle = (ch.title || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      return `    {
+      slug: "${ch.slug}",
+      title: "${chTitle}",
+      content: "${chContent}",
+    }`;
+    }).join(",\n");
+    return `  {
+    id: "${n.id}",
+    title: "${n.title}",
+    cover: "${n.cover || "/novels/cover-placeholder.jpg"}",
+    description: "${desc}",
+    author: "${n.author || ""}",
+    publishedDate: "${n.publishedDate || ""}",
+    platform: "${n.platform || ""}",
+    intro: "${intro}",
+    chapters: [
+${chapters}
+    ],
+  }`;
+  }
+
+  if (req.method === "GET" && req.url === "/api/novels/list") {
+    const items = parseTsArray(NOVELS_FILE, "novels");
+    return sendJSON(res, items.map(n => ({ ...n, chapters: n.chapters || [] })));
+  }
+
+  if (req.method === "POST" && req.url === "/api/novels/add") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const { title, description, author, publishedDate, platform, intro, chapters, coverBase64 } = body;
+      if (!title) return sendJSON(res, { error: "小说名称不能为空" }, 400);
+      const id = "novel-" + Date.now();
+      let coverPath = "/novels/cover-placeholder.jpg";
+      if (coverBase64) {
+        const saved = saveCover(coverBase64, id);
+        if (saved) coverPath = saved;
+      }
+      const newItem = formatNovel({ id, title, cover: coverPath, description: description || "", author: author || "", publishedDate: publishedDate || "", platform: platform || "", intro: intro || "", chapters: chapters || [] });
+      insertIntoArrayFile(NOVELS_FILE, "novels", newItem);
+      return sendJSON(res, { ok: true, id });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  if (req.method === "PUT" && req.url === "/api/novels/update") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const items = parseTsArray(NOVELS_FILE, "novels");
+      const idx = items.findIndex((n) => n.id === body.id);
+      if (idx === -1) return sendJSON(res, { error: "小说不存在" }, 404);
+      let coverPath = items[idx].cover;
+      if (body.coverBase64) {
+        const saved = saveCover(body.coverBase64, body.id);
+        if (saved) coverPath = saved;
+      }
+      items[idx] = { ...items[idx], ...body, cover: coverPath || items[idx].cover };
+      delete items[idx].coverBase64;
+      const content = fs.readFileSync(NOVELS_FILE, "utf-8");
+      const newContent = rebuildArraySection(content, "novels", items, formatNovel);
+      fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+  if (req.method === "DELETE" && req.url.startsWith("/api/novels/delete")) {
+    try {
+      const u = new URL(req.url, `http://localhost:${PORT}`);
+      const id = u.searchParams.get("id");
+      const items = parseTsArray(NOVELS_FILE, "novels");
+      const filtered = items.filter((n) => n.id !== id);
+      if (filtered.length === items.length) return sendJSON(res, { error: "小说不存在" }, 404);
+      const content = fs.readFileSync(NOVELS_FILE, "utf-8");
+      const newContent = rebuildArraySection(content, "novels", filtered, formatNovel);
+      fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
+
 	// 404
 	res.writeHead(404);
 	res.end("Not Found");

@@ -49,9 +49,8 @@ export const siteConfig: SiteConfig = {
 export const navBarConfig: NavBarConfig = {
 	links: [
 		// 导航链接列表
-		LinkPreset.Home, // 首页
 		{
-			name: "博客",
+			name: "文章",
 			url: "/posts/",
 		},
 		{
