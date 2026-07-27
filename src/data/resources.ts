@@ -32,19 +32,25 @@ export const resources: Resource[] = [
   {
     id: "res-1785121394121",
     name: "樱之空动漫",
-    description: "不多说。",
+    description: "不多说",
     url: "https://skr.skr3.cc:666/",
   },
   {
     id: "res-1785121434885",
     name: "Steam",
-    description: "Steam官网。",
+    description: "Steam官网",
     url: "https://store.steampowered.com/",
   },
   {
     id: "res-1785121483512",
     name: "网页里的电脑博物馆",
-    description: "收录了各种古董系统。",
+    description: "收录了各种古董系统",
     url: "https://www.compumuseum.com/index.html?utm_source=xinquji",
   },
+  {
+    id: "res-1785142125486",
+    name: "MAS",
+    description: "免费激活Windows和MS365",
+    url: "https://massgrave.dev/",
+  }
 ];
