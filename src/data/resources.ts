@@ -53,4 +53,10 @@ export const resources: Resource[] = [
     description: "免费激活Windows和MS365",
     url: "https://massgrave.dev/",
   }
+  {
+    id: "res-1785213242507",
+    name: "离线游戏资源文档",
+    description: "免费下载GTA这类游戏。",
+    url: "https://www.114game.net/",
+  },
 ];
