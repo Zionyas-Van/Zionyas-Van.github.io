@@ -1,9 +1,15 @@
+---
+title: "20260420-xiaosuda-bye"
+published: 2026-07-28 03:43:20
+description: ""
+category: "daily says"
+---
 ﻿---
 title: "2026年04月20日，一路走好，小苏打。"
 published: 2026-04-20 01:19:19
 description: "小苏打，你在鼠星要过得开心噢！"
 tags: ["萌宠"]
-category: "daily says"
+category: "日常"
 ---
 
 2026年04月20日，一路走好小苏打。
