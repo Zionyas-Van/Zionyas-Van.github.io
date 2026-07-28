@@ -24,13 +24,13 @@ export interface Novel {
 export const novels: Novel[] = [
   {
     id: "novel-1785254064988",
-    title: "未来与你",
+    title: "和结婚对象同居之后",
     cover: "/projects/novel-1785254064988.png",
-    description: "当来自不同地两个时间线的人被拉在了一起...",
+    description: "",
     author: "ZionyasVan",
     publishedDate: "2026-06-15",
     platform: "暂无",
-    intro: "",
+    intro: "《和结婚对象同居之后》，又名《未来与你》。",
     chapters: [
 
     ],
