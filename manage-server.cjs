@@ -14,6 +14,8 @@ const POSTS_DIR = path.join(ROOT, "src", "content", "posts");
 const PROJECTS_FILE = path.join(ROOT, "src", "data", "projects.ts");
 const VIDEOS_FILE = path.join(ROOT, "src", "data", "videos.ts");
 const COVERS_DIR = path.join(ROOT, "public", "projects");
+const COVERS_POST_DIR = path.join(ROOT, "public", "covers");
+
 
 // ========== 解析 TypeScript 数据文件 ==========
 function parseTsArray(filepath, arrayName) {
@@ -174,42 +176,67 @@ function scanAllPosts() {
 }
 
 function parseFrontmatter(raw) {
-	const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-	if (!match) return { body: raw };
-	const fmStr = match[1];
-	const body = match[2];
-	const result = { body };
-	const lines = fmStr.split("\n");
-	for (const line of lines) {
-		const keyMatch = line.match(/^(\w+):\s*(.*)$/);
-		if (keyMatch) {
-			const key = keyMatch[1];
-			let val = keyMatch[2].trim();
-			if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-			if (val.startsWith("[") && val.endsWith("]")) {
-				val = val
-					.slice(1, -1)
-					.split(",")
-					.map((s) => s.trim().replace(/^"|"$/g, ""));
-			}
-			result[key] = val;
-		}
-	}
-	return result;
+  // 去掉 UTF-8 BOM
+  if (raw.charCodeAt(0) === 0xFEFF || raw.charCodeAt(0) === 65279) raw = raw.slice(1);
+  // 统一换行符
+  raw = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  // 文件必须以 --- 开头
+  if (!raw.startsWith("---")) return { body: raw };
+
+  // 找第二个 ---（独立成行）
+  const secondDash = raw.indexOf("\n---", 3);
+  if (secondDash === -1) return { body: raw };
+
+  // 提取 frontmatter 行和正文
+  const fmStr = raw.slice(4, secondDash);  // 跳过第一个 "---\n"
+  let body = raw.slice(secondDash + 4);    // 跳过 "\n---"
+  if (body.startsWith("\n")) body = body.slice(1); // 去掉多余换行
+
+  // 解析 frontmatter 键值对
+  const result = { body };
+  const lines = fmStr.split("\n");
+  for (const line of lines) {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = line.slice(0, colonIdx).trim();
+    let val = line.slice(colonIdx + 1).trim();
+    // 去首尾成对引号
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    // 数组 [xxx, yyy]
+    if (val.startsWith("[") && val.endsWith("]")) {
+      val = val.slice(1, -1).split(",").map((s) => s.trim().replace(/^["']|["']$/g, ""));
+    }
+    result[key] = val;
+  }
+  return result;
 }
 
+
+
 function toFrontmatter(fm) {
-	const lines = [];
-	if (fm.title) lines.push(`title: "${fm.title}"`);
-	if (fm.published) lines.push(`published: ${fm.published}`);
-	if (fm.description !== undefined)
-		lines.push(`description: "${(fm.description || "").replace(/"/g, '\\"')}"`);
-	if (fm.tags && fm.tags.length > 0) {
-		lines.push(`tags: [${fm.tags.map((t) => `"${t}"`).join(", ")}]`);
-	}
-	if (fm.category) lines.push(`category: "${fm.category}"`);
-	return `---\n${lines.join("\n")}\n---\n`;
+  const lines = [];
+  if (fm.title) lines.push(`title: "${(fm.title || "").replace(/"/g, '\\"')}"`);
+  if (fm.published) lines.push(`published: ${fm.published}`);
+  if (fm.description !== undefined) {
+    const d = fm.description || "";
+    // 包含特殊字符用单引号包裹，否则双引号
+    if (d.includes("'") && !d.includes('"')) lines.push(`description: "${d.replace(/"/g, '\\"')}"`);
+    else if (d.includes('"') || d.includes(":")) lines.push(`description: '${d.replace(/'/g, "\\'")}'`);
+    else lines.push(`description: "${d}"`);
+  }
+  if (fm.image !== undefined && fm.image !== "") lines.push(`image: "${(fm.image || "").replace(/"/g, '\\"')}"`);
+  if (fm.tags && fm.tags.length > 0) {
+    lines.push(`tags: [${fm.tags.map((t) => `"${(t || "").replace(/"/g, '\\"')}"`).join(", ")}]`);
+  }
+  if (fm.category) lines.push(`category: "${(fm.category || "").replace(/"/g, '\\"')}"`);
+  if (fm.draft !== undefined) lines.push(`draft: ${fm.draft === true || fm.draft === "true" ? "true" : "false"}`);
+  if (fm.lang !== undefined && fm.lang !== "") lines.push(`lang: '${(fm.lang || "").replace(/'/g, "\\'")}'`);
+  return "---\n" + lines.join("\n") + "\n---\n";
 }
+
 
 // ========== 工具函数 ==========
 function sendJSON(res, data, status = 200) {
@@ -254,6 +281,18 @@ function saveCover(base64, filename) {
 	return `/projects/${fullname}`;
 }
 
+function savePostCover(base64, slug) {
+  if (!base64 || base64 === "") return "";
+  const matches = base64.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!matches) return "";
+  const ext = matches[1] === "png" ? "png" : "jpg";
+  fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
+  const filepath = path.join(COVERS_POST_DIR, `${slug}.${ext}`);
+  fs.writeFileSync(filepath, Buffer.from(matches[2], "base64"));
+  return `/covers/${slug}.${ext}`;
+}
+
+
 // ========== 请求路由 ==========
 const server = http.createServer(async (req, res) => {
 	if (
@@ -270,67 +309,62 @@ const server = http.createServer(async (req, res) => {
 		return sendJSON(res, scanPostCategories());
 	}
 
-	// API: 发布博客 (生成 category/slug.md 平铺格式)
-	if (req.method === "POST" && req.url === "/api/create-post") {
-		try {
-			const body = JSON.parse(await readBody(req));
-			const {
-				title,
-				description,
-				tags,
-				category,
-				displayCategory,
-				slug,
-				content,
-			} = body;
+  // API: 发布博客 
+  if (req.method === "POST" && req.url === "/api/create-post") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const { title, description, tags, category, displayCategory, slug, content, image, draft, lang, coverBase64 } = body;
 
-			if (!title || !category || !slug || !content) {
-				return sendJSON(
-					res,
-					{ error: "标题、分类文件夹、slug 和内容不能为空" },
-					400,
-				);
-			}
+      if (!title || !category || !slug || !content) {
+        return sendJSON(res, { error: "标题、分类文件夹、slug 和内容不能为空" }, 400);
+      }
 
-			const filePath = path.join(POSTS_DIR, category, `${slug}.md`);
-			if (fs.existsSync(filePath)) {
-				return sendJSON(
-					res,
-					{ error: `文件已存在: ${category}/${slug}.md` },
-					400,
-				);
-			}
+      const filePath = path.join(POSTS_DIR, category, slug + ".md");
+      if (fs.existsSync(filePath)) {
+        return sendJSON(res, { error: `文件已存在: ${category}/${slug}.md` }, 400);
+      }
 
-			fs.mkdirSync(path.join(POSTS_DIR, category), { recursive: true });
+      fs.mkdirSync(path.join(POSTS_DIR, category), { recursive: true });
 
-			const tagsStr = tags
-				? tags
-						.split(",")
-						.map((t) => t.trim())
-						.filter(Boolean)
-						.map(tsString)
-						.join(", ")
-				: "";
-			const descStr = tsString(description || "");
-			const catDisplay = displayCategory || category;
+      // 处理封面图上传
+      let imagePath = image || "";
+      if (coverBase64) {
+        fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
+        const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (matches) {
+          const ext = matches[1] === "png" ? "png" : "jpg";
+          const coverName = `${slug}.${ext}`;
+          fs.writeFileSync(path.join(COVERS_POST_DIR, coverName), Buffer.from(matches[2], "base64"));
+          imagePath = `/covers/${coverName}`;
+        }
+      }
 
-			const md = `---
+      const tagsArr = tags
+        ? (Array.isArray(tags) ? tags : tags.split(",").map((t) => t.trim()).filter(Boolean))
+        : [];
+      const tagsStr = tagsArr.map(tsString).join(", ");
+      const descStr = tsString(description || "");
+      const catDisplay = displayCategory || category;
+
+      const md = `---
 title: ${tsString(title)}
 published: ${now()}
-description: ${descStr}
+description: ${descStr}${imagePath ? `\nimage: "${imagePath}"` : ""}
 tags: [${tagsStr}]
 category: ${tsString(catDisplay)}
+draft: ${draft === true || draft === "true" ? "true" : "false"}${lang ? `\nlang: '${lang}'` : ""}
 ---
 
 ${content}
 `;
 
-			fs.writeFileSync(filePath, md, "utf-8");
-			return sendJSON(res, { ok: true, path: `${category}/${slug}.md` });
-		} catch (e) {
-			return sendJSON(res, { error: e.message }, 500);
-		}
-	}
+      fs.writeFileSync(filePath, md, "utf-8");
+      return sendJSON(res, { ok: true, path: `${category}/${slug}.md` });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
 
 	// API: 新建项目
 	if (req.method === "POST" && req.url === "/api/create-project") {
@@ -584,45 +618,63 @@ ${dlStr}
 		if (!realPath) return sendJSON(res, { error: "文章不存在" }, 404);
 		const raw = fs.readFileSync(realPath, "utf-8");
 		const fm = parseFrontmatter(raw);
-		return sendJSON(res, {
-			category,
-			slug,
-			title: fm.title,
-			description: fm.description,
-			tags: fm.tags,
-			published: fm.published,
-			content: fm.body,
-		});
+        return sendJSON(res, { category, slug, title: fm.title, description: fm.description, tags: fm.tags, published: fm.published, content: fm.body, image: fm.image || "", draft: fm.draft, lang: fm.lang, displayCategory: fm.category || category });
 	}
 
-	// 更新文章
-	if (req.method === "PUT" && req.url === "/api/posts/update") {
-		try {
-			const body = JSON.parse(await readBody(req));
-			const { category, slug, title, description, tags, content } = body;
-			if (!category || !slug)
-				return sendJSON(res, { error: "分类和slug不能为空" }, 400);
-			// 优先找新格式
-			let indexPath = path.join(POSTS_DIR, category, `${slug}.md`);
-			if (!fs.existsSync(indexPath)) {
-				indexPath = path.join(POSTS_DIR, category, slug, "index.md");
-			}
-			if (!fs.existsSync(indexPath))
-				return sendJSON(res, { error: "文章不存在" }, 404);
-			const fm = {
-				title: title || slug,
-				published: new Date().toISOString().replace("T", " ").slice(0, 19),
-				description: description || "",
-				tags: tags || [],
-				category,
-			};
-			const newMd = toFrontmatter(fm) + (content || "");
-			fs.writeFileSync(indexPath, newMd, "utf-8");
-			return sendJSON(res, { ok: true });
-		} catch (e) {
-			return sendJSON(res, { error: e.message }, 500);
-		}
-	}
+  // 更新文章
+  if (req.method === "PUT" && req.url === "/api/posts/update") {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const { category, slug, title, description, tags, content, image, draft, lang, coverBase64 } = body;
+      if (!category || !slug) return sendJSON(res, { error: "分类和slug不能为空" }, 400);
+
+      // 找到现有文件
+      let indexPath = path.join(POSTS_DIR, category, slug + ".md");
+      if (!fs.existsSync(indexPath)) {
+        indexPath = path.join(POSTS_DIR, category, slug, "index.md");
+      }
+      if (!fs.existsSync(indexPath)) return sendJSON(res, { error: "文章不存在" }, 404);
+
+      // 读取旧的 frontmatter 以保留一些字段
+      const oldRaw = fs.readFileSync(indexPath, "utf-8");
+      const oldFm = parseFrontmatter(oldRaw);
+
+      // 处理封面图覆盖
+      let imagePath = image !== undefined ? image : oldFm.image;
+      if (coverBase64) {
+        fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
+        const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (matches) {
+          const ext = matches[1] === "png" ? "png" : "jpg";
+          const coverName = `${slug}.${ext}`;
+          fs.writeFileSync(path.join(COVERS_POST_DIR, coverName), Buffer.from(matches[2], "base64"));
+          imagePath = `/covers/${coverName}`;
+        }
+      }
+
+      const tagsArr = tags
+        ? (Array.isArray(tags) ? tags : tags.split(",").map((t) => t.trim()).filter(Boolean))
+        : [];
+
+      const fm = {
+        title: title || oldFm.title || slug,
+        published: oldFm.published || new Date().toISOString().replace("T", " ").slice(0, 19),
+        description: description !== undefined ? description : oldFm.description || "",
+        image: imagePath !== undefined ? imagePath : oldFm.image || "",
+        tags: tagsArr.length > 0 ? tagsArr : (oldFm.tags || []),
+        category: category || oldFm.category,
+        draft: draft !== undefined ? draft : oldFm.draft,
+        lang: lang !== undefined ? lang : oldFm.lang || "",
+      };
+
+      const newMd = toFrontmatter(fm) + (content !== undefined ? content : oldFm.body || "");
+      fs.writeFileSync(indexPath, newMd, "utf-8");
+      return sendJSON(res, { ok: true });
+    } catch (e) {
+      return sendJSON(res, { error: e.message }, 500);
+    }
+  }
+
 
 	// 删除文章
 	if (req.method === "DELETE" && req.url.startsWith("/api/posts/delete")) {

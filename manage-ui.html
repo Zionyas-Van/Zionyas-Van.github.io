@@ -85,6 +85,9 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
         <label>分类显示名</label>
         <input id="blog-display-cat" placeholder="例如: 我的世界（用于页面显示）">
         <div class="hint">和分类文件夹不同，这是给访客看的名字</div>
+        <label>封面图</label>
+        <input type="file" id="blog-cover-input" accept="image/*">
+        <div class="hint">上传封面图，自动存到 public/covers/</div>
         <label>分类文件夹 *</label>
         <select id="blog-category">
           <option value="">加载中...</option>
@@ -96,6 +99,21 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
         <div class="hint">英文+连字符，如 my-first-post</div>
       </div>
     </div>
+
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label>发布日期（2000-01-01）</label>
+        <input id="blog-published" placeholder="留空则自动生成当前时间">
+      </div>
+      <div>
+        <label>语言</label>
+        <input id="blog-lang" placeholder="zh_CN" value="zh_CN">
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input type="checkbox" id="blog-draft" style="width:auto"> 标记为草稿（不在网站显示）
+    </label>
+
 
     <label>文章内容 (Markdown) *</label>
     <textarea id="blog-content" placeholder="在这里写 Markdown 内容..."></textarea>
@@ -249,8 +267,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <input type="hidden" id="edit-post-cat">
       <input type="hidden" id="edit-post-slug">
       <label>标题</label><input id="edit-post-title">
+      <label>封面图（留空则不改）</label>
+      <input type="file" id="edit-post-cover" accept="image/*">
+      <div class="hint">当前封面: <span id="edit-post-current-cover" style="color:#a78bfa"></span></div>
       <label>描述</label><input id="edit-post-desc">
       <label>标签（逗号分隔）</label><input id="edit-post-tags">
+      <div class="row"><div><label>分类显示名</label><input id="edit-post-display-cat"></div><div><label>发布日期</label><input id="edit-post-published"></div></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+        <input type="checkbox" id="edit-post-draft" style="width:auto"> 草稿
+      </label>
       <label>内容 (Markdown)</label><textarea id="edit-post-content" style="min-height:200px"></textarea>
       <div class="btns">
         <button class="btn btn-primary" onclick="savePostEdit()">💾 保存修改</button>
@@ -392,17 +417,33 @@ async function createPost(){
   const category=$('blog-category').value.trim();
   const slug=$('blog-slug').value.trim();
   if(!title||!category||!slug||!content) return showResult('blog-result',false,'请填写所有带 * 的必填项');
+
+  // 处理封面图
+  let coverBase64='';
+  const coverFile=$('blog-cover-input').files[0];
+  if(coverFile) coverBase64=await fileToBase64(coverFile);
+
+  const tagsRaw=$('blog-tags').value.trim();
+  const tagsArr=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
+
   const data = {
     title,
     description: $('blog-desc').value.trim(),
-    tags: $('blog-tags').value.trim(),
+    tags: tagsArr,
     category,
     displayCategory: $('blog-display-cat').value.trim() || category,
-    slug, content
+    slug, content,
+    image: '',
+    draft: $('blog-draft').checked,
+    lang: $('blog-lang').value.trim() || 'zh_CN',
+    published: $('blog-published').value.trim() || '',
+    coverBase64
   };
   const r=await api('/api/create-post',data);
   showResult('blog-result',r.ok, r.ok?`文章已创建: ${r.path}`:r.error);
+  if(r.ok){$('blog-cover-input').value='';$('blog-published').value='';}
 }
+
 
 // ========== 作品 ==========
 function addDlRow(){
@@ -483,20 +524,40 @@ async function editPost(cat,slug){
   $('edit-post-desc').value=r.description||'';
   $('edit-post-tags').value=(r.tags||[]).join(', ');
   $('edit-post-content').value=r.content||'';
+  $('edit-post-display-cat').value=r.category||cat;
+  $('edit-post-published').value=r.published||'';
+  $('edit-post-draft').checked=r.draft===true||r.draft==='true';
+  $('edit-post-current-cover').textContent=r.image||'(无)';
+  $('edit-post-cover').value='';
   $('posts-list').style.display='none';$('posts-editor').style.display='block';
 }
+
 function cancelPostEdit(){$('posts-list').style.display='block';$('posts-editor').style.display='none';}
 async function savePostEdit(){
+  let coverBase64='';
+  const coverFile=$('edit-post-cover').files[0];
+  if(coverFile) coverBase64=await fileToBase64(coverFile);
+
+  const tagsRaw=$('edit-post-tags').value.trim();
+  const tagsArr=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
+
   const data={
-    category:$('edit-post-cat').value,slug:$('edit-post-slug').value,
-    title:$('edit-post-title').value,description:$('edit-post-desc').value,
-    tags:$('edit-post-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    content:$('edit-post-content').value
+    category:$('edit-post-cat').value,
+    slug:$('edit-post-slug').value,
+    title:$('edit-post-title').value,
+    description:$('edit-post-desc').value,
+    displayCategory:$('edit-post-display-cat').value,
+    tags:tagsArr,
+    content:$('edit-post-content').value,
+    draft:$('edit-post-draft').checked,
+    published:$('edit-post-published').value,
+    coverBase64
   };
   const r=await api('/api/posts/update',data,'PUT');
   showResult('edit-post-result',r.ok,r.ok?'已保存':r.error);
   if(r.ok){cancelPostEdit();loadPostsList();}
 }
+
 async function deletePost(cat,slug){
   if(!confirm(`确认删除文章 "${slug}" 吗？此操作不可撤销！`)) return;
   const r=await api(`/api/posts/delete?category=${encodeURIComponent(cat)}&slug=${encodeURIComponent(slug)}`,null,'DELETE');
