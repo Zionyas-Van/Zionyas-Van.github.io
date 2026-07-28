@@ -58,5 +58,11 @@ export const resources: Resource[] = [
     name: "离线游戏资源文档",
     description: "免费下载GTA这类游戏。",
     url: "https://www.114game.net/",
-  }
+  },
+  {
+    id: "res-1785258920224",
+    name: "我告诉你",
+    description: "Windows系统镜像下载。",
+    url: "https://msdn.itellyou.cn/?utm_source=xinquji",
+  },
 ];
