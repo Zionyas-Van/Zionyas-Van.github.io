@@ -778,7 +778,7 @@ function editChapter(idx){
 }
 function saveChapter(){
   const slug=$('edit-chapter-slug').value.trim(),title=$('edit-chapter-title').value.trim();
-  const content=$('edit-chapter-content').value.replace(/\n/g,'\\n');
+  const content=$('edit-chapter-content').value;
   if(!slug||!title) return showResult('edit-chapter-result',false,'slug和标题不能为空');
   const oldIdx=parseInt($('edit-chapter-slug-old').value);
   if(!isNaN(oldIdx)&&$('edit-chapter-slug-old').value!==''){

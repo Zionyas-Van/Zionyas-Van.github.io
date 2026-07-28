@@ -1,18 +1,18 @@
 ---
 import type { GetStaticPaths } from "astro";
-import MainGridLayout from "../../../layouts/MainGridLayout.astro";
-import { novels } from "../../../data/novels";
 import { Icon } from "astro-icon/components";
 import MarkdownIt from "markdown-it";
+import { novels } from "../../../data/novels";
+import MainGridLayout from "../../../layouts/MainGridLayout.astro";
 
 export const getStaticPaths = (() => {
-  const paths: { params: { id: string; chapter: string } }[] = [];
-  for (const n of novels) {
-    for (const ch of n.chapters) {
-      paths.push({ params: { id: n.id, chapter: ch.slug } });
-    }
-  }
-  return paths;
+	const paths: { params: { id: string; chapter: string } }[] = [];
+	for (const n of novels) {
+		for (const ch of n.chapters) {
+			paths.push({ params: { id: n.id, chapter: ch.slug } });
+		}
+	}
+	return paths;
 }) satisfies GetStaticPaths;
 
 const { id, chapter } = Astro.params;
@@ -24,10 +24,17 @@ if (!ch) return Astro.redirect(`/novels/${novel.id}/`);
 
 const chapterIndex = novel.chapters.indexOf(ch);
 const prevChapter = chapterIndex > 0 ? novel.chapters[chapterIndex - 1] : null;
-const nextChapter = chapterIndex < novel.chapters.length - 1 ? novel.chapters[chapterIndex + 1] : null;
+const nextChapter =
+	chapterIndex < novel.chapters.length - 1
+		? novel.chapters[chapterIndex + 1]
+		: null;
 
 const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
-const renderedContent = md.render(ch.content);
+const unescaped = ch.content
+	.replace(/\\n/g, "\n")
+	.replace(/\\"/g, '"')
+	.replace(/\\\\/g, "\\");
+const renderedContent = md.render(unescaped);
 ---
 
 <MainGridLayout title={`${ch.title} - ${novel.title}`} description={novel.description}>
