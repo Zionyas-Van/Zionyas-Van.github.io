@@ -58,5 +58,5 @@ export const resources: Resource[] = [
     name: "离线游戏资源文档",
     description: "免费下载GTA这类游戏。",
     url: "https://www.114game.net/",
-  },
+  }
 ];

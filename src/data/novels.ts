@@ -21,4 +21,18 @@ export interface Novel {
   chapters: Chapter[];   // 章节列表（按顺序排列）
 }
 
-export const novels: Novel[] = [];
+export const novels: Novel[] = [
+  {
+    id: "novel-1785254064988",
+    title: "未来与你",
+    cover: "/projects/novel-1785254064988.png",
+    description: "当来自不同地两个时间线的人被拉在了一起...",
+    author: "ZionyasVan",
+    publishedDate: "2026-06-15",
+    platform: "暂无",
+    intro: "",
+    chapters: [
+
+    ],
+  }
+];
