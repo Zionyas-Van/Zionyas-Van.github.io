@@ -31,7 +31,8 @@ if (!novel) return Astro.redirect("/novels/");
           <span>已发布平台：{novel.platform}</span>
           <span>共 {novel.chapters.length} 章</span>
         </div>
-        <p class="text-75 leading-relaxed whitespace-pre-line">{novel.intro}</p>
+        <p class="text-75 leading-relaxed whitespace-pre-line">{novel.intro.replace(/\\n/g, "\n")}</p>
+
       </div>
     </div>
 

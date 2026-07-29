@@ -833,7 +833,7 @@ ${dlStr}
   const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
 
   function formatNovel(n) {
-    const intro = (n.intro || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+    const intro = (n.intro || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r/g, "").replace(/\n/g, "\\n");
     const desc = (n.description || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     const chapters = (n.chapters || []).map((ch) => {
       const chContent = (ch.content || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
