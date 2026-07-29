@@ -64,5 +64,5 @@ export const resources: Resource[] = [
     name: "我告诉你",
     description: "Windows系统镜像下载。",
     url: "https://msdn.itellyou.cn/?utm_source=xinquji",
-  },
+  }
 ];

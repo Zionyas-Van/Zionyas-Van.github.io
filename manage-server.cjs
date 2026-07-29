@@ -421,7 +421,7 @@ ${dlStr}
     featured: ${featured === true || featured === "true"},
   },`;
 
-			insertIntoArrayFile(PROJECTS_FILE, "projects", newProject);
+			insertIntoArrayFile(PROJECTS_FILE, "projects", newProject, formatProject);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -461,7 +461,7 @@ ${dlStr}
     description: ${tsString(description || "")},
     url: ${tsString(url)},
   },`;
-			insertIntoArrayFile(RESOURCES_FILE, "resources", newItem);
+			insertIntoArrayFile(RESOURCES_FILE, "resources", newItem, formatProject);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -537,7 +537,7 @@ ${dlStr}
     featured: ${featured === true || featured === "true"},
   },`;
 
-			insertIntoArrayFile(VIDEOS_FILE, "videos", newVideo);
+			insertIntoArrayFile(VIDEOS_FILE, "videos", newVideo, formatProject);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -876,7 +876,7 @@ ${chapters}
         if (saved) coverPath = saved;
       }
       const newItem = formatNovel({ id, title, cover: coverPath, description: description || "", author: author || "", publishedDate: publishedDate || "", platform: platform || "", intro: intro || "", chapters: chapters || [] });
-      insertIntoArrayFile(NOVELS_FILE, "novels", newItem);
+      insertIntoArrayFile(NOVELS_FILE, "novels", newItem, formatProject);
       return sendJSON(res, { ok: true, id });
     } catch (e) {
       return sendJSON(res, { error: e.message }, 500);
@@ -928,25 +928,28 @@ ${chapters}
 });
 
 // ========== 辅助：向 TypeScript 数据文件中插入数组项 ==========
-function insertIntoArrayFile(filepath, arrayName, newItemStr) {
-	let content = fs.readFileSync(filepath, "utf-8");
-	const pattern = new RegExp(`export const ${arrayName}[^=]*=\\s*\\[`);
-	const match = content.match(pattern);
-	if (!match) throw new Error(`找不到 export const ${arrayName} 数组`);
+function insertIntoArrayFile(filepath, arrayName, newItemStr, formatFn) {
+  const items = parseTsArray(filepath, arrayName);
+  const idMatch = newItemStr.match(/id:\s*"([^"]+)"/);
+  const nameMatch = newItemStr.match(/name:\s*"([^"]+)"/);
+  const titleMatch = newItemStr.match(/title:\s*"([^"]+)"/);
+  const descMatch = newItemStr.match(/description:\s*"([^"]*)"/);
+  const urlMatch = newItemStr.match(/url:\s*"([^"]+)"/);
+  const bvidMatch = newItemStr.match(/bvid:\s*"([^"]+)"/);
 
-	const startIdx = match.index + match[0].length;
-	const rest = content.slice(startIdx);
-	const isEmpty = /^\s*\]/.test(rest);
+  const newItem = {
+    id: idMatch ? idMatch[1] : (nameMatch ? nameMatch[1] : ""),
+    title: titleMatch ? titleMatch[1] : (nameMatch ? nameMatch[1] : ""),
+    name: nameMatch ? nameMatch[1] : "",
+    description: descMatch ? descMatch[1] : "",
+    url: urlMatch ? urlMatch[1] : "",
+    bvid: bvidMatch ? bvidMatch[1] : "",
+  };
+  items.push(newItem);
 
-	if (isEmpty) {
-		content = `${content.slice(0, startIdx)}\n${newItemStr}\n${content.slice(startIdx)}`;
-	} else {
-		const lastSemicolonBracket = content.lastIndexOf("];");
-		if (lastSemicolonBracket === -1) throw new Error("找不到数组结束标记 ];");
-		content = `${content.slice(0, lastSemicolonBracket) + newItemStr}\n${content.slice(lastSemicolonBracket)}`;
-	}
-
-	fs.writeFileSync(filepath, content, "utf-8");
+  const content = fs.readFileSync(filepath, "utf-8");
+  const newContent = rebuildArraySection(content, arrayName, items, formatFn);
+  fs.writeFileSync(filepath, newContent, "utf-8");
 }
 
 // ========== 启动服务器 ==========

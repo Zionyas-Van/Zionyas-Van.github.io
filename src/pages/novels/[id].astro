@@ -26,10 +26,10 @@ if (!novel) return Astro.redirect("/novels/");
       <div class="flex-1 min-w-0">
         <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3">{novel.title}</h1>
         <div class="flex flex-wrap items-center gap-3 text-sm text-75 mb-4">
-          <span>✍️ {novel.author}</span>
-          <span>📅 {novel.publishedDate}</span>
-          <span>📡 {novel.platform}</span>
-          <span>📖 共 {novel.chapters.length} 章</span>
+          <span>著作：{novel.author}</span>
+          <span>发布日期：{novel.publishedDate}</span>
+          <span>已发布平台：{novel.platform}</span>
+          <span>共 {novel.chapters.length} 章</span>
         </div>
         <p class="text-75 leading-relaxed whitespace-pre-line">{novel.intro}</p>
       </div>
