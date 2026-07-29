@@ -40,7 +40,7 @@ const renderedContent = md.render(unescaped);
 <MainGridLayout title={`${ch.title} - ${novel.title}`} description={novel.description}>
   <div class="onload-animation">
     <!-- 面包屑导航 -->
-    <div class="flex items-center gap-2 text-sm text-75/50 mb-6 flex-wrap">
+    <div class="flex items-center gap-2 text-sm text-black/40 dark:text-white/40 mb-6 flex-wrap">
       <a href="/novels/" class="hover:text-[var(--primary)] transition-colors">那些故事</a>
       <Icon name="material-symbols:chevron-right-rounded" class="text-[0.75rem]" />
       <a href={`/novels/${novel.id}/`} class="hover:text-[var(--primary)] transition-colors">{novel.title}</a>
@@ -53,7 +53,7 @@ const renderedContent = md.render(unescaped);
 
     <!-- 正文 -->
     <div class="card-base rounded-[var(--radius-large)] p-6 md:p-10 mb-8">
-      <article class="prose-a:text-[var(--primary)] text-90 text-base md:text-lg leading-loose tracking-wide" style="word-spacing: 0.05em; line-height: 2;" set:html={renderedContent} />
+      <article class="prose-a:text-[var(--primary)] text-90 text-base md:text-lg leading-loose tracking-wide [&>p]:indent-8" style="word-spacing: 0.05em; line-height: 2;" set:html={renderedContent} />
     </div>
 
     <!-- 上下章导航 -->
@@ -85,5 +85,41 @@ const renderedContent = md.render(unescaped);
         </a>
       ) : <div />}
     </div>
+
+
+    <!-- 底部上下章 -->
+    <div class="flex justify-center gap-4 mt-8">
+      {prevChapter ? (
+        <a
+          href={`/novels/${novel.id}/${prevChapter.slug}/`}
+          class="card-base rounded-[var(--radius-large)] px-8 py-4 flex items-center gap-3
+                 hover:bg-[var(--primary)]/10 transition-colors group"
+        >
+          <Icon name="material-symbols:chevron-left-rounded" class="text-[var(--primary)] text-[1.5rem]" />
+          <div class="text-left">
+            <div class="text-xs text-black/30 dark:text-white/30">上一章</div>
+            <div class="text-sm font-semibold text-90 group-hover:text-[var(--primary)] transition-colors">{prevChapter.title}</div>
+          </div>
+        </a>
+      ) : (
+        <div class="px-8 py-4 text-sm text-black/20 dark:text-white/20">已是第一章</div>
+      )}
+      {nextChapter ? (
+        <a
+          href={`/novels/${novel.id}/${nextChapter.slug}/`}
+          class="card-base rounded-[var(--radius-large)] px-8 py-4 flex items-center gap-3
+                 hover:bg-[var(--primary)]/10 transition-colors group"
+        >
+          <div class="text-right">
+            <div class="text-xs text-black/30 dark:text-white/30">下一章</div>
+            <div class="text-sm font-semibold text-90 group-hover:text-[var(--primary)] transition-colors">{nextChapter.title}</div>
+          </div>
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-[1.5rem]" />
+        </a>
+      ) : (
+        <div class="px-8 py-4 text-sm text-black/20 dark:text-white/20">已是最后一章</div>
+      )}
+    </div>
+
   </div>
 </MainGridLayout>
