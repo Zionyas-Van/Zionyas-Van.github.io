@@ -64,5 +64,11 @@ export const resources: Resource[] = [
     name: "我告诉你",
     description: "Windows系统镜像下载。",
     url: "https://msdn.itellyou.cn/?utm_source=xinquji",
-  }
+  },
+  {
+    id: "res-1785287948925",
+    name: "网易云游戏",
+    description: "10元5小时云电脑。",
+    url: "https://cg.163.com/#/",
+  },
 ];

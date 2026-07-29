@@ -736,6 +736,19 @@ async function editNovel(id){
   $('novels-admin-list').style.display='none';$('novel-editor').style.display='block';
 }
 function cancelNovelEdit(){$('novels-admin-list').style.display='block';$('novel-editor').style.display='none';}
+
+async function saveNovelSilent(){
+  const id=$('admin-novel-id').value;
+  if(!id) return;
+  let coverBase64='';const f=$('admin-novel-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const data={id,title:$('admin-novel-title').value,description:$('admin-novel-desc').value,
+    author:$('admin-novel-author').value,publishedDate:$('admin-novel-date').value,
+    platform:$('admin-novel-platform').value,intro:$('admin-novel-intro').value.replace(/\n/g,'\\n'),
+    chapters:novelChapters,coverBase64};
+  await api('/api/novels/update',data,'PUT');
+}
+
+
 async function saveNovel(){
   const id=$('admin-novel-id').value;
   let coverBase64='';const f=$('admin-novel-cover').files[0];if(f) coverBase64=await fileToBase64(f);
@@ -783,14 +796,21 @@ function saveChapter(){
   const content=$('edit-chapter-content').value;
   if(!slug||!title) return showResult('edit-chapter-result',false,'slug和标题不能为空');
   const oldIdx=parseInt($('edit-chapter-slug-old').value);
+  const chData={slug,title,content};
+  if(date) chData.date=date;
   if(!isNaN(oldIdx)&&$('edit-chapter-slug-old').value!==''){
-    novelChapters[oldIdx]={slug,title,date:date||undefined,content};
+    novelChapters[oldIdx]=chData;
   }else{
-    novelChapters.push({slug,title,date:date||undefined,content});
+    novelChapters.push(chData);
   }
   renderChaptersList();$('chapter-editor').style.display='none';
-  showResult('edit-chapter-result',true,'章节已保存（别忘了保存小说！）');
+  showResult('edit-chapter-result',true,'章节已保存');
+
+  // 🆕 自动保存小说（不用再手动点击）
+  const id=$('admin-novel-id').value;
+  if(id) saveNovelSilent();
 }
+
 function deleteChapter(idx){
   if(!confirm('删除这一章？')) return;
   novelChapters.splice(idx,1);renderChaptersList();
