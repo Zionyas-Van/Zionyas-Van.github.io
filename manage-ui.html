@@ -766,6 +766,7 @@ async function saveNovel(){
     if(r.ok){$('admin-novel-id').value=r.id;$('chapters-card').style.display='block';$('delete-novel-btn').style.display='inline-block';}
   }
 }
+
 async function deleteNovelConfirm(id){
   if(!id) id=$('admin-novel-id').value;
   if(!confirm('确认删除这部小说及其所有章节吗？此操作不可撤销！')) return;

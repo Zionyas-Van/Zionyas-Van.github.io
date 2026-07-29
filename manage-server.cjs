@@ -461,7 +461,7 @@ ${dlStr}
     description: ${tsString(description || "")},
     url: ${tsString(url)},
   },`;
-			insertIntoArrayFile(RESOURCES_FILE, "resources", newItem, formatProject);
+			insertIntoArrayFile(RESOURCES_FILE, "resources", newItem, formatResource);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -537,7 +537,7 @@ ${dlStr}
     featured: ${featured === true || featured === "true"},
   },`;
 
-			insertIntoArrayFile(VIDEOS_FILE, "videos", newVideo, formatProject);
+			insertIntoArrayFile(VIDEOS_FILE, "videos", newVideo, formatVideo);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -877,7 +877,7 @@ ${chapters}
         if (saved) coverPath = saved;
       }
       const newItem = formatNovel({ id, title, cover: coverPath, description: description || "", author: author || "", publishedDate: publishedDate || "", platform: platform || "", intro: intro || "", chapters: chapters || [] });
-      insertIntoArrayFile(NOVELS_FILE, "novels", newItem, formatProject);
+      insertIntoArrayFile(NOVELS_FILE, "novels", newItem, formatNovel);
       return sendJSON(res, { ok: true, id });
     } catch (e) {
       return sendJSON(res, { error: e.message }, 500);

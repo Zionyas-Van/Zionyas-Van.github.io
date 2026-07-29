@@ -19,20 +19,20 @@ export const resources: Resource[] = [
   },
   {
     id: "res-1785121225067",
-    name: "MnecraftSounds",
+    name: "Minecraft Soundss",
     description: "我的世界音效收录网站。",
     url: "https://o.xbottle.top/mcsounds/",
   },
   {
     id: "res-1785121305574",
-    name: "Windows 12 网页版",
+    name: "Windwos 12 网页版",
     description: "用浏览器体验Win 12",
     url: "https://win12.tech/boot",
   },
   {
     id: "res-1785121394121",
     name: "樱之空动漫",
-    description: "不多说",
+    description: "免费版小破站",
     url: "https://skr.skr3.cc:666/",
   },
   {
@@ -69,6 +69,6 @@ export const resources: Resource[] = [
     id: "res-1785287948925",
     name: "网易云游戏",
     description: "10元5小时云电脑。",
-    url: "https://cg.163.com/#/",
-  },
+    url: "https://cg.163.com",
+  }
 ];
