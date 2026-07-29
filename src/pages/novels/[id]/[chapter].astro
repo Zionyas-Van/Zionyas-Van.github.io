@@ -52,8 +52,8 @@ const renderedContent = md.render(unescaped);
     <h1 class="text-xl md:text-2xl font-bold text-90 mb-8">{ch.title}</h1>
 
     <!-- 正文 -->
-    <div class="card-base rounded-[var(--radius-large)] p-6 md:p-8 mb-8">
-      <article class="prose-a:text-[var(--primary)] text-90 leading-relaxed" set:html={renderedContent} />
+    <div class="card-base rounded-[var(--radius-large)] p-6 md:p-10 mb-8">
+      <article class="prose-a:text-[var(--primary)] text-90 text-base md:text-lg leading-loose tracking-wide" style="word-spacing: 0.05em; line-height: 2;" set:html={renderedContent} />
     </div>
 
     <!-- 上下章导航 -->
