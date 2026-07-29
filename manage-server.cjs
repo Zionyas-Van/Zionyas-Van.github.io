@@ -838,9 +838,10 @@ ${dlStr}
     const chapters = (n.chapters || []).map((ch) => {
       const chContent = (ch.content || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
       const chTitle = (ch.title || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      const chDate = ch.date || "";
       return `    {
       slug: "${ch.slug}",
-      title: "${chTitle}",
+      title: "${chTitle}",${chDate ? `\n      date: "${chDate}",` : ""}
       content: "${chContent}",
     }`;
     }).join(",\n");

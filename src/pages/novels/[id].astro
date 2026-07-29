@@ -54,6 +54,7 @@ if (!novel) return Astro.redirect("/novels/");
               </span>
               <span class="text-sm text-90 group-hover:text-[var(--primary)] transition-colors flex-1">
                 {ch.title}
+                {ch.date && <span class="text-xs text-black/30 dark:text-white/30 ml-2">{ch.date}</span>}
               </span>
               <Icon name="material-symbols:chevron-right-rounded" class="text-75/30 text-[1rem]" />
             </a>
