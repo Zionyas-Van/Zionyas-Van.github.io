@@ -70,5 +70,11 @@ export const resources: Resource[] = [
     name: "网易云游戏",
     description: "10元5小时云电脑。",
     url: "https://cg.163.com",
+  },
+  {
+    id: "res-1785501286660",
+    name: "FreeConvert",
+    description: "免费文件格式转换器。",
+    url: "https://www.freeconvert.com/zh",
   }
 ];
