@@ -55,7 +55,7 @@ const renderedContent = md.render(unescaped);
 
     <!-- 正文 -->
     <div class="card-base rounded-[var(--radius-large)] p-6 md:p-10 mb-8">
-      <article class="prose-a:text-[var(--primary)] text-90 text-base md:text-lg leading-loose tracking-wide [&>p]:indent-8" style="word-spacing: 0.05em; line-height: 2;" set:html={renderedContent} />
+      <article class="prose-a:text-[var(--primary)] text-90 text-base md:text-lg leading-loose tracking-wide [&>p]:indent-8 [&>p>img]:max-w-full [&>p>img]:rounded-lg [&>p>img]:mx-auto" style="word-spacing: 0.05em; line-height: 2;" set:html={renderedContent} />
     </div>
 
     <!-- 上下章导航 -->
