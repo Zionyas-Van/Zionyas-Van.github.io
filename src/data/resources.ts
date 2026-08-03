@@ -76,5 +76,11 @@ export const resources: Resource[] = [
     name: "FreeConvert",
     description: "免费文件格式转换器。",
     url: "https://www.freeconvert.com/zh",
+  },
+  {
+    id: "res-1785769986310",
+    name: "StackEdit",
+    description: "MD文章编辑器。",
+    url: "https://stackedit.cn/",
   }
 ];
