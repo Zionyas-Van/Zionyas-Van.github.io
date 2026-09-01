@@ -82,5 +82,11 @@ export const resources: Resource[] = [
     name: "StackEdit",
     description: "MD文章编辑器。",
     url: "https://stackedit.cn/",
+  },
+  {
+    id: "res-1788271966155",
+    name: "苦力怕论坛",
+    description: "MC中文论坛",
+    url: "https://klpbbs.net/",
   }
 ];
