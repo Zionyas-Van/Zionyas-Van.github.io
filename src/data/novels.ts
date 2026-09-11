@@ -63,11 +63,11 @@ export const novels: Novel[] = [
   {
     id: "novel-1789142478703",
     title: "和你的青春补全计划",
-    cover: "/novels/cover-placeholder.jpg",
+    cover: "/projects/novel-1789142478703.png",
     description: "",
     author: "ZionyasVan",
-    publishedDate: "",
-    platform: "",
+    publishedDate: "2026-09-12",
+    platform: "番茄小说网",
     intro: "",
     chapters: [
 
