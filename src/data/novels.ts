@@ -27,7 +27,7 @@ export const novels: Novel[] = [
   {
     id: "novel-1785254064988",
     title: "和结婚对象同居之后",
-    cover: "/projects/novel-1785254064988.png",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dkicf2izwugte34w0xDIYPAIDyAqayAGxzDdU0Dqe=.png",
     description: "相亲闪婚，约定一年后离婚。然后她开始跟他说\"下次\"，不料这个“下次”就是一辈子。",
     author: "ZionyasVan",
     publishedDate: "2026-06-15",
@@ -63,7 +63,7 @@ export const novels: Novel[] = [
   {
     id: "novel-1789142478703",
     title: "和你的青春补全计划",
-    cover: "/projects/novel-1789142478703.png",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dkicf1qa7qzfygqvrqDIYPAIDyAqayAGxzDdU0Dqe=.png",
     description: "",
     author: "ZionyasVan",
     publishedDate: "2026-09-12",
