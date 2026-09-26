@@ -100,5 +100,11 @@ export const resources: Resource[] = [
     name: "王者荣耀素材库",
     description: "王者图标资源。",
     url: "https://pvp.icreate.qq.com/index?biz=397",
+  },
+  {
+    id: "res-1790437385601",
+    name: "Gamemodd/CS",
+    description: "CS模组。",
+    url: "https://www.gamemodd.com/cs/",
   }
 ];
