@@ -88,5 +88,11 @@ export const resources: Resource[] = [
     name: "苦力怕论坛",
     description: "MC中文论坛",
     url: "https://klpbbs.net/",
+  },
+  {
+    id: "res-1790436769069",
+    name: "萤火虫资源网",
+    description: "刷机资源圣地。",
+    url: "https://yhcres.top/",
   }
 ];
