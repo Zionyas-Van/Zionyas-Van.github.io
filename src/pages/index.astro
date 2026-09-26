@@ -5,17 +5,22 @@
 
 import { Icon } from "astro-icon/components";
 import PostCard from "../components/PostCard.astro";
+import { novels } from "../data/novels";
 import { projects } from "../data/projects";
 import { resources } from "../data/resources";
-import { novels } from "../data/novels";
 import { videos } from "../data/videos";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
-import { getSortedPosts } from "../utils/content-utils";
+import {
+	getSortedDailyPosts,
+	getSortedPostsExcludingDaily,
+} from "../utils/content-utils";
 import { getPostUrlBySlug } from "../utils/url-utils";
 
-// 获取最新 4 篇博客文章
-const latestPosts = (await getSortedPosts()).slice(0, 4);
+// 获取最新 4 篇博客文章（排除日常）
+const latestPosts = (await getSortedPostsExcludingDaily()).slice(0, 4);
 
+// 获取最新 4 篇日常文章
+const dailyPosts = (await getSortedDailyPosts()).slice(0, 4);
 // 筛选需要在首页展示的精选内容
 const featuredProjects = projects.filter((p) => p.featured);
 const featuredVideos = videos.filter((v) => v.featured);
@@ -281,5 +286,53 @@ const hasFeatured = featuredItems.length > 0;
       </div>
     )}
   </div>
+
+  <!-- ========== 我的日常区 ========== -->
+  {dailyPosts.length > 0 && (
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+          <Icon name="material-symbols:wb-sunny-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          我的日常
+        </h2>
+        <a
+          href="/daily/"
+          class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
+        >
+          查看全部
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+        </a>
+      </div>
+      <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
+        {dailyPosts.map((entry) => (
+          <PostCard
+            entry={entry}
+            title={entry.data.title}
+            tags={entry.data.tags}
+            category={entry.data.category}
+            published={entry.data.published}
+            updated={entry.data.updated}
+            url={getPostUrlBySlug(entry.slug)}
+            image={entry.data.image}
+            description={entry.data.description}
+            draft={entry.data.draft}
+            class:list="onload-animation"
+            style=""
+          />
+        ))}
+      </div>
+    </div>
+  )}
   </div>
 </MainGridLayout>
+
+</MainGridLayout>
+
+</MainGridLayout>
+
+</MainGridLayout>
+
+</MainGridLayout>
+
+</MainGridLayout>
+

@@ -85,9 +85,9 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
         <label>分类显示名</label>
         <input id="blog-display-cat" placeholder="例如: 我的世界（用于页面显示）">
         <div class="hint">和分类文件夹不同，这是给访客看的名字</div>
-        <label>封面图</label>
-        <input type="file" id="blog-cover-input" accept="image/*">
-        <div class="hint">上传封面图，自动存到 public/covers/</div>
+        <label>封面图链接</label>
+        <input id="blog-cover-input" placeholder="贴入图床链接，如 https://1815356055.cdn.123clouddisk.com/...">
+        <div class="hint">直接粘贴 123 图床或其他图片外链</div>
         <label>分类文件夹 *</label>
         <select id="blog-category">
           <option value="">加载中...</option>
@@ -141,7 +141,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <label>一句话描述</label><input id="admin-novel-desc">
       <label>详细介绍</label><textarea id="admin-novel-intro" style="min-height:80px"></textarea>
       <div class="row"><div><label>发布日期</label><input id="admin-novel-date" placeholder="2026-07-27"></div><div><label>发布平台</label><input id="admin-novel-platform" placeholder="B站专栏"></div></div>
-      <label>封面图（留空则不改）</label><input type="file" id="admin-novel-cover" accept="image/*">
+      <label>封面图链接</label><input id="admin-novel-cover" placeholder="贴入图床链接">
       <div class="btns">
         <button class="btn btn-primary" onclick="saveNovel()">💾 保存基本信息</button>
         <button class="btn" style="background:#555" onclick="cancelNovelEdit()">取消</button>
@@ -198,9 +198,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
     </div>
     <label>标签（用逗号分隔）</label>
     <input id="proj-tags" placeholder="Python, 工具, Windows">
-    <label>封面图</label>
-    <input type="file" id="proj-cover" accept="image/*">
-    <div class="hint">不上传则使用默认占位图</div>
+    <label>封面图链接</label>
+    <input id="proj-cover" placeholder="贴入图床链接（留空使用默认图）">
     <label>下载链接</label>
     <div id="dl-list">
       <div class="dl-row">
@@ -233,9 +232,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
     <input id="vid-bvid" placeholder="BV1xx411c7mD">
     <label>简短描述</label>
     <input id="vid-desc" placeholder="视频简介">
-    <label>封面图（选填）</label>
-    <input type="file" id="vid-cover" accept="image/*">
-    <div class="hint">不上传则自动使用B站封面</div>
+    <label>封面图链接（选填）</label>
+    <input id="vid-cover" placeholder="贴入图床链接（留空自动使用 B 站封面）">
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
       <input type="checkbox" id="vid-featured" checked style="width:auto"> 显示在首页精选区
     </label>
@@ -268,8 +266,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <input type="hidden" id="edit-post-cat">
       <input type="hidden" id="edit-post-slug">
       <label>标题</label><input id="edit-post-title">
-      <label>封面图（留空则不改）</label>
-      <input type="file" id="edit-post-cover" accept="image/*">
+      <label>封面图链接</label>
+      <input id="edit-post-cover" placeholder="贴入图床链接">
       <div class="hint">当前封面: <span id="edit-post-current-cover" style="color:#a78bfa"></span></div>
       <label>描述</label><input id="edit-post-desc">
       <label>标签（逗号分隔）</label><input id="edit-post-tags">
@@ -298,7 +296,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <label>详细介绍</label><textarea id="admin-proj-long" style="min-height:80px"></textarea>
       <div class="row"><div><label>平台</label><input id="admin-proj-platform"></div><div><label>状态</label><select id="admin-proj-status"><option value="已发布">已发布</option><option value="开发中">开发中</option><option value="抢先体验">抢先体验</option></select></div></div>
       <label>标签（逗号分隔）</label><input id="admin-proj-tags">
-      <label>封面图（留空则不改）</label><input type="file" id="admin-proj-cover" accept="image/*">
+      <label>封面图链接</label><input id="admin-proj-cover" placeholder="贴入图床链接">
       <label>下载链接（格式：按钮文字|链接|图标名，每行一个。图标可选：github/steam/drive）</label>
       <textarea id="admin-proj-dl" style="min-height:60px" placeholder="GitHub|https://...|github&#10;百度网盘|https://...|"></textarea>
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="admin-proj-featured" style="width:auto"> 首页精选</label>
@@ -319,7 +317,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <input type="hidden" id="admin-vid-id">
       <div class="row"><div><label>标题</label><input id="admin-vid-title"></div><div><label>BV号</label><input id="admin-vid-bvid"></div></div>
       <label>描述</label><input id="admin-vid-desc">
-      <label>封面图（留空则不改）</label><input type="file" id="admin-vid-cover" accept="image/*">
+      <label>封面图链接</label><input id="admin-vid-cover" placeholder="贴入图床链接">
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="admin-vid-featured" style="width:auto"> 首页精选</label>
       <div class="btns">
         <button class="btn btn-primary" onclick="saveVideoEdit()">💾 保存修改</button>
@@ -419,11 +417,7 @@ async function createPost(){
   const slug=$('blog-slug').value.trim();
   if(!title||!category||!slug||!content) return showResult('blog-result',false,'请填写所有带 * 的必填项');
 
-  // 处理封面图
-  let coverBase64='';
-  const coverFile=$('blog-cover-input').files[0];
-  if(coverFile) coverBase64=await fileToBase64(coverFile);
-
+  const coverUrl=$('blog-cover-input').value.trim();
   const tagsRaw=$('blog-tags').value.trim();
   const tagsArr=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
 
@@ -434,11 +428,10 @@ async function createPost(){
     category,
     displayCategory: $('blog-display-cat').value.trim() || category,
     slug, content,
-    image: '',
+    image: coverUrl,
     draft: $('blog-draft').checked,
     lang: $('blog-lang').value.trim() || 'zh_CN',
-    published: $('blog-published').value.trim() || '',
-    coverBase64
+    published: $('blog-published').value.trim() || ''
   };
   const r=await api('/api/create-post',data);
   showResult('blog-result',r.ok, r.ok?`文章已创建: ${r.path}`:r.error);
@@ -468,9 +461,7 @@ async function createProject(){
     const icon=r.querySelector('.dl-icon').value;
     if(label&&url) downloadLinks.push({label,url,icon:icon||undefined});
   });
-  let coverBase64='';
-  const f=$('proj-cover').files[0];
-  if(f) coverBase64=await fileToBase64(f);
+  const coverUrl=$('proj-cover').value.trim();
   const r=await api('/api/create-project',{
     id,title,
     description:$('proj-desc').value.trim(),
@@ -478,7 +469,7 @@ async function createProject(){
     type,platform:$('proj-platform').value.trim(),
     status:$('proj-status').value,
     tags:$('proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    downloadLinks,featured:$('proj-featured').checked,coverBase64
+    downloadLinks,featured:$('proj-featured').checked,cover:coverUrl
   });
   showResult('project-result',r.ok, r.ok?`作品已创建: ${r.id}`:r.error);
 }
@@ -489,13 +480,11 @@ async function createVideo(){
   const title=$('vid-title').value.trim();
   const bvid=$('vid-bvid').value.trim();
   if(!id||!title||!bvid) return showResult('video-result',false,'请填写所有带 * 的必填项');
-  let coverBase64='';
-  const f=$('vid-cover').files[0];
-  if(f) coverBase64=await fileToBase64(f);
+  const coverUrl=$('vid-cover').value.trim();
   const r=await api('/api/create-video',{
     id,title,bvid,
     description:$('vid-desc').value.trim(),
-    featured:$('vid-featured').checked,coverBase64
+    featured:$('vid-featured').checked,cover:coverUrl
   });
   showResult('video-result',r.ok, r.ok?`视频已创建: ${r.id}`:r.error);
 }
@@ -529,16 +518,13 @@ async function editPost(cat,slug){
   $('edit-post-published').value=r.published||'';
   $('edit-post-draft').checked=r.draft===true||r.draft==='true';
   $('edit-post-current-cover').textContent=r.image||'(无)';
-  $('edit-post-cover').value='';
+  $('edit-post-cover').value=r.image||'';
   $('posts-list').style.display='none';$('posts-editor').style.display='block';
 }
 
 function cancelPostEdit(){$('posts-list').style.display='block';$('posts-editor').style.display='none';}
 async function savePostEdit(){
-  let coverBase64='';
-  const coverFile=$('edit-post-cover').files[0];
-  if(coverFile) coverBase64=await fileToBase64(coverFile);
-
+  const coverUrl=$('edit-post-cover').value.trim();
   const tagsRaw=$('edit-post-tags').value.trim();
   const tagsArr=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
 
@@ -552,7 +538,7 @@ async function savePostEdit(){
     content:$('edit-post-content').value,
     draft:$('edit-post-draft').checked,
     published:$('edit-post-published').value,
-    coverBase64
+    image:coverUrl
   };
   const r=await api('/api/posts/update',data,'PUT');
   showResult('edit-post-result',r.ok,r.ok?'已保存':r.error);
@@ -588,21 +574,21 @@ async function editProject(id){
   $('admin-proj-tags').value=(p.tags||[]).join(', ');
   $('admin-proj-dl').value=(p.downloadLinks||[]).map(d=>`${d.label}|${d.url}|${d.icon||''}`).join('\n');
   $('admin-proj-featured').checked=p.featured===true;
-  $('admin-proj-cover').value='';
+  $('admin-proj-cover').value=p.cover||'';
   $('projects-admin-list').style.display='none';$('projects-admin-editor').style.display='block';
 }
 function cancelProjectEdit(){$('projects-admin-list').style.display='block';$('projects-admin-editor').style.display='none';}
 async function saveProjectEdit(){
   const dlRaw=$('admin-proj-dl').value.trim();
   const downloadLinks=dlRaw?dlRaw.split('\n').map(line=>{const parts=line.split('|');return{label:parts[0]?.trim(),url:parts[1]?.trim(),icon:parts[2]?.trim()||undefined};}).filter(l=>l.label&&l.url):[];
-  let coverBase64='';const f=$('admin-proj-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const coverUrl=$('admin-proj-cover').value.trim();
   const data={
     id:$('admin-proj-id').value,title:$('admin-proj-title').value,
     type:$('admin-proj-type').value,description:$('admin-proj-desc').value,
     longDescription:$('admin-proj-long').value.replace(/\n/g,'\\n'),
     platform:$('admin-proj-platform').value,status:$('admin-proj-status').value,
     tags:$('admin-proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    downloadLinks,featured:$('admin-proj-featured').checked,coverBase64
+    downloadLinks,featured:$('admin-proj-featured').checked,cover:coverUrl
   };
   const r=await api('/api/projects/update',data,'PUT');
   showResult('edit-project-result',r.ok,r.ok?'已保存':r.error);
@@ -633,16 +619,16 @@ async function editVideo(id){
   $('admin-vid-bvid').value=v.bvid||'';
   $('admin-vid-desc').value=v.description||'';
   $('admin-vid-featured').checked=v.featured===true;
-  $('admin-vid-cover').value='';
+  $('admin-vid-cover').value=v.cover||'';
   $('videos-admin-list').style.display='none';$('videos-admin-editor').style.display='block';
 }
 function cancelVideoEdit(){$('videos-admin-list').style.display='block';$('videos-admin-editor').style.display='none';}
 async function saveVideoEdit(){
-  let coverBase64='';const f=$('admin-vid-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const coverUrl=$('admin-vid-cover').value.trim();
   const data={
     id:$('admin-vid-id').value,title:$('admin-vid-title').value,
     bvid:$('admin-vid-bvid').value,description:$('admin-vid-desc').value,
-    featured:$('admin-vid-featured').checked,coverBase64
+    featured:$('admin-vid-featured').checked,cover:coverUrl
   };
   const r=await api('/api/videos/update',data,'PUT');
   showResult('edit-video-result',r.ok,r.ok?'已保存':r.error);
@@ -730,7 +716,7 @@ async function editNovel(id){
   $('admin-novel-author').value=n.author||'';$('admin-novel-desc').value=n.description||'';
   $('admin-novel-intro').value=(n.intro||'').replace(/\\n/g,'\n');
   $('admin-novel-date').value=n.publishedDate||'';$('admin-novel-platform').value=n.platform||'';
-  $('admin-novel-cover').value='';novelChapters=[...(n.chapters||[])];
+  $('admin-novel-cover').value=n.cover||'';novelChapters=[...(n.chapters||[])];
   $('novel-editor-title').textContent='编辑: '+n.title;$('delete-novel-btn').style.display='inline-block';
   $('chapters-card').style.display='block';renderChaptersList();
   $('novels-admin-list').style.display='none';$('novel-editor').style.display='block';
@@ -740,22 +726,22 @@ function cancelNovelEdit(){$('novels-admin-list').style.display='block';$('novel
 async function saveNovelSilent(){
   const id=$('admin-novel-id').value;
   if(!id) return;
-  let coverBase64='';const f=$('admin-novel-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const coverUrl=$('admin-novel-cover').value.trim();
   const data={id,title:$('admin-novel-title').value,description:$('admin-novel-desc').value,
     author:$('admin-novel-author').value,publishedDate:$('admin-novel-date').value,
     platform:$('admin-novel-platform').value,intro:$('admin-novel-intro').value.replace(/\n/g,'\\n'),
-    chapters:novelChapters,coverBase64};
+    chapters:novelChapters,cover:coverUrl};
   await api('/api/novels/update',data,'PUT');
 }
 
 
 async function saveNovel(){
   const id=$('admin-novel-id').value;
-  let coverBase64='';const f=$('admin-novel-cover').files[0];if(f) coverBase64=await fileToBase64(f);
+  const coverUrl=$('admin-novel-cover').value.trim();
   const data={title:$('admin-novel-title').value,description:$('admin-novel-desc').value,
     author:$('admin-novel-author').value,publishedDate:$('admin-novel-date').value,
     platform:$('admin-novel-platform').value,intro:$('admin-novel-intro').value.replace(/\n/g,'\\n'),
-    chapters:novelChapters,coverBase64};
+    chapters:novelChapters,cover:coverUrl};
   if(!data.title) return showResult('edit-novel-result',false,'小说名不能为空');
   if(id){
     data.id=id;const r=await api('/api/novels/update',data,'PUT');

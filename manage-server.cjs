@@ -381,6 +381,7 @@ ${content}
 				status,
 				downloadLinks,
 				featured,
+				cover,
 				coverBase64,
 			} = body;
 
@@ -388,7 +389,7 @@ ${content}
 				return sendJSON(res, { error: "id、名称和类型不能为空" }, 400);
 			}
 
-			let coverPath = "/projects/placeholder-cover.jpg";
+			let coverPath = cover || "/projects/placeholder-cover.jpg";
 			if (coverBase64) {
 				const saved = saveCover(coverBase64, id);
 				if (saved) coverPath = saved;
@@ -515,13 +516,13 @@ ${dlStr}
 	if (req.method === "POST" && req.url === "/api/create-video") {
 		try {
 			const body = JSON.parse(await readBody(req));
-			const { id, title, bvid, description, featured, coverBase64 } = body;
+			const { id, title, bvid, description, featured, cover, coverBase64 } = body;
 
 			if (!id || !title || !bvid) {
 				return sendJSON(res, { error: "id、标题和BV号不能为空" }, 400);
 			}
 
-			let coverPath = "";
+			let coverPath = cover || "";
 			if (coverBase64) {
 				const saved = saveCover(coverBase64, `video-${id}`);
 				if (saved) coverPath = saved;
@@ -715,7 +716,7 @@ ${dlStr}
 			const idx = projs.findIndex((p) => p.id === body.id);
 			if (idx === -1) return sendJSON(res, { error: "项目不存在" }, 404);
 
-			let coverPath = projs[idx].cover;
+			let coverPath = body.cover !== undefined ? body.cover : projs[idx].cover;
 			if (body.coverBase64) {
 				const saved = saveCover(body.coverBase64, body.id);
 				if (saved) coverPath = saved;
@@ -724,7 +725,7 @@ ${dlStr}
 			projs[idx] = {
 				...projs[idx],
 				...body,
-				cover: coverPath || projs[idx].cover,
+				cover: coverPath,
 			};
 			delete projs[idx].coverBase64;
 
@@ -779,7 +780,7 @@ ${dlStr}
 			const idx = vids.findIndex((v) => v.id === body.id);
 			if (idx === -1) return sendJSON(res, { error: "视频不存在" }, 404);
 
-			let coverPath = vids[idx].cover;
+			let coverPath = body.cover !== undefined ? body.cover : vids[idx].cover;
 			if (body.coverBase64) {
 				const saved = saveCover(body.coverBase64, `video-${body.id}`);
 				if (saved) coverPath = saved;
@@ -788,7 +789,7 @@ ${dlStr}
 			vids[idx] = {
 				...vids[idx],
 				...body,
-				cover: coverPath || vids[idx].cover,
+				cover: coverPath,
 			};
 			delete vids[idx].coverBase64;
 
@@ -868,10 +869,10 @@ ${chapters}
   if (req.method === "POST" && req.url === "/api/novels/add") {
     try {
       const body = JSON.parse(await readBody(req));
-      const { title, description, author, publishedDate, platform, intro, chapters, coverBase64 } = body;
+      const { title, description, author, publishedDate, platform, intro, chapters, cover, coverBase64 } = body;
       if (!title) return sendJSON(res, { error: "小说名称不能为空" }, 400);
       const id = "novel-" + Date.now();
-      let coverPath = "/novels/cover-placeholder.jpg";
+      let coverPath = cover || "/novels/cover-placeholder.jpg";
       if (coverBase64) {
         const saved = saveCover(coverBase64, id);
         if (saved) coverPath = saved;
@@ -890,12 +891,12 @@ ${chapters}
       const items = parseTsArray(NOVELS_FILE, "novels");
       const idx = items.findIndex((n) => n.id === body.id);
       if (idx === -1) return sendJSON(res, { error: "小说不存在" }, 404);
-      let coverPath = items[idx].cover;
+      let coverPath = body.cover !== undefined ? body.cover : items[idx].cover;
       if (body.coverBase64) {
         const saved = saveCover(body.coverBase64, body.id);
         if (saved) coverPath = saved;
       }
-      items[idx] = { ...items[idx], ...body, cover: coverPath || items[idx].cover };
+      items[idx] = { ...items[idx], ...body, cover: coverPath };
       delete items[idx].coverBase64;
       const content = fs.readFileSync(NOVELS_FILE, "utf-8");
       const newContent = rebuildArraySection(content, "novels", items, formatNovel);

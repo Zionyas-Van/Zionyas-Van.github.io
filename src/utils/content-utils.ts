@@ -31,6 +31,21 @@ export async function getSortedPosts() {
 
 	return sorted;
 }
+// 日常分类的文章类别标识
+export const DAILY_CATEGORY = "日常";
+
+// 获取所有非"日常"分类的文章（用于博客列表和首页"我的文章"）
+export async function getSortedPostsExcludingDaily() {
+	const sorted = await getSortedPosts();
+	return sorted.filter((post) => post.data.category !== DAILY_CATEGORY);
+}
+
+// 获取"日常"分类的文章
+export async function getSortedDailyPosts() {
+	const sorted = await getSortedPosts();
+	return sorted.filter((post) => post.data.category === DAILY_CATEGORY);
+}
+
 export type PostForList = {
 	slug: string;
 	data: CollectionEntry<"posts">["data"];

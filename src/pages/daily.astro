@@ -1,0 +1,45 @@
+---
+import { Icon } from "astro-icon/components";
+import PostCard from "../components/PostCard.astro";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { getSortedDailyPosts } from "../utils/content-utils";
+import { getPostUrlBySlug } from "../utils/url-utils";
+
+const dailyPosts = await getSortedDailyPosts();
+---
+
+<MainGridLayout title="我的日常" description="记录生活点滴">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
+      <Icon name="material-symbols:wb-sunny-outline-rounded" class="text-[var(--primary)] text-[1.75rem]" />
+      我的日常
+    </h1>
+    <p class="text-75 mt-1.5 text-sm">记录生活点滴</p>
+  </div>
+
+  {dailyPosts.length > 0 ? (
+    <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
+      {dailyPosts.map((entry) => (
+        <PostCard
+          entry={entry}
+          title={entry.data.title}
+          tags={entry.data.tags}
+          category={entry.data.category}
+          published={entry.data.published}
+          updated={entry.data.updated}
+          url={getPostUrlBySlug(entry.slug)}
+          image={entry.data.image}
+          description={entry.data.description}
+          draft={entry.data.draft}
+          class:list="onload-animation"
+          style=""
+        />
+      ))}
+    </div>
+  ) : (
+    <div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75">
+      <Icon name="material-symbols:wb-sunny-outline-rounded" class="text-4xl mx-auto mb-3 opacity-40" />
+      <p>还没有日常记录，敬请期待～</p>
+    </div>
+  )}
+</MainGridLayout>
