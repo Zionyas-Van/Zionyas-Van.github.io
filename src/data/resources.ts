@@ -110,7 +110,7 @@ export const resources: Resource[] = [
   {
     id: "res-1790437448102",
     name: "Apple 设计中心",
-    description: "Apple 资源库。",
+    description: "Apple 开发者图标资源库。",
     url: "https://developer.apple.com/design/resources/#product-bezels",
   }
 ];
