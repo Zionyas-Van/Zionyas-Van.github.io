@@ -106,5 +106,11 @@ export const resources: Resource[] = [
     name: "Gamemodd/CS",
     description: "CS模组。",
     url: "https://www.gamemodd.com/cs/",
+  },
+  {
+    id: "res-1790437448102",
+    name: "Apple 设计中心",
+    description: "Apple 资源库。",
+    url: "https://developer.apple.com/design/resources/#product-bezels",
   }
 ];
