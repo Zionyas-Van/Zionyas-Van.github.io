@@ -56,21 +56,5 @@ export const projects: Project[] = [
 
     ],
     featured: false,
-  },
-  {
-    id: "codemao-zionyasvan-HoverOS",
-    title: "HoverOS",
-    description: "闲着无聊而随便做的小作品。",
-    longDescription: "只是来凑数的，不建议尝试哦",
-    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dkicf1qa94i7yirplwDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
-    screenshots: [],
-    type: "game",
-    tags: ["开发者：ZionyasVan（DXL）", "类型：模拟", "框架：CodeMao"],
-    platform: "CodeMao",
-    status: "开发中",
-    downloadLinks: [
-      { label: "编程猫平台", url: "https://shequ.codemao.cn/work/226460915" }
-    ],
-    featured: false,
   }
 ];
