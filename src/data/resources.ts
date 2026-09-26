@@ -94,5 +94,11 @@ export const resources: Resource[] = [
     name: "萤火虫资源网",
     description: "刷机资源圣地。",
     url: "https://yhcres.top/",
+  },
+  {
+    id: "res-1790437041013",
+    name: "王者荣耀素材库",
+    description: "王者图标资源。",
+    url: "https://pvp.icreate.qq.com/index?biz=397",
   }
 ];
