@@ -112,5 +112,23 @@ export const resources: Resource[] = [
     name: "Apple 设计中心",
     description: "Apple 开发者图标资源库。",
     url: "https://developer.apple.com/design/resources/#product-bezels",
+  },
+  {
+    id: "res-1790526946906",
+    name: "Windows系统镜像",
+    description: "有xp到11的大部分系统镜像文件，123盘。",
+    url: "https://1815356055.share.123pan.cn/123pan/wd3iVv-DfeHh",
+  },
+  {
+    id: "res-1790527010917",
+    name: "小米桌面_ALPHA-4.37.0（修改版）",
+    description: "有动画的流畅精简版。",
+    url: "https://1815356055.share.123pan.cn/123pan/wd3iVv-gHyHh",
+  },
+  {
+    id: "res-1790527074548",
+    name: "哔哩哔哩v.7.38.0（插件版）",
+    description: "目前可登录的哔站插件版。",
+    url: "https://1815356055.share.123pan.cn/123pan/wd3iVv-LXhHh",
   }
 ];
