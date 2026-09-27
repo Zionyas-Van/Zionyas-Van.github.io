@@ -1,6 +1,6 @@
 ---
 // ============================================
-// 首页
+// 首页 · 主舞台 + 侧边栏 布局
 // ============================================
 
 import { Icon } from "astro-icon/components";
@@ -21,11 +21,11 @@ const latestPosts = (await getSortedPostsExcludingDaily()).slice(0, 4);
 
 // 获取最新 4 篇日常文章
 const dailyPosts = (await getSortedDailyPosts()).slice(0, 4);
-// 筛选需要在首页展示的精选内容
+
+// 首页精选内容
 const featuredProjects = projects.filter((p) => p.featured);
 const featuredVideos = videos.filter((v) => v.featured);
 
-// 混合精选列表（类型标记用于区分渲染）
 type FeaturedItem =
 	| {
 			kind: "project";
@@ -58,236 +58,228 @@ const hasFeatured = featuredItems.length > 0;
 
 <MainGridLayout>
 
-  <!-- ========== 精选展示区 ========== -->
-  {
-    hasFeatured && (
-      <div class="mb-10">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-            <Icon name="material-symbols:star-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-            猜你喜欢
-          </h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {featuredItems.map((item) => {
-            if (item.kind === "project") {
-              // --- 作品卡片 ---
-              return (
-                <a
-                  href={`/projects/${item.id}/`}
-                  class="card-base group rounded-[var(--radius-large)] overflow-hidden 
-                         hover:scale-[1.02] active:scale-100 transition-transform duration-200"
-                >
-                  {/* 封面图 */}
-                  <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5">
+  <!-- ==================================================== -->
+  <!-- ① 猜你喜欢（全宽 · 2 列大卡片）                        -->
+  <!-- ==================================================== -->
+  {hasFeatured && (
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+          <Icon name="material-symbols:star-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          猜你喜欢
+        </h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {featuredItems.map((item) => {
+          if (item.kind === "project") {
+            return (
+              <a
+                href={`/projects/${item.id}/`}
+                class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+              >
+                <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5">
+                  <img
+                    src={item.cover}
+                    alt={item.title}
+                    class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="p-5">
+                  <span class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2 bg-[var(--primary)]/10 text-[var(--primary)]">
+                    {item.type === "game" ? "🎮 游戏" : "💻 软件"}
+                  </span>
+                  <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
+                    {item.title}
+                  </h3>
+                  <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
+                    {item.description}
+                  </p>
+                </div>
+              </a>
+            );
+          } else {
+            return (
+              <a
+                href={`https://www.bilibili.com/video/${item.bvid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+              >
+                <div class="aspect-video w-full overflow-hidden relative bg-black/10 dark:bg-white/5">
+                  {item.cover ? (
                     <img
                       src={item.cover}
                       alt={item.title}
                       class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
                       loading="lazy"
                     />
-                  </div>
-                  {/* 信息区 */}
-                  <div class="p-5">
-                    <span
-                      class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2
-                             bg-[var(--primary)]/10 text-[var(--primary)]"
-                    >
-                      {item.type === "game" ? "🎮 游戏" : "💻 软件"}
-                    </span>
-                    <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
-                      {item.title}
-                    </h3>
-                    <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
-                      {item.description}
-                    </p>
-                  </div>
-                </a>
-              );
-            } else {
-              // --- 视频卡片 ---
-              return (
-                <a
-                  href={`https://www.bilibili.com/video/${item.bvid}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                         hover:scale-[1.02] active:scale-100 transition-transform duration-200"
-                >
-                  {/* 封面图 + 播放按钮叠加层 */}
-                  <div class="aspect-video w-full overflow-hidden relative bg-black/10 dark:bg-white/5">
-                    {item.cover ? (
-                      <img
-                        src={item.cover}
-                        alt={item.title}
-                        class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-pink-900/40">
-                        <Icon name="material-symbols:smart-display-outline-rounded" class="text-white/40 text-5xl" />
-                      </div>
-                    )}
-                    {/* 播放按钮 */}
-                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
-                      <div class="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center 
-                                  group-hover:bg-white group-hover:scale-110 transition-all shadow-lg">
-                        <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-3xl ml-0.5" />
-                      </div>
+                  ) : (
+                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-pink-900/40">
+                      <Icon name="material-symbols:smart-display-outline-rounded" class="text-white/40 text-5xl" />
+                    </div>
+                  )}
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
+                    <div class="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center group-hover:bg-white group-hover:scale-110 transition-all shadow-lg">
+                      <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-3xl ml-0.5" />
                     </div>
                   </div>
-                  {/* 信息区 */}
-                  <div class="p-5">
-                    <span
-                      class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2
-                             bg-red-500/10 text-red-500 dark:text-red-400"
-                    >
-                      🎬 视频
-                    </span>
-                    <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
-                      {item.title}
-                    </h3>
-                    <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
-                      {item.description}
-                    </p>
+                </div>
+                <div class="p-5">
+                  <span class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2 bg-red-500/10 text-red-500 dark:text-red-400">
+                    🎬 视频
+                  </span>
+                  <h3 class="font-bold text-lg text-90 group-hover:text-[var(--primary)] transition-colors">
+                    {item.title}
+                  </h3>
+                  <p class="text-sm text-75 mt-1.5 leading-relaxed line-clamp-2">
+                    {item.description}
+                  </p>
+                </div>
+              </a>
+            );
+          }
+        })}
+      </div>
+    </div>
+  )}
+
+  <!-- ==================================================== -->
+  <!-- ② 主舞台 + 侧边栏（桌面 12 栅格，移动端自动堆叠）      -->
+  <!-- ==================================================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-8">
+
+    <!-- ============ 左侧：我的文章（占 7 列） ============ -->
+    <div class="lg:col-span-7 flex flex-col">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+          <Icon name="material-symbols:article-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          我的文章
+        </h2>
+        <a href="/posts/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
+          查看全部
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+        </a>
+      </div>
+
+      {latestPosts.length > 0 ? (
+        <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
+          {latestPosts.map((entry) => (
+            <PostCard
+              entry={entry}
+              title={entry.data.title}
+              tags={entry.data.tags}
+              category={entry.data.category}
+              published={entry.data.published}
+              updated={entry.data.updated}
+              url={getPostUrlBySlug(entry.slug)}
+              image={entry.data.image}
+              description={entry.data.description}
+              draft={entry.data.draft}
+              class:list="onload-animation"
+              style=""
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75">
+          <Icon name="material-symbols:edit-document-outline-rounded" class="text-4xl mx-auto mb-3 opacity-40" />
+          <p>还没有发布文章，敬请期待～</p>
+        </div>
+      )}
+    </div>
+
+    <!-- ============ 右侧：那些故事 + 今日推荐（占 5 列） ============ -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+
+      <!-- 那些故事 -->
+      {novels.length > 0 && (
+        <div>
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+              <Icon name="material-symbols:auto-stories-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+              那些故事
+            </h2>
+            <a href="/novels/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
+              查看全部
+              <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+            </a>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            {novels.slice(0, 4).map((n) => (
+              <a
+                href={`/novels/${n.id}/`}
+                class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+              >
+                <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+                  <img
+                    src={n.cover}
+                    alt={n.title}
+                    class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="p-3">
+                  <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                    {n.title}
+                  </h3>
+                  <p class="text-xs text-75 mt-1 line-clamp-2 leading-relaxed">
+                    {n.description}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- 今日推荐 -->
+      {resources.length > 0 && (
+        <div>
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+              <Icon name="material-symbols:package-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+              今日推荐
+            </h2>
+            <a href="/resources/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
+              查看全部
+              <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+            </a>
+          </div>
+          <div class="card-base rounded-[var(--radius-large)] p-3">
+            <div class="flex flex-col gap-0.5">
+              {resources.slice(0, 6).map((r) => (
+                <a
+                  href={r.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-start gap-3 px-3 py-2.5 rounded-lg
+                         hover:bg-[var(--primary)]/5 active:scale-[0.99]
+                         transition-all duration-150"
+                >
+                  <div class="w-8 h-8 rounded-md bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Icon name="material-symbols:link-rounded" class="text-[var(--primary)] text-[1rem]" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="font-medium text-90 text-sm truncate">{r.name}</div>
+                    <div class="text-xs text-75 line-clamp-2 leading-relaxed mt-0.5">{r.description}</div>
                   </div>
                 </a>
-              );
-            }
-          })}
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )}
 
-  <!-- ========== 资源分享区 ========== -->
-  {resources.length > 0 && (
-    <div class="mb-10">
-      <div class="flex items-center justify-between mb-5">
-        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-          <Icon name="material-symbols:package-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-          今日推荐
-        </h2>
-        <a
-          href="/resources/"
-          class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
-        >
-          查看全部
-          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
-        </a>
-      </div>
-      <div class="flex flex-wrap gap-2 overflow-hidden" style="max-height: 88px">
-        {resources.map((r) => (
-          <a
-            href={r.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full
-                   bg-[var(--card-bg)] border border-black/5 dark:border-white/10
-                   hover:border-[var(--primary)]/40 hover:bg-[var(--primary)]/5
-                   active:scale-95 transition-all duration-150
-                   max-w-[280px]"
-            title={r.description}
-          >
-            <span class="text-sm font-medium text-90 truncate">{r.name}</span>
-            <span class="hidden md:inline text-xs text-75 truncate">{r.description}</span>
-          </a>
-        ))}
-      </div>
     </div>
-  )}
-
-  <!-- ========== 那些故事区 ========== -->
-  {novels.length > 0 && (
-    <div class="mb-10">
-      <div class="flex items-center justify-between mb-5">
-        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-          <Icon name="material-symbols:auto-stories-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-          那些故事
-        </h2>
-        <a
-          href="/novels/"
-          class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
-        >
-          查看全部
-          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
-        </a>
-      </div>
-      <div class="flex gap-4 overflow-x-auto pb-1" style="scrollbar-width: thin">
-        {novels.map((n) => (
-          <a
-            href={`/novels/${n.id}/`}
-            class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                   hover:scale-[1.02] active:scale-100 transition-transform duration-200
-                   flex-shrink-0 w-[180px] md:w-[200px]"
-          >
-            <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
-              <img
-                src={n.cover}
-                alt={n.title}
-                class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-                loading="lazy"
-              />
-            </div>
-            <div class="p-4">
-              <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-                {n.title}
-              </h3>
-              <p class="text-xs text-75 mt-1 line-clamp-2 leading-relaxed">
-                {n.description}
-              </p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  )}
-
-
-  <!-- ========== 最新博客区 ========== -->
-  <div class="mb-8">
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-        <Icon name="material-symbols:article-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-        我的文章
-      </h2>
-      <a
-        href="/posts/"
-        class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
-      >
-        查看全部
-        <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
-      </a>
-    </div>
-
-    {latestPosts.length > 0 ? (
-      <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
-        {latestPosts.map((entry) => (
-          <PostCard
-            entry={entry}
-            title={entry.data.title}
-            tags={entry.data.tags}
-            category={entry.data.category}
-            published={entry.data.published}
-            updated={entry.data.updated}
-            url={getPostUrlBySlug(entry.slug)}
-            image={entry.data.image}
-            description={entry.data.description}
-            draft={entry.data.draft}
-            class:list="onload-animation"
-            style=""
-          />
-        ))}
-      </div>
-    ) : (
-      <div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75">
-        <Icon name="material-symbols:edit-document-outline-rounded" class="text-4xl mx-auto mb-3 opacity-40" />
-        <p>还没有发布文章，敬请期待～</p>
-      </div>
-    )}
   </div>
 
-  <!-- ========== 我的日常区 ========== -->
+  <!-- ==================================================== -->
+  <!-- ③ 我的日常（全宽 · 2 列网格）                          -->
+  <!-- ==================================================== -->
   {dailyPosts.length > 0 && (
     <div class="mb-8">
       <div class="flex items-center justify-between mb-5">
@@ -295,15 +287,12 @@ const hasFeatured = featuredItems.length > 0;
           <Icon name="material-symbols:wb-sunny-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
           我的日常
         </h2>
-        <a
-          href="/daily/"
-          class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1"
-        >
+        <a href="/daily/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
           查看全部
           <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
         </a>
       </div>
-      <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {dailyPosts.map((entry) => (
           <PostCard
             entry={entry}
@@ -323,16 +312,5 @@ const hasFeatured = featuredItems.length > 0;
       </div>
     </div>
   )}
-  </div>
-</MainGridLayout>
 
 </MainGridLayout>
-
-</MainGridLayout>
-
-</MainGridLayout>
-
-</MainGridLayout>
-
-</MainGridLayout>
-
