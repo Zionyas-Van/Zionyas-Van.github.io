@@ -1,6 +1,6 @@
 ---
 // ============================================
-// 首页 · 主舞台 + 侧边栏 布局
+// 首页 · 主舞台 + 侧边栏 + 移动端专属 UI
 // ============================================
 
 import { Icon } from "astro-icon/components";
@@ -16,13 +16,23 @@ import {
 } from "../utils/content-utils";
 import { getPostUrlBySlug } from "../utils/url-utils";
 
-// 获取最新 4 篇博客文章（排除日常）
-const latestPosts = (await getSortedPostsExcludingDaily()).slice(0, 4);
+// 所有非日常文章
+const allNonDaily = await getSortedPostsExcludingDaily();
 
-// 获取最新 4 篇日常文章
+// 新闻（category = "新闻"）· 最多 8 条
+const newsPosts = allNonDaily
+	.filter((p) => p.data.category === "新闻")
+	.slice(0, 8);
+
+// 普通文章（排除新闻）· 最新 4 篇
+const latestPosts = allNonDaily
+	.filter((p) => p.data.category !== "新闻")
+	.slice(0, 4);
+
+// 日常 · 最新 4 篇
 const dailyPosts = (await getSortedDailyPosts()).slice(0, 4);
 
-// 首页精选内容
+// 首页精选
 const featuredProjects = projects.filter((p) => p.featured);
 const featuredVideos = videos.filter((v) => v.featured);
 
@@ -54,12 +64,25 @@ const featuredItems: FeaturedItem[] = [
 ];
 
 const hasFeatured = featuredItems.length > 0;
+
+// 新闻日期格式化：MM-DD
+const formatNewsDate = (d: unknown) => {
+	try {
+		const date = d instanceof Date ? d : new Date(d as string);
+		if (Number.isNaN(date.getTime())) return "";
+		const m = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		return `${m}-${day}`;
+	} catch {
+		return "";
+	}
+};
 ---
 
 <MainGridLayout>
 
   <!-- ==================================================== -->
-  <!-- ① 猜你喜欢（全宽 · 2 列大卡片）                        -->
+  <!-- ① 猜你喜欢（桌面 2 列 / 移动端横滑）                    -->
   <!-- ==================================================== -->
   {hasFeatured && (
     <div class="mb-8">
@@ -69,14 +92,15 @@ const hasFeatured = featuredItems.length > 0;
           猜你喜欢
         </h2>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex gap-4 overflow-x-auto pb-3 md:grid md:grid-cols-2 md:overflow-visible md:pb-0" style="scrollbar-width: thin;">
         {featuredItems.map((item) => {
           if (item.kind === "project") {
             return (
               <a
                 href={`/projects/${item.id}/`}
                 class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                       hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                       flex-shrink-0 w-[75vw] md:w-auto"
               >
                 <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5">
                   <img
@@ -106,7 +130,8 @@ const hasFeatured = featuredItems.length > 0;
                 target="_blank"
                 rel="noopener noreferrer"
                 class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                       hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                       flex-shrink-0 w-[75vw] md:w-auto"
               >
                 <div class="aspect-video w-full overflow-hidden relative bg-black/10 dark:bg-white/5">
                   {item.cover ? (
@@ -147,52 +172,14 @@ const hasFeatured = featuredItems.length > 0;
   )}
 
   <!-- ==================================================== -->
-  <!-- ② 主舞台 + 侧边栏（桌面 12 栅格，移动端自动堆叠）      -->
+  <!-- ② 主舞台 + 侧边栏                                     -->
+  <!-- 移动端顺序：故事 → 推荐 → 新闻 → 文章                   -->
+  <!-- 桌面端顺序：文章（左 7 列）｜ 故事+推荐+新闻（右 5 列）  -->
   <!-- ==================================================== -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-8">
+  <div class="flex flex-col gap-8 lg:grid lg:grid-cols-12 lg:gap-5 mb-8">
 
-    <!-- ============ 左侧：我的文章（占 7 列） ============ -->
-    <div class="lg:col-span-7 flex flex-col">
-      <div class="flex items-center justify-between mb-5">
-        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-          <Icon name="material-symbols:article-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-          我的文章
-        </h2>
-        <a href="/posts/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
-          查看全部
-          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
-        </a>
-      </div>
-
-      {latestPosts.length > 0 ? (
-        <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
-          {latestPosts.map((entry) => (
-            <PostCard
-              entry={entry}
-              title={entry.data.title}
-              tags={entry.data.tags}
-              category={entry.data.category}
-              published={entry.data.published}
-              updated={entry.data.updated}
-              url={getPostUrlBySlug(entry.slug)}
-              image={entry.data.image}
-              description={entry.data.description}
-              draft={entry.data.draft}
-              class:list="onload-animation"
-              style=""
-            />
-          ))}
-        </div>
-      ) : (
-        <div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75">
-          <Icon name="material-symbols:edit-document-outline-rounded" class="text-4xl mx-auto mb-3 opacity-40" />
-          <p>还没有发布文章，敬请期待～</p>
-        </div>
-      )}
-    </div>
-
-    <!-- ============ 右侧：那些故事 + 今日推荐（占 5 列） ============ -->
-    <div class="lg:col-span-5 flex flex-col gap-5">
+    <!-- ============ 右栏（DOM 在前 · 移动端优先显示） ============ -->
+    <div class="lg:col-span-5 order-1 lg:order-2 flex flex-col gap-8 lg:gap-5">
 
       <!-- 那些故事 -->
       {novels.length > 0 && (
@@ -207,12 +194,13 @@ const hasFeatured = featuredItems.length > 0;
               <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
             </a>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="flex gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0" style="scrollbar-width: thin;">
             {novels.slice(0, 4).map((n) => (
               <a
                 href={`/novels/${n.id}/`}
                 class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                       hover:scale-[1.02] active:scale-100 transition-transform duration-200"
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                       flex-shrink-0 w-[140px] lg:w-auto"
               >
                 <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
                   <img
@@ -250,23 +238,48 @@ const hasFeatured = featuredItems.length > 0;
             </a>
           </div>
           <div class="card-base rounded-[var(--radius-large)] p-3">
-            <div class="flex flex-col gap-0.5">
-              {resources.slice(0, 6).map((r) => (
+            <div class="flex flex-wrap gap-2">
+              {resources.slice(0, 8).map((r) => (
                 <a
                   href={r.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="flex items-start gap-3 px-3 py-2.5 rounded-lg
-                         hover:bg-[var(--primary)]/5 active:scale-[0.99]
-                         transition-all duration-150"
+                  title={r.description}
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                         bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10
+                         text-xs text-90 transition-colors max-w-full"
                 >
-                  <div class="w-8 h-8 rounded-md bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Icon name="material-symbols:link-rounded" class="text-[var(--primary)] text-[1rem]" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="font-medium text-90 text-sm truncate">{r.name}</div>
-                    <div class="text-xs text-75 line-clamp-2 leading-relaxed mt-0.5">{r.description}</div>
-                  </div>
+                  <Icon name="material-symbols:link-rounded" class="text-[var(--primary)] text-[0.9rem] flex-shrink-0" />
+                  <span class="truncate">{r.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <!-- 新闻（限高 + 内部滚动） -->
+      {newsPosts.length > 0 && (
+        <div>
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+              <Icon name="material-symbols:newspaper-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+              新闻
+            </h2>
+          </div>
+          <div class="card-base rounded-[var(--radius-large)] overflow-hidden">
+            <div class="max-h-[320px] overflow-y-auto" style="scrollbar-width: thin;">
+              {newsPosts.map((p) => (
+                <a
+                  href={getPostUrlBySlug(p.slug)}
+                  class="flex items-center justify-between gap-3 px-4 py-3
+                         hover:bg-[var(--primary)]/5 transition-colors
+                         border-b border-black/5 dark:border-white/5 last:border-0"
+                >
+                  <span class="text-sm text-90 truncate flex-1">{p.data.title}</span>
+                  <time class="text-xs text-75 flex-shrink-0 tabular-nums">
+                    {formatNewsDate(p.data.published)}
+                  </time>
                 </a>
               ))}
             </div>
@@ -275,10 +288,50 @@ const hasFeatured = featuredItems.length > 0;
       )}
 
     </div>
+
+    <!-- ============ 左栏：我的文章（DOM 在后 · 移动端后显示） ============ -->
+    <div class="lg:col-span-7 order-2 lg:order-1 flex flex-col">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+          <Icon name="material-symbols:article-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+          我的文章
+        </h2>
+        <a href="/posts/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
+          查看全部
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+        </a>
+      </div>
+
+      {latestPosts.length > 0 ? (
+        <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4">
+          {latestPosts.map((entry) => (
+            <PostCard
+              entry={entry}
+              title={entry.data.title}
+              tags={entry.data.tags}
+              category={entry.data.category}
+              published={entry.data.published}
+              updated={entry.data.updated}
+              url={getPostUrlBySlug(entry.slug)}
+              image={entry.data.image}
+              description={entry.data.description}
+              draft={entry.data.draft}
+              class:list="onload-animation"
+              style=""
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="card-base rounded-[var(--radius-large)] p-8 text-center text-75">
+          <Icon name="material-symbols:edit-document-outline-rounded" class="text-4xl mx-auto mb-3 opacity-40" />
+          <p>还没有发布文章，敬请期待～</p>
+        </div>
+      )}
+    </div>
   </div>
 
   <!-- ==================================================== -->
-  <!-- ③ 我的日常（全宽 · 2 列网格）                          -->
+  <!-- ③ 我的日常（桌面 2 列 / 移动端横滑）                    -->
   <!-- ==================================================== -->
   {dailyPosts.length > 0 && (
     <div class="mb-8">
@@ -292,25 +345,60 @@ const hasFeatured = featuredItems.length > 0;
           <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
         </a>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex gap-4 overflow-x-auto pb-3 md:grid md:grid-cols-2 md:overflow-visible md:pb-0" style="scrollbar-width: thin;">
         {dailyPosts.map((entry) => (
-          <PostCard
-            entry={entry}
-            title={entry.data.title}
-            tags={entry.data.tags}
-            category={entry.data.category}
-            published={entry.data.published}
-            updated={entry.data.updated}
-            url={getPostUrlBySlug(entry.slug)}
-            image={entry.data.image}
-            description={entry.data.description}
-            draft={entry.data.draft}
-            class:list="onload-animation"
-            style=""
-          />
+          <div class="flex-shrink-0 w-[85vw] md:w-auto">
+            <PostCard
+              entry={entry}
+              title={entry.data.title}
+              tags={entry.data.tags}
+              category={entry.data.category}
+              published={entry.data.published}
+              updated={entry.data.updated}
+              url={getPostUrlBySlug(entry.slug)}
+              image={entry.data.image}
+              description={entry.data.description}
+              draft={entry.data.draft}
+              class:list="onload-animation"
+              style=""
+            />
+          </div>
         ))}
       </div>
     </div>
   )}
+
+  <!-- 移动端底部为导航栏留出空间 -->
+  <div class="h-20 lg:hidden" aria-hidden="true"></div>
+
+  <!-- ==================================================== -->
+  <!-- ④ 底部固定导航栏（仅移动端显示）                       -->
+  <!-- ==================================================== -->
+  <nav
+    class="fixed bottom-0 left-0 right-0 z-50 lg:hidden
+           border-t border-black/5 dark:border-white/10
+           bg-[var(--card-bg)]/95 backdrop-blur-lg
+           pb-[env(safe-area-inset-bottom)]"
+    aria-label="移动端底部导航"
+  >
+    <div class="flex items-center justify-around h-16">
+      <a href="/" class="flex flex-col items-center gap-0.5 text-[var(--primary)]">
+        <Icon name="material-symbols:home-rounded" class="text-[1.5rem]" />
+        <span class="text-[11px] font-medium">首页</span>
+      </a>
+      <a href="/posts/" class="flex flex-col items-center gap-0.5 text-75 hover:text-[var(--primary)] transition-colors">
+        <Icon name="material-symbols:article-outline-rounded" class="text-[1.5rem]" />
+        <span class="text-[11px] font-medium">文章</span>
+      </a>
+      <a href="/resources/" class="flex flex-col items-center gap-0.5 text-75 hover:text-[var(--primary)] transition-colors">
+        <Icon name="material-symbols:package-outline-rounded" class="text-[1.5rem]" />
+        <span class="text-[11px] font-medium">资源</span>
+      </a>
+      <a href="/novels/" class="flex flex-col items-center gap-0.5 text-75 hover:text-[var(--primary)] transition-colors">
+        <Icon name="material-symbols:auto-stories-rounded" class="text-[1.5rem]" />
+        <span class="text-[11px] font-medium">阅读</span>
+      </a>
+    </div>
+  </nav>
 
 </MainGridLayout>
