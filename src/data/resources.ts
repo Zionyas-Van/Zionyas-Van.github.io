@@ -8,6 +8,8 @@ export interface Resource {
 	name: string; // 资源名称
 	description: string; // 简短描述
 	url: string; // 链接地址
+	category?: string; // 分类：网站 / 应用 / 游戏 / 文件 / 其他
+	cover?: string; // 配图链接（123 云盘图床，可留空）
 }
 
 export const resources: Resource[] = [
@@ -130,5 +132,13 @@ export const resources: Resource[] = [
     name: "哔哩哔哩v.7.38.0（插件版）",
     description: "目前可登录的哔站插件版。",
     url: "https://1815356055.share.123pan.cn/123pan/wd3iVv-LXhHh",
+  },
+  {
+    id: "res-1790611124626",
+    name: "爱听音乐网",
+    description: "免费下载热门歌曲。",
+    url: "https://www.2t58.com/",
+    category: "网站",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r5o3nnp95akfcDIYPAIDyAqayAGxzDdU0Dqe=.png",
   }
 ];

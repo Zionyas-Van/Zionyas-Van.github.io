@@ -6,66 +6,305 @@
 <title>ZionyasVan 管理工具</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh}
-.header{background:#1a1a2e;padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #2a2a4a}
-.header h1{font-size:20px;color:#a78bfa}
-.tabs{display:flex;gap:4px;padding:12px 24px;background:#12122a;border-bottom:1px solid #2a2a4a}
-.tab{padding:10px 20px;border:none;background:transparent;color:#888;cursor:pointer;border-radius:8px;font-size:14px;transition:.2s}
-.tab:hover{color:#ccc;background:#1a1a3a}
-.tab.active{background:#a78bfa;color:#fff}
-.panels{padding:24px;max-width:900px}
+
+:root{
+  --bg:#0a0a14;
+  --bg-2:#0f0f1e;
+  --card:#15152a;
+  --card-2:#1e1e3a;
+  --border:#262640;
+  --border-2:#30304d;
+  --text:#e8e8f0;
+  --text-2:#a0a0b8;
+  --text-3:#707090;
+  --primary:#a78bfa;
+  --primary-2:#8b6fe0;
+  --primary-soft:rgba(167,139,250,0.12);
+  --success:#22c55e;
+  --danger:#ef4444;
+}
+
+body{
+  font-family:"Microsoft YaHei","PingFang SC",-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  font-size:14px;
+  line-height:1.5;
+}
+
+.app{display:flex;min-height:100vh}
+
+/* ============ 侧边栏 ============ */
+.sidebar{
+  width:240px;
+  flex-shrink:0;
+  background:var(--bg-2);
+  border-right:1px solid var(--border);
+  padding:20px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 8px 18px;
+  border-bottom:1px solid var(--border);
+}
+.brand-icon{
+  width:40px;height:40px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#a78bfa,#6366f1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  flex-shrink:0;
+}
+.brand-title{font-size:15px;font-weight:700;letter-spacing:.02em}
+.brand-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+
+.nav{display:flex;flex-direction:column;gap:20px}
+.nav-group{display:flex;flex-direction:column;gap:3px}
+.nav-label{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-3);
+  letter-spacing:.08em;
+  padding:0 10px 6px;
+}
+.tab{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  border:none;
+  background:transparent;
+  color:var(--text-2);
+  cursor:pointer;
+  border-radius:8px;
+  font-size:13.5px;
+  font-family:inherit;
+  text-align:left;
+  transition:background .15s,color .15s;
+  width:100%;
+}
+.tab:hover{background:var(--card);color:var(--text)}
+.tab.active{
+  background:var(--primary-soft);
+  color:var(--primary);
+  font-weight:600;
+}
+.tab-emoji{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+
+/* ============ 主内容 ============ */
+.main{flex:1;min-width:0;padding:32px 40px 48px}
+.panels{max-width:820px;margin:0 auto}
 .panel{display:none}
 .panel.active{display:block}
-.card{background:#1a1a2e;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #2a2a4a}
-.card h3{font-size:16px;margin-bottom:16px;color:#c4b5fd}
-label{display:block;font-size:13px;color:#999;margin-bottom:4px;margin-top:12px}
+
+/* ============ 卡片 ============ */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:24px;
+  margin-bottom:16px;
+}
+.card h3{
+  font-size:16px;
+  font-weight:700;
+  color:var(--text);
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.card h3::before{
+  content:"";
+  width:3px;
+  height:16px;
+  background:var(--primary);
+  border-radius:2px;
+}
+
+/* ============ 表单 ============ */
+label{
+  display:block;
+  font-size:12.5px;
+  color:var(--text-2);
+  font-weight:500;
+  margin-bottom:6px;
+  margin-top:16px;
+}
 label:first-child{margin-top:0}
-input,textarea,select{width:100%;padding:10px 12px;border:1px solid #3a3a5a;border-radius:8px;background:#0f0f1a;color:#e0e0e0;font-size:14px;font-family:inherit;resize:vertical}
-textarea{min-height:120px}
-input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
+
+input,textarea,select{
+  width:100%;
+  padding:10px 13px;
+  border:1px solid var(--border-2);
+  border-radius:9px;
+  background:var(--bg-2);
+  color:var(--text);
+  font-size:14px;
+  font-family:inherit;
+  transition:border-color .15s,background .15s,box-shadow .15s;
+  resize:vertical;
+}
+input::placeholder,textarea::placeholder{color:var(--text-3)}
+input:hover,textarea:hover,select:hover{border-color:#3d3d5e}
+input:focus,textarea:focus,select:focus{
+  outline:none;
+  border-color:var(--primary);
+  background:var(--bg);
+  box-shadow:0 0 0 3px var(--primary-soft);
+}
+textarea{min-height:120px;line-height:1.6}
+
 .row{display:flex;gap:12px}
-.row>*{flex:1}
-.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
-.btn-primary{background:#a78bfa;color:#fff}
-.btn-primary:hover{background:#8b6fe0}
-.btn-success{background:#22c55e;color:#fff}
+.row>*{flex:1;min-width:0}
+
+/* ============ 按钮 ============ */
+.btn{
+  padding:10px 20px;
+  border:none;
+  border-radius:9px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  font-family:inherit;
+  transition:background .15s,transform .08s;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-2)}
+.btn-success{background:var(--success);color:#fff}
 .btn-success:hover{background:#16a34a}
-.btn-danger{background:#ef4444;color:#fff;padding:6px 12px;font-size:12px}
-.btns{margin-top:20px;display:flex;gap:8px}
-.result{padding:12px;border-radius:8px;margin-top:12px;font-size:13px;display:none}
-.result.success{display:block;background:#22c55e20;color:#4ade80;border:1px solid #22c55e40}
-.result.error{display:block;background:#ef444420;color:#f87171;border:1px solid #ef444440}
+.btn-danger{background:var(--danger);color:#fff;padding:6px 12px;font-size:12px}
+.btn-danger:hover{background:#dc2626}
+.btns{margin-top:22px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ============ 结果提示 ============ */
+.result{
+  padding:12px 14px;
+  border-radius:9px;
+  margin-top:14px;
+  font-size:13px;
+  display:none;
+  white-space:pre-wrap;
+  line-height:1.6;
+}
+.result.success{display:block;background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.25)}
+.result.error{display:block;background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25)}
 .result pre{white-space:pre-wrap;margin:0;font-family:inherit}
+
+/* ============ 辅助 ============ */
 .tag-row{display:flex;gap:8px;align-items:center}
 .tag-row input{flex:1}
 .tag-row button{padding:8px 12px}
 .dl-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .dl-row input{flex:1}
 .dl-row select{width:120px;flex:none}
-.hint{font-size:12px;color:#666;margin-top:4px}
+.hint{font-size:12px;color:var(--text-3);margin-top:5px}
+
+/* ============ 表格 ============ */
+table{border-collapse:collapse;width:100%}
+table thead tr{border-bottom:1px solid var(--border)}
+table th{
+  color:var(--text-3);
+  font-size:11.5px;
+  font-weight:600;
+  text-align:left;
+  padding:10px 8px;
+  letter-spacing:.05em;
+}
+table td{
+  padding:12px 8px;
+  font-size:13.5px;
+}
+table tbody tr{border-bottom:1px solid var(--border)}
+table tbody tr:hover{background:var(--bg-2)}
+table tbody tr:last-child{border-bottom:none}
+tr td:last-child{white-space:nowrap}
+
+/* ============ 滚动条 ============ */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a2a48;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#3a3a5a}
+
+/* ============ 响应式 ============ */
+@media (max-width: 820px){
+  .app{flex-direction:column}
+  .sidebar{
+    width:100%;
+    height:auto;
+    position:static;
+    flex-direction:row;
+    align-items:center;
+    padding:12px 16px;
+    gap:16px;
+    overflow-x:auto;
+    border-right:none;
+    border-bottom:1px solid var(--border);
+  }
+  .brand{padding:0;border:none;flex-shrink:0}
+  .brand-sub{display:none}
+  .nav{flex-direction:row;gap:4px;flex-shrink:0}
+  .nav-group{flex-direction:row;gap:4px}
+  .nav-label{display:none}
+  .tab{padding:8px 12px;white-space:nowrap;width:auto}
+  .main{padding:20px 16px 40px}
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <span style="font-size:24px">🛠️</span>
-  <h1>ZionyasVan 内容管理工具</h1>
-</div>
+<div class="app">
 
-<div class="tabs">
-  <button class="tab active" data-panel="blog">发布博客</button>
-  <button class="tab" data-panel="project">发布作品</button>
-  <button class="tab" data-panel="video">发布视频</button>
-  <button class="tab" data-panel="push">实时推送</button>
-  <button class="tab" data-panel="manage-posts">管理博客</button>
-  <button class="tab" data-panel="manage-projects">管理作品</button>
-  <button class="tab" data-panel="manage-videos">管理视频</button>
-  <button class="tab" data-panel="manage-resources">管理资源</button>
-  <button class="tab" data-panel="manage-novels">管理小说</button>
+  <!-- ============ 左侧导航 ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🛠️</div>
+      <div>
+        <div class="brand-title">ZionyasVan</div>
+        <div class="brand-sub">内容管理工具</div>
+      </div>
+    </div>
 
-</div>
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-label">发布</div>
+        <button class="tab active" data-panel="blog"><span class="tab-emoji">📝</span>发布博客</button>
+        <button class="tab" data-panel="project"><span class="tab-emoji">🎮</span>发布作品</button>
+        <button class="tab" data-panel="video"><span class="tab-emoji">🎬</span>发布视频</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">管理</div>
+        <button class="tab" data-panel="manage-posts"><span class="tab-emoji">📋</span>管理博客</button>
+        <button class="tab" data-panel="manage-projects"><span class="tab-emoji">🗂️</span>管理作品</button>
+        <button class="tab" data-panel="manage-videos"><span class="tab-emoji">🎞️</span>管理视频</button>
+        <button class="tab" data-panel="manage-resources"><span class="tab-emoji">📦</span>管理资源</button>
+        <button class="tab" data-panel="manage-novels"><span class="tab-emoji">📚</span>管理小说</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">系统</div>
+        <button class="tab" data-panel="push"><span class="tab-emoji">🚀</span>实时推送</button>
+      </div>
+    </nav>
+  </aside>
 
-<div class="panels">
+  <!-- ============ 右侧内容区 ============ -->
+  <main class="main">
+    <div class="panels">
 
 <!-- ========== 博客面板 ========== -->
 <div class="panel active" id="panel-blog">
@@ -336,6 +575,23 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <input type="hidden" id="admin-res-id">
       <div class="row"><div><label>名称</label><input id="admin-res-name"></div><div><label>链接</label><input id="admin-res-url"></div></div>
       <label>描述</label><input id="admin-res-desc">
+      <div class="row">
+        <div>
+          <label>分类</label>
+          <select id="admin-res-category">
+            <option value="">（未分类）</option>
+            <option value="网站">网站</option>
+            <option value="应用">应用</option>
+            <option value="游戏">游戏</option>
+            <option value="文件">文件</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div>
+          <label>配图链接</label>
+          <input id="admin-res-cover" placeholder="贴入图床链接（可留空）">
+        </div>
+      </div>
       <div class="btns">
         <button class="btn btn-primary" onclick="saveResourceEdit()">💾 保存修改</button>
         <button class="btn" style="background:#555" onclick="cancelResourceEdit()">取消</button>
@@ -347,6 +603,23 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
       <h3 style="font-size:14px;color:#a78bfa;margin-bottom:12px">➕ 新增资源</h3>
       <div class="row"><div><label>名称 *</label><input id="new-res-name"></div><div><label>链接 *</label><input id="new-res-url"></div></div>
       <label>描述</label><input id="new-res-desc">
+      <div class="row">
+        <div>
+          <label>分类</label>
+          <select id="new-res-category">
+            <option value="">（未分类）</option>
+            <option value="网站">网站</option>
+            <option value="应用">应用</option>
+            <option value="游戏">游戏</option>
+            <option value="文件">文件</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div>
+          <label>配图链接</label>
+          <input id="new-res-cover" placeholder="贴入图床链接（可留空）">
+        </div>
+      </div>
       <div class="btns"><button class="btn btn-primary" onclick="addResource()">新增</button></div>
       <div class="result" id="new-resource-result"></div>
     </div>
@@ -354,6 +627,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#a78bfa}
 </div>
 
 
+    </div>
+  </main>
 </div>
 
 <script>
@@ -657,11 +932,20 @@ async function editResource(id){
   if(!r) return alert('找不到资源');
   $('admin-res-id').value=r.id;$('admin-res-name').value=r.name||'';
   $('admin-res-url').value=r.url||'';$('admin-res-desc').value=r.description||'';
+  $('admin-res-category').value=r.category||'';
+  $('admin-res-cover').value=r.cover||'';
   $('resources-admin-list').style.display='none';$('resources-admin-editor').style.display='block';
 }
 function cancelResourceEdit(){$('resources-admin-list').style.display='block';$('resources-admin-editor').style.display='none';}
 async function saveResourceEdit(){
-  const data={id:$('admin-res-id').value,name:$('admin-res-name').value,url:$('admin-res-url').value,description:$('admin-res-desc').value};
+  const data={
+    id:$('admin-res-id').value,
+    name:$('admin-res-name').value,
+    url:$('admin-res-url').value,
+    description:$('admin-res-desc').value,
+    category:$('admin-res-category').value,
+    cover:$('admin-res-cover').value.trim(),
+  };
   const r=await api('/api/resources/update',data,'PUT');
   showResult('edit-resource-result',r.ok,r.ok?'已保存':r.error);
   if(r.ok){cancelResourceEdit();loadResourcesList();}
@@ -674,9 +958,22 @@ async function deleteResource(id){
 async function addResource(){
   const name=$('new-res-name').value.trim(),url=$('new-res-url').value.trim();
   if(!name||!url) return showResult('new-resource-result',false,'名称和链接必填');
-  const r=await api('/api/resources/add',{name,url,description:$('new-res-desc').value.trim()});
+  const r=await api('/api/resources/add',{
+    name,
+    url,
+    description:$('new-res-desc').value.trim(),
+    category:$('new-res-category').value,
+    cover:$('new-res-cover').value.trim(),
+  });
   showResult('new-resource-result',r.ok,r.ok?'资源已添加':r.error);
-  if(r.ok){$('new-res-name').value='';$('new-res-url').value='';$('new-res-desc').value='';loadResourcesList();}
+  if(r.ok){
+    $('new-res-name').value='';
+    $('new-res-url').value='';
+    $('new-res-desc').value='';
+    $('new-res-category').value='';
+    $('new-res-cover').value='';
+    loadResourcesList();
+  }
 }
 
 

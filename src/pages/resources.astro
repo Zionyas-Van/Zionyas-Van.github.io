@@ -1,13 +1,18 @@
 ---
 import { Icon } from "astro-icon/components";
 import { resources } from "../data/resources";
-// ============================================
-// 资源分享 · 全部资源
-// ============================================
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 固定的分类顺序；只有出现过的分类才会显示按钮
+const CATEGORY_ORDER = ["网站", "应用", "游戏", "文件", "其他"];
+const usedCategories = CATEGORY_ORDER.filter((c) =>
+	resources.some((r) => r.category === c),
+);
+const hasUncategorized = resources.some((r) => !r.category);
 ---
 
 <MainGridLayout title="资源分享" description="实用资源与工具推荐">
+  <!-- 标题 -->
   <div class="mb-6 onload-animation">
     <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
       <Icon name="material-symbols:package-outline-rounded" class="text-[var(--primary)] text-[1.75rem]" />
@@ -16,22 +21,37 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
     <p class="text-75 mt-1.5 text-sm">实用资源与工具推荐</p>
   </div>
 
-  <!-- 搜索框 -->
-  <div class="mb-4 onload-animation">
-    <div class="card-base rounded-[var(--radius-large)] flex items-center gap-2.5 px-4 py-2.5">
-      <Icon name="material-symbols:search-rounded" class="text-75 text-[1.25rem] flex-shrink-0" />
-      <input
-        id="resource-search"
-        type="text"
-        placeholder="搜索资源名称或描述…"
-        autocomplete="off"
-        class="bg-transparent outline-none w-full text-90 placeholder:text-50 text-sm"
-      />
-    </div>
-  </div>
-
   {resources.length > 0 ? (
     <>
+      <!-- 搜索框 -->
+      <div class="mb-4 onload-animation">
+        <div class="card-base rounded-[var(--radius-large)] flex items-center gap-2.5 px-4 py-2.5">
+          <Icon name="material-symbols:search-rounded" class="text-75 text-[1.25rem] flex-shrink-0" />
+          <input
+            id="resource-search"
+            type="text"
+            placeholder="搜索资源名称或描述…"
+            autocomplete="off"
+            class="bg-transparent outline-none w-full text-90 placeholder:text-50 text-sm"
+          />
+        </div>
+      </div>
+
+      <!-- 分类标签 -->
+      <div id="resource-categories" class="mb-5 flex flex-wrap gap-2 onload-animation">
+        <button type="button" data-cat-btn="全部" data-active="true"
+          class="resource-cat-btn px-3.5 py-1.5 rounded-full text-sm font-medium">全部</button>
+        {usedCategories.map((c) => (
+          <button type="button" data-cat-btn={c} data-active="false"
+            class="resource-cat-btn px-3.5 py-1.5 rounded-full text-sm font-medium">{c}</button>
+        ))}
+        {hasUncategorized && (
+          <button type="button" data-cat-btn="未分类" data-active="false"
+            class="resource-cat-btn px-3.5 py-1.5 rounded-full text-sm font-medium">未分类</button>
+        )}
+      </div>
+
+      <!-- 资源网格 -->
       <div id="resource-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
         {resources.map((r) => (
           <a
@@ -39,19 +59,33 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
             target="_blank"
             rel="noopener noreferrer"
             data-resource-card
+            data-item-category={r.category || "未分类"}
             data-search={`${r.name} ${r.description}`.toLowerCase()}
-            class="card-base group rounded-[var(--radius-large)] p-5
+            class="card-base group rounded-[var(--radius-large)] p-4
                    hover:scale-[1.01] active:scale-100 transition-transform duration-200
                    flex items-start gap-3 onload-animation"
           >
-            <div class="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0">
-              <Icon name="material-symbols:link-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-            </div>
-            <div class="min-w-0">
-              <h3 class="font-semibold text-90 group-hover:text-[var(--primary)] transition-colors">
-                {r.name}
-              </h3>
-              <p class="text-sm text-75 mt-1 leading-relaxed">
+            {r.cover ? (
+              <div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
+                <img src={r.cover} alt={r.name} class="w-full h-full object-cover" loading="lazy" />
+              </div>
+            ) : (
+              <div class="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0">
+                <Icon name="material-symbols:link-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+              </div>
+            )}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <h3 class="font-semibold text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                  {r.name}
+                </h3>
+                {r.category && (
+                  <span class="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)]">
+                    {r.category}
+                  </span>
+                )}
+              </div>
+              <p class="text-sm text-75 mt-1 leading-relaxed line-clamp-2">
                 {r.description}
               </p>
             </div>
@@ -59,14 +93,12 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
         ))}
       </div>
 
-      <div
-        id="resource-search-empty"
-        style="display: none;"
-        class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation"
-      >
+      <!-- 空状态 -->
+      <div id="resource-search-empty" style="display: none;"
+        class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
         <Icon name="material-symbols:search-off-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
         <p class="font-medium text-lg text-90 mb-2">没有找到匹配的资源</p>
-        <p class="text-sm">换个关键词试试～</p>
+        <p class="text-sm">换个关键词或分类试试～</p>
       </div>
     </>
   ) : (
@@ -78,32 +110,70 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
   )}
 </MainGridLayout>
 
+<style>
+  .resource-cat-btn {
+    transition: all 0.15s;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    background: var(--card-bg);
+    color: var(--content-meta, #888);
+  }
+  .resource-cat-btn[data-active="true"] {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+  }
+  .resource-cat-btn[data-active="false"]:hover {
+    color: var(--primary) !important;
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent) !important;
+  }
+</style>
+
 <script>
-  function initResourceSearch() {
+  function initResourceFilter() {
     const input = document.getElementById("resource-search");
     const grid = document.getElementById("resource-grid");
-    if (!input || !grid || input.dataset.bound === "1") return;
+    const catBox = document.getElementById("resource-categories");
+    if (!input || !grid || !catBox || input.dataset.bound === "1") return;
     input.dataset.bound = "1";
 
     const empty = document.getElementById("resource-search-empty");
     const cards = Array.from(grid.querySelectorAll("[data-resource-card]"));
+    const catBtns = Array.from(catBox.querySelectorAll("[data-cat-btn]"));
+    let activeCat = "全部";
 
-    const apply = () => {
+    const applyBtnStyle = () => {
+      for (const btn of catBtns) {
+        btn.dataset.active = btn.dataset.catBtn === activeCat ? "true" : "false";
+      }
+    };
+
+    const applyFilter = () => {
       const q = input.value.trim().toLowerCase();
       let visible = 0;
       for (const card of cards) {
-        const hit = !q || (card.dataset.search || "").includes(q);
+        const catOk = activeCat === "全部" || card.dataset.itemCategory === activeCat;
+        const kwOk = !q || (card.dataset.search || "").includes(q);
+        const hit = catOk && kwOk;
         card.style.display = hit ? "" : "none";
         if (hit) visible++;
       }
-      if (empty) empty.style.display = visible === 0 && q ? "" : "none";
+      if (empty) empty.style.display = visible === 0 ? "" : "none";
     };
 
-    input.addEventListener("input", apply);
+    input.addEventListener("input", applyFilter);
+    for (const btn of catBtns) {
+      btn.addEventListener("click", () => {
+        activeCat = btn.dataset.catBtn || "全部";
+        applyBtnStyle();
+        applyFilter();
+      });
+    }
+
+    applyBtnStyle();
   }
 
-  initResourceSearch();
+  initResourceFilter();
   ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
-    document.addEventListener(evt, initResourceSearch);
+    document.addEventListener(evt, initResourceFilter);
   });
 </script>

@@ -16,7 +16,6 @@ const VIDEOS_FILE = path.join(ROOT, "src", "data", "videos.ts");
 const COVERS_DIR = path.join(ROOT, "public", "projects");
 const COVERS_POST_DIR = path.join(ROOT, "public", "covers");
 
-
 // ========== 解析 TypeScript 数据文件 ==========
 function parseTsArray(filepath, arrayName) {
 	const content = fs.readFileSync(filepath, "utf-8");
@@ -176,67 +175,81 @@ function scanAllPosts() {
 }
 
 function parseFrontmatter(raw) {
-  // 去掉 UTF-8 BOM
-  if (raw.charCodeAt(0) === 0xFEFF || raw.charCodeAt(0) === 65279) raw = raw.slice(1);
-  // 统一换行符
-  raw = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+	// 去掉 UTF-8 BOM
+	if (raw.charCodeAt(0) === 0xfeff || raw.charCodeAt(0) === 65279)
+		raw = raw.slice(1);
+	// 统一换行符
+	raw = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-  // 文件必须以 --- 开头
-  if (!raw.startsWith("---")) return { body: raw };
+	// 文件必须以 --- 开头
+	if (!raw.startsWith("---")) return { body: raw };
 
-  // 找第二个 ---（独立成行）
-  const secondDash = raw.indexOf("\n---", 3);
-  if (secondDash === -1) return { body: raw };
+	// 找第二个 ---（独立成行）
+	const secondDash = raw.indexOf("\n---", 3);
+	if (secondDash === -1) return { body: raw };
 
-  // 提取 frontmatter 行和正文
-  const fmStr = raw.slice(4, secondDash);  // 跳过第一个 "---\n"
-  let body = raw.slice(secondDash + 4);    // 跳过 "\n---"
-  if (body.startsWith("\n")) body = body.slice(1); // 去掉多余换行
+	// 提取 frontmatter 行和正文
+	const fmStr = raw.slice(4, secondDash); // 跳过第一个 "---\n"
+	let body = raw.slice(secondDash + 4); // 跳过 "\n---"
+	if (body.startsWith("\n")) body = body.slice(1); // 去掉多余换行
 
-  // 解析 frontmatter 键值对
-  const result = { body };
-  const lines = fmStr.split("\n");
-  for (const line of lines) {
-    const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) continue;
-    const key = line.slice(0, colonIdx).trim();
-    let val = line.slice(colonIdx + 1).trim();
-    // 去首尾成对引号
-    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-      val = val.slice(1, -1);
-    }
-    // 数组 [xxx, yyy]
-    if (val.startsWith("[") && val.endsWith("]")) {
-      val = val.slice(1, -1).split(",").map((s) => s.trim().replace(/^["']|["']$/g, ""));
-    }
-    result[key] = val;
-  }
-  return result;
+	// 解析 frontmatter 键值对
+	const result = { body };
+	const lines = fmStr.split("\n");
+	for (const line of lines) {
+		const colonIdx = line.indexOf(":");
+		if (colonIdx === -1) continue;
+		const key = line.slice(0, colonIdx).trim();
+		let val = line.slice(colonIdx + 1).trim();
+		// 去首尾成对引号
+		if (
+			(val.startsWith('"') && val.endsWith('"')) ||
+			(val.startsWith("'") && val.endsWith("'"))
+		) {
+			val = val.slice(1, -1);
+		}
+		// 数组 [xxx, yyy]
+		if (val.startsWith("[") && val.endsWith("]")) {
+			val = val
+				.slice(1, -1)
+				.split(",")
+				.map((s) => s.trim().replace(/^["']|["']$/g, ""));
+		}
+		result[key] = val;
+	}
+	return result;
 }
-
-
 
 function toFrontmatter(fm) {
-  const lines = [];
-  if (fm.title) lines.push(`title: "${(fm.title || "").replace(/"/g, '\\"')}"`);
-  if (fm.published) lines.push(`published: ${fm.published}`);
-  if (fm.description !== undefined) {
-    const d = fm.description || "";
-    // 包含特殊字符用单引号包裹，否则双引号
-    if (d.includes("'") && !d.includes('"')) lines.push(`description: "${d.replace(/"/g, '\\"')}"`);
-    else if (d.includes('"') || d.includes(":")) lines.push(`description: '${d.replace(/'/g, "\\'")}'`);
-    else lines.push(`description: "${d}"`);
-  }
-  if (fm.image !== undefined && fm.image !== "") lines.push(`image: "${(fm.image || "").replace(/"/g, '\\"')}"`);
-  if (fm.tags && fm.tags.length > 0) {
-    lines.push(`tags: [${fm.tags.map((t) => `"${(t || "").replace(/"/g, '\\"')}"`).join(", ")}]`);
-  }
-  if (fm.category) lines.push(`category: "${(fm.category || "").replace(/"/g, '\\"')}"`);
-  if (fm.draft !== undefined) lines.push(`draft: ${fm.draft === true || fm.draft === "true" ? "true" : "false"}`);
-  if (fm.lang !== undefined && fm.lang !== "") lines.push(`lang: '${(fm.lang || "").replace(/'/g, "\\'")}'`);
-  return "---\n" + lines.join("\n") + "\n---\n";
+	const lines = [];
+	if (fm.title) lines.push(`title: "${(fm.title || "").replace(/"/g, '\\"')}"`);
+	if (fm.published) lines.push(`published: ${fm.published}`);
+	if (fm.description !== undefined) {
+		const d = fm.description || "";
+		// 包含特殊字符用单引号包裹，否则双引号
+		if (d.includes("'") && !d.includes('"'))
+			lines.push(`description: "${d.replace(/"/g, '\\"')}"`);
+		else if (d.includes('"') || d.includes(":"))
+			lines.push(`description: '${d.replace(/'/g, "\\'")}'`);
+		else lines.push(`description: "${d}"`);
+	}
+	if (fm.image !== undefined && fm.image !== "")
+		lines.push(`image: "${(fm.image || "").replace(/"/g, '\\"')}"`);
+	if (fm.tags && fm.tags.length > 0) {
+		lines.push(
+			`tags: [${fm.tags.map((t) => `"${(t || "").replace(/"/g, '\\"')}"`).join(", ")}]`,
+		);
+	}
+	if (fm.category)
+		lines.push(`category: "${(fm.category || "").replace(/"/g, '\\"')}"`);
+	if (fm.draft !== undefined)
+		lines.push(
+			`draft: ${fm.draft === true || fm.draft === "true" ? "true" : "false"}`,
+		);
+	if (fm.lang !== undefined && fm.lang !== "")
+		lines.push(`lang: '${(fm.lang || "").replace(/'/g, "\\'")}'`);
+	return `---\n${lines.join("\n")}\n---\n`;
 }
-
 
 // ========== 工具函数 ==========
 function sendJSON(res, data, status = 200) {
@@ -281,17 +294,16 @@ function saveCover(base64, filename) {
 	return `/projects/${fullname}`;
 }
 
-function savePostCover(base64, slug) {
-  if (!base64 || base64 === "") return "";
-  const matches = base64.match(/^data:image\/(\w+);base64,(.+)$/);
-  if (!matches) return "";
-  const ext = matches[1] === "png" ? "png" : "jpg";
-  fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
-  const filepath = path.join(COVERS_POST_DIR, `${slug}.${ext}`);
-  fs.writeFileSync(filepath, Buffer.from(matches[2], "base64"));
-  return `/covers/${slug}.${ext}`;
+function _savePostCover(base64, slug) {
+	if (!base64 || base64 === "") return "";
+	const matches = base64.match(/^data:image\/(\w+);base64,(.+)$/);
+	if (!matches) return "";
+	const ext = matches[1] === "png" ? "png" : "jpg";
+	fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
+	const filepath = path.join(COVERS_POST_DIR, `${slug}.${ext}`);
+	fs.writeFileSync(filepath, Buffer.from(matches[2], "base64"));
+	return `/covers/${slug}.${ext}`;
 }
-
 
 // ========== 请求路由 ==========
 const server = http.createServer(async (req, res) => {
@@ -309,44 +321,72 @@ const server = http.createServer(async (req, res) => {
 		return sendJSON(res, scanPostCategories());
 	}
 
-  // API: 发布博客 
-  if (req.method === "POST" && req.url === "/api/create-post") {
-    try {
-      const body = JSON.parse(await readBody(req));
-      const { title, description, tags, category, displayCategory, slug, content, image, draft, lang, coverBase64 } = body;
+	// API: 发布博客
+	if (req.method === "POST" && req.url === "/api/create-post") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const {
+				title,
+				description,
+				tags,
+				category,
+				displayCategory,
+				slug,
+				content,
+				image,
+				draft,
+				lang,
+				coverBase64,
+			} = body;
 
-      if (!title || !category || !slug || !content) {
-        return sendJSON(res, { error: "标题、分类文件夹、slug 和内容不能为空" }, 400);
-      }
+			if (!title || !category || !slug || !content) {
+				return sendJSON(
+					res,
+					{ error: "标题、分类文件夹、slug 和内容不能为空" },
+					400,
+				);
+			}
 
-      const filePath = path.join(POSTS_DIR, category, slug + ".md");
-      if (fs.existsSync(filePath)) {
-        return sendJSON(res, { error: `文件已存在: ${category}/${slug}.md` }, 400);
-      }
+			const filePath = path.join(POSTS_DIR, category, `${slug}.md`);
+			if (fs.existsSync(filePath)) {
+				return sendJSON(
+					res,
+					{ error: `文件已存在: ${category}/${slug}.md` },
+					400,
+				);
+			}
 
-      fs.mkdirSync(path.join(POSTS_DIR, category), { recursive: true });
+			fs.mkdirSync(path.join(POSTS_DIR, category), { recursive: true });
 
-      // 处理封面图上传
-      let imagePath = image || "";
-      if (coverBase64) {
-        fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
-        const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (matches) {
-          const ext = matches[1] === "png" ? "png" : "jpg";
-          const coverName = `${slug}.${ext}`;
-          fs.writeFileSync(path.join(COVERS_POST_DIR, coverName), Buffer.from(matches[2], "base64"));
-          imagePath = `/covers/${coverName}`;
-        }
-      }
+			// 处理封面图上传
+			let imagePath = image || "";
+			if (coverBase64) {
+				fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
+				const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+				if (matches) {
+					const ext = matches[1] === "png" ? "png" : "jpg";
+					const coverName = `${slug}.${ext}`;
+					fs.writeFileSync(
+						path.join(COVERS_POST_DIR, coverName),
+						Buffer.from(matches[2], "base64"),
+					);
+					imagePath = `/covers/${coverName}`;
+				}
+			}
 
-      const tagsArr = tags
-        ? (Array.isArray(tags) ? tags : tags.split(",").map((t) => t.trim()).filter(Boolean))
-        : [];
-      const tagsStr = tagsArr.map(tsString).join(", ");
-      const descStr = tsString(description || "");
-      const catDisplay = displayCategory || category;
+			const tagsArr = tags
+				? Array.isArray(tags)
+					? tags
+					: tags
+							.split(",")
+							.map((t) => t.trim())
+							.filter(Boolean)
+				: [];
+			const tagsStr = tagsArr.map(tsString).join(", ");
+			const descStr = tsString(description || "");
+			const catDisplay = displayCategory || category;
 
-      const md = `---
+			const md = `---
 title: ${tsString(title)}
 published: ${now()}
 description: ${descStr}${imagePath ? `\nimage: "${imagePath}"` : ""}
@@ -358,13 +398,12 @@ draft: ${draft === true || draft === "true" ? "true" : "false"}${lang ? `\nlang:
 ${content}
 `;
 
-      fs.writeFileSync(filePath, md, "utf-8");
-      return sendJSON(res, { ok: true, path: `${category}/${slug}.md` });
-    } catch (e) {
-      return sendJSON(res, { error: e.message }, 500);
-    }
-  }
-
+			fs.writeFileSync(filePath, md, "utf-8");
+			return sendJSON(res, { ok: true, path: `${category}/${slug}.md` });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
 
 	// API: 新建项目
 	if (req.method === "POST" && req.url === "/api/create-project") {
@@ -436,11 +475,13 @@ ${dlStr}
 		const desc = (r.description || "")
 			.replace(/\\/g, "\\\\")
 			.replace(/"/g, '\\"');
+		const categoryLine = r.category ? `\n    category: "${r.category}",` : "";
+		const coverLine = r.cover ? `\n    cover: "${r.cover}",` : "";
 		return `  {
     id: "${r.id}",
     name: "${r.name}",
     description: "${desc}",
-    url: "${r.url}",
+    url: "${r.url}",${categoryLine}${coverLine}
   }`;
 	}
 
@@ -452,17 +493,28 @@ ${dlStr}
 	if (req.method === "POST" && req.url === "/api/resources/add") {
 		try {
 			const body = JSON.parse(await readBody(req));
-			const { name, description, url } = body;
+			const { name, description, url, category, cover } = body;
 			if (!name || !url)
 				return sendJSON(res, { error: "名称和链接不能为空" }, 400);
 			const id = `res-${Date.now()}`;
-			const newItem = `  {
-    id: "${id}",
-    name: ${tsString(name)},
-    description: ${tsString(description || "")},
-    url: ${tsString(url)},
-  },`;
-			insertIntoArrayFile(RESOURCES_FILE, "resources", newItem, formatResource);
+			const items = parseTsArray(RESOURCES_FILE, "resources");
+			const newItem = {
+				id,
+				name,
+				description: description || "",
+				url,
+			};
+			if (category) newItem.category = category;
+			if (cover) newItem.cover = cover;
+			items.push(newItem);
+			const content = fs.readFileSync(RESOURCES_FILE, "utf-8");
+			const newContent = rebuildArraySection(
+				content,
+				"resources",
+				items,
+				formatResource,
+			);
+			fs.writeFileSync(RESOURCES_FILE, newContent, "utf-8");
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -516,7 +568,8 @@ ${dlStr}
 	if (req.method === "POST" && req.url === "/api/create-video") {
 		try {
 			const body = JSON.parse(await readBody(req));
-			const { id, title, bvid, description, featured, cover, coverBase64 } = body;
+			const { id, title, bvid, description, featured, cover, coverBase64 } =
+				body;
 
 			if (!id || !title || !bvid) {
 				return sendJSON(res, { error: "id、标题和BV号不能为空" }, 400);
@@ -619,63 +672,100 @@ ${dlStr}
 		if (!realPath) return sendJSON(res, { error: "文章不存在" }, 404);
 		const raw = fs.readFileSync(realPath, "utf-8");
 		const fm = parseFrontmatter(raw);
-        return sendJSON(res, { category, slug, title: fm.title, description: fm.description, tags: fm.tags, published: fm.published, content: fm.body, image: fm.image || "", draft: fm.draft, lang: fm.lang, displayCategory: fm.category || category });
+		return sendJSON(res, {
+			category,
+			slug,
+			title: fm.title,
+			description: fm.description,
+			tags: fm.tags,
+			published: fm.published,
+			content: fm.body,
+			image: fm.image || "",
+			draft: fm.draft,
+			lang: fm.lang,
+			displayCategory: fm.category || category,
+		});
 	}
 
-  // 更新文章
-  if (req.method === "PUT" && req.url === "/api/posts/update") {
-    try {
-      const body = JSON.parse(await readBody(req));
-      const { category, slug, title, description, tags, content, image, draft, lang, coverBase64 } = body;
-      if (!category || !slug) return sendJSON(res, { error: "分类和slug不能为空" }, 400);
+	// 更新文章
+	if (req.method === "PUT" && req.url === "/api/posts/update") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const {
+				category,
+				slug,
+				title,
+				description,
+				tags,
+				content,
+				image,
+				draft,
+				lang,
+				coverBase64,
+			} = body;
+			if (!category || !slug)
+				return sendJSON(res, { error: "分类和slug不能为空" }, 400);
 
-      // 找到现有文件
-      let indexPath = path.join(POSTS_DIR, category, slug + ".md");
-      if (!fs.existsSync(indexPath)) {
-        indexPath = path.join(POSTS_DIR, category, slug, "index.md");
-      }
-      if (!fs.existsSync(indexPath)) return sendJSON(res, { error: "文章不存在" }, 404);
+			// 找到现有文件
+			let indexPath = path.join(POSTS_DIR, category, `${slug}.md`);
+			if (!fs.existsSync(indexPath)) {
+				indexPath = path.join(POSTS_DIR, category, slug, "index.md");
+			}
+			if (!fs.existsSync(indexPath))
+				return sendJSON(res, { error: "文章不存在" }, 404);
 
-      // 读取旧的 frontmatter 以保留一些字段
-      const oldRaw = fs.readFileSync(indexPath, "utf-8");
-      const oldFm = parseFrontmatter(oldRaw);
+			// 读取旧的 frontmatter 以保留一些字段
+			const oldRaw = fs.readFileSync(indexPath, "utf-8");
+			const oldFm = parseFrontmatter(oldRaw);
 
-      // 处理封面图覆盖
-      let imagePath = image !== undefined ? image : oldFm.image;
-      if (coverBase64) {
-        fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
-        const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (matches) {
-          const ext = matches[1] === "png" ? "png" : "jpg";
-          const coverName = `${slug}.${ext}`;
-          fs.writeFileSync(path.join(COVERS_POST_DIR, coverName), Buffer.from(matches[2], "base64"));
-          imagePath = `/covers/${coverName}`;
-        }
-      }
+			// 处理封面图覆盖
+			let imagePath = image !== undefined ? image : oldFm.image;
+			if (coverBase64) {
+				fs.mkdirSync(COVERS_POST_DIR, { recursive: true });
+				const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+				if (matches) {
+					const ext = matches[1] === "png" ? "png" : "jpg";
+					const coverName = `${slug}.${ext}`;
+					fs.writeFileSync(
+						path.join(COVERS_POST_DIR, coverName),
+						Buffer.from(matches[2], "base64"),
+					);
+					imagePath = `/covers/${coverName}`;
+				}
+			}
 
-      const tagsArr = tags
-        ? (Array.isArray(tags) ? tags : tags.split(",").map((t) => t.trim()).filter(Boolean))
-        : [];
+			const tagsArr = tags
+				? Array.isArray(tags)
+					? tags
+					: tags
+							.split(",")
+							.map((t) => t.trim())
+							.filter(Boolean)
+				: [];
 
-      const fm = {
-        title: title || oldFm.title || slug,
-        published: oldFm.published || new Date().toISOString().replace("T", " ").slice(0, 19),
-        description: description !== undefined ? description : oldFm.description || "",
-        image: imagePath !== undefined ? imagePath : oldFm.image || "",
-        tags: tagsArr.length > 0 ? tagsArr : (oldFm.tags || []),
-        category: category || oldFm.category,
-        draft: draft !== undefined ? draft : oldFm.draft,
-        lang: lang !== undefined ? lang : oldFm.lang || "",
-      };
+			const fm = {
+				title: title || oldFm.title || slug,
+				published:
+					oldFm.published ||
+					new Date().toISOString().replace("T", " ").slice(0, 19),
+				description:
+					description !== undefined ? description : oldFm.description || "",
+				image: imagePath !== undefined ? imagePath : oldFm.image || "",
+				tags: tagsArr.length > 0 ? tagsArr : oldFm.tags || [],
+				category: category || oldFm.category,
+				draft: draft !== undefined ? draft : oldFm.draft,
+				lang: lang !== undefined ? lang : oldFm.lang || "",
+			};
 
-      const newMd = toFrontmatter(fm) + (content !== undefined ? content : oldFm.body || "");
-      fs.writeFileSync(indexPath, newMd, "utf-8");
-      return sendJSON(res, { ok: true });
-    } catch (e) {
-      return sendJSON(res, { error: e.message }, 500);
-    }
-  }
-
+			const newMd =
+				toFrontmatter(fm) +
+				(content !== undefined ? content : oldFm.body || "");
+			fs.writeFileSync(indexPath, newMd, "utf-8");
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
 
 	// 删除文章
 	if (req.method === "DELETE" && req.url.startsWith("/api/posts/delete")) {
@@ -830,23 +920,36 @@ ${dlStr}
 		}
 	}
 
-  // ========== 小说管理 API ==========
-  const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
+	// ========== 小说管理 API ==========
+	const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
 
-  function formatNovel(n) {
-    const intro = (n.intro || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r/g, "").replace(/\n/g, "\\n");
-    const desc = (n.description || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    const chapters = (n.chapters || []).map((ch) => {
-      const chContent = (ch.content || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
-      const chTitle = (ch.title || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      const chDate = ch.date || "";
-      return `    {
+	function formatNovel(n) {
+		const intro = (n.intro || "")
+			.replace(/\\/g, "\\\\")
+			.replace(/"/g, '\\"')
+			.replace(/\r/g, "")
+			.replace(/\n/g, "\\n");
+		const desc = (n.description || "")
+			.replace(/\\/g, "\\\\")
+			.replace(/"/g, '\\"');
+		const chapters = (n.chapters || [])
+			.map((ch) => {
+				const chContent = (ch.content || "")
+					.replace(/\\/g, "\\\\")
+					.replace(/"/g, '\\"')
+					.replace(/\n/g, "\\n");
+				const chTitle = (ch.title || "")
+					.replace(/\\/g, "\\\\")
+					.replace(/"/g, '\\"');
+				const chDate = ch.date || "";
+				return `    {
       slug: "${ch.slug}",
       title: "${chTitle}",${chDate ? `\n      date: "${chDate}",` : ""}
       content: "${chContent}",
     }`;
-    }).join(",\n");
-    return `  {
+			})
+			.join(",\n");
+		return `  {
     id: "${n.id}",
     title: "${n.title}",
     cover: "${n.cover || "/novels/cover-placeholder.jpg"}",
@@ -859,70 +962,103 @@ ${dlStr}
 ${chapters}
     ],
   }`;
-  }
+	}
 
-  if (req.method === "GET" && req.url === "/api/novels/list") {
-    const items = parseTsArray(NOVELS_FILE, "novels");
-    return sendJSON(res, items.map(n => ({ ...n, chapters: n.chapters || [] })));
-  }
+	if (req.method === "GET" && req.url === "/api/novels/list") {
+		const items = parseTsArray(NOVELS_FILE, "novels");
+		return sendJSON(
+			res,
+			items.map((n) => ({ ...n, chapters: n.chapters || [] })),
+		);
+	}
 
-  if (req.method === "POST" && req.url === "/api/novels/add") {
-    try {
-      const body = JSON.parse(await readBody(req));
-      const { title, description, author, publishedDate, platform, intro, chapters, cover, coverBase64 } = body;
-      if (!title) return sendJSON(res, { error: "小说名称不能为空" }, 400);
-      const id = "novel-" + Date.now();
-      let coverPath = cover || "/novels/cover-placeholder.jpg";
-      if (coverBase64) {
-        const saved = saveCover(coverBase64, id);
-        if (saved) coverPath = saved;
-      }
-      const newItem = formatNovel({ id, title, cover: coverPath, description: description || "", author: author || "", publishedDate: publishedDate || "", platform: platform || "", intro: intro || "", chapters: chapters || [] });
-      insertIntoArrayFile(NOVELS_FILE, "novels", newItem, formatNovel);
-      return sendJSON(res, { ok: true, id });
-    } catch (e) {
-      return sendJSON(res, { error: e.message }, 500);
-    }
-  }
+	if (req.method === "POST" && req.url === "/api/novels/add") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const {
+				title,
+				description,
+				author,
+				publishedDate,
+				platform,
+				intro,
+				chapters,
+				cover,
+				coverBase64,
+			} = body;
+			if (!title) return sendJSON(res, { error: "小说名称不能为空" }, 400);
+			const id = `novel-${Date.now()}`;
+			let coverPath = cover || "/novels/cover-placeholder.jpg";
+			if (coverBase64) {
+				const saved = saveCover(coverBase64, id);
+				if (saved) coverPath = saved;
+			}
+			const newItem = formatNovel({
+				id,
+				title,
+				cover: coverPath,
+				description: description || "",
+				author: author || "",
+				publishedDate: publishedDate || "",
+				platform: platform || "",
+				intro: intro || "",
+				chapters: chapters || [],
+			});
+			insertIntoArrayFile(NOVELS_FILE, "novels", newItem, formatNovel);
+			return sendJSON(res, { ok: true, id });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
 
-  if (req.method === "PUT" && req.url === "/api/novels/update") {
-    try {
-      const body = JSON.parse(await readBody(req));
-      const items = parseTsArray(NOVELS_FILE, "novels");
-      const idx = items.findIndex((n) => n.id === body.id);
-      if (idx === -1) return sendJSON(res, { error: "小说不存在" }, 404);
-      let coverPath = body.cover !== undefined ? body.cover : items[idx].cover;
-      if (body.coverBase64) {
-        const saved = saveCover(body.coverBase64, body.id);
-        if (saved) coverPath = saved;
-      }
-      items[idx] = { ...items[idx], ...body, cover: coverPath };
-      delete items[idx].coverBase64;
-      const content = fs.readFileSync(NOVELS_FILE, "utf-8");
-      const newContent = rebuildArraySection(content, "novels", items, formatNovel);
-      fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
-      return sendJSON(res, { ok: true });
-    } catch (e) {
-      return sendJSON(res, { error: e.message }, 500);
-    }
-  }
+	if (req.method === "PUT" && req.url === "/api/novels/update") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const items = parseTsArray(NOVELS_FILE, "novels");
+			const idx = items.findIndex((n) => n.id === body.id);
+			if (idx === -1) return sendJSON(res, { error: "小说不存在" }, 404);
+			let coverPath = body.cover !== undefined ? body.cover : items[idx].cover;
+			if (body.coverBase64) {
+				const saved = saveCover(body.coverBase64, body.id);
+				if (saved) coverPath = saved;
+			}
+			items[idx] = { ...items[idx], ...body, cover: coverPath };
+			delete items[idx].coverBase64;
+			const content = fs.readFileSync(NOVELS_FILE, "utf-8");
+			const newContent = rebuildArraySection(
+				content,
+				"novels",
+				items,
+				formatNovel,
+			);
+			fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
 
-  if (req.method === "DELETE" && req.url.startsWith("/api/novels/delete")) {
-    try {
-      const u = new URL(req.url, `http://localhost:${PORT}`);
-      const id = u.searchParams.get("id");
-      const items = parseTsArray(NOVELS_FILE, "novels");
-      const filtered = items.filter((n) => n.id !== id);
-      if (filtered.length === items.length) return sendJSON(res, { error: "小说不存在" }, 404);
-      const content = fs.readFileSync(NOVELS_FILE, "utf-8");
-      const newContent = rebuildArraySection(content, "novels", filtered, formatNovel);
-      fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
-      return sendJSON(res, { ok: true });
-    } catch (e) {
-      return sendJSON(res, { error: e.message }, 500);
-    }
-  }
-
+	if (req.method === "DELETE" && req.url.startsWith("/api/novels/delete")) {
+		try {
+			const u = new URL(req.url, `http://localhost:${PORT}`);
+			const id = u.searchParams.get("id");
+			const items = parseTsArray(NOVELS_FILE, "novels");
+			const filtered = items.filter((n) => n.id !== id);
+			if (filtered.length === items.length)
+				return sendJSON(res, { error: "小说不存在" }, 404);
+			const content = fs.readFileSync(NOVELS_FILE, "utf-8");
+			const newContent = rebuildArraySection(
+				content,
+				"novels",
+				filtered,
+				formatNovel,
+			);
+			fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
 
 	// 404
 	res.writeHead(404);
@@ -931,27 +1067,27 @@ ${chapters}
 
 // ========== 辅助：向 TypeScript 数据文件中插入数组项 ==========
 function insertIntoArrayFile(filepath, arrayName, newItemStr, formatFn) {
-  const items = parseTsArray(filepath, arrayName);
-  const idMatch = newItemStr.match(/id:\s*"([^"]+)"/);
-  const nameMatch = newItemStr.match(/name:\s*"([^"]+)"/);
-  const titleMatch = newItemStr.match(/title:\s*"([^"]+)"/);
-  const descMatch = newItemStr.match(/description:\s*"([^"]*)"/);
-  const urlMatch = newItemStr.match(/url:\s*"([^"]+)"/);
-  const bvidMatch = newItemStr.match(/bvid:\s*"([^"]+)"/);
+	const items = parseTsArray(filepath, arrayName);
+	const idMatch = newItemStr.match(/id:\s*"([^"]+)"/);
+	const nameMatch = newItemStr.match(/name:\s*"([^"]+)"/);
+	const titleMatch = newItemStr.match(/title:\s*"([^"]+)"/);
+	const descMatch = newItemStr.match(/description:\s*"([^"]*)"/);
+	const urlMatch = newItemStr.match(/url:\s*"([^"]+)"/);
+	const bvidMatch = newItemStr.match(/bvid:\s*"([^"]+)"/);
 
-  const newItem = {
-    id: idMatch ? idMatch[1] : (nameMatch ? nameMatch[1] : ""),
-    title: titleMatch ? titleMatch[1] : (nameMatch ? nameMatch[1] : ""),
-    name: nameMatch ? nameMatch[1] : "",
-    description: descMatch ? descMatch[1] : "",
-    url: urlMatch ? urlMatch[1] : "",
-    bvid: bvidMatch ? bvidMatch[1] : "",
-  };
-  items.push(newItem);
+	const newItem = {
+		id: idMatch ? idMatch[1] : nameMatch ? nameMatch[1] : "",
+		title: titleMatch ? titleMatch[1] : nameMatch ? nameMatch[1] : "",
+		name: nameMatch ? nameMatch[1] : "",
+		description: descMatch ? descMatch[1] : "",
+		url: urlMatch ? urlMatch[1] : "",
+		bvid: bvidMatch ? bvidMatch[1] : "",
+	};
+	items.push(newItem);
 
-  const content = fs.readFileSync(filepath, "utf-8");
-  const newContent = rebuildArraySection(content, arrayName, items, formatFn);
-  fs.writeFileSync(filepath, newContent, "utf-8");
+	const content = fs.readFileSync(filepath, "utf-8");
+	const newContent = rebuildArraySection(content, arrayName, items, formatFn);
+	fs.writeFileSync(filepath, newContent, "utf-8");
 }
 
 // ========== 启动服务器 ==========
