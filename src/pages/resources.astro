@@ -1,4 +1,4 @@
----
+﻿---
 import { Icon } from "astro-icon/components";
 import { resources } from "../data/resources";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
@@ -18,7 +18,7 @@ const hasUncategorized = resources.some((r) => !r.category);
       <Icon name="material-symbols:package-outline-rounded" class="text-[var(--primary)] text-[1.75rem]" />
       资源分享
     </h1>
-    <p class="text-75 mt-1.5 text-sm">实用资源与工具推荐</p>
+    <p class="text-75 mt-1.5 text-sm">实用资源与工具推荐（如遇点按没反应的情况，请刷新即可解决）</p>
   </div>
 
   {resources.length > 0 ? (
