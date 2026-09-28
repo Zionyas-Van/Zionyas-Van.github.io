@@ -434,7 +434,7 @@ ${content}
 				if (saved) coverPath = saved;
 			}
 
-			const dlStr = (downloadLinks || [])
+			const _dlStr = (downloadLinks || [])
 				.filter((l) => l.label && l.url)
 				.map((l) => {
 					const iconPart = l.icon ? `icon: ${tsString(l.icon)}, ` : "";
@@ -442,24 +442,20 @@ ${content}
 				})
 				.join(",\n");
 
-			const tagsArr = (tags || []).map(tsString).join(", ");
-			const newProject = `
-  {
-    id: ${tsString(id)},
-    title: ${tsString(title)},
-    description: ${tsString(description || "")},
-    longDescription: ${tsString(longDescription || "")},
-    cover: ${tsString(coverPath)},
-    screenshots: [],
-    type: ${tsString(type)},
-    tags: [${tagsArr}],
-    platform: ${tsString(platform || "")},
-    status: ${tsString(status || "开发中")},
-    downloadLinks: [
-${dlStr}
-    ],
-    featured: ${featured === true || featured === "true"},
-  },`;
+			const newProject = {
+				id,
+				title,
+				description: description || "",
+				longDescription: longDescription || "",
+				cover: coverPath,
+				screenshots: [],
+				type,
+				tags: tags || [],
+				platform: platform || "",
+				status: status || "开发中",
+				downloadLinks: downloadLinks || [],
+				featured: featured === true || featured === "true",
+			};
 
 			insertIntoArrayFile(PROJECTS_FILE, "projects", newProject, formatProject);
 			return sendJSON(res, { ok: true, id });
@@ -581,15 +577,14 @@ ${dlStr}
 				if (saved) coverPath = saved;
 			}
 
-			const newVideo = `
-  {
-    id: ${tsString(id)},
-    title: ${tsString(title)},
-    bvid: ${tsString(bvid)},
-    cover: ${tsString(coverPath)},
-    description: ${tsString(description || "")},
-    featured: ${featured === true || featured === "true"},
-  },`;
+			const newVideo = {
+				id,
+				title,
+				bvid,
+				cover: coverPath,
+				description: description || "",
+				featured: featured === true || featured === "true",
+			};
 
 			insertIntoArrayFile(VIDEOS_FILE, "videos", newVideo, formatVideo);
 			return sendJSON(res, { ok: true, id });
@@ -993,7 +988,7 @@ ${chapters}
 				const saved = saveCover(coverBase64, id);
 				if (saved) coverPath = saved;
 			}
-			const newItem = formatNovel({
+			const newNovel = {
 				id,
 				title,
 				cover: coverPath,
@@ -1003,8 +998,8 @@ ${chapters}
 				platform: platform || "",
 				intro: intro || "",
 				chapters: chapters || [],
-			});
-			insertIntoArrayFile(NOVELS_FILE, "novels", newItem, formatNovel);
+			};
+			insertIntoArrayFile(NOVELS_FILE, "novels", newNovel, formatNovel);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -1066,23 +1061,8 @@ ${chapters}
 });
 
 // ========== 辅助：向 TypeScript 数据文件中插入数组项 ==========
-function insertIntoArrayFile(filepath, arrayName, newItemStr, formatFn) {
+function insertIntoArrayFile(filepath, arrayName, newItem, formatFn) {
 	const items = parseTsArray(filepath, arrayName);
-	const idMatch = newItemStr.match(/id:\s*"([^"]+)"/);
-	const nameMatch = newItemStr.match(/name:\s*"([^"]+)"/);
-	const titleMatch = newItemStr.match(/title:\s*"([^"]+)"/);
-	const descMatch = newItemStr.match(/description:\s*"([^"]*)"/);
-	const urlMatch = newItemStr.match(/url:\s*"([^"]+)"/);
-	const bvidMatch = newItemStr.match(/bvid:\s*"([^"]+)"/);
-
-	const newItem = {
-		id: idMatch ? idMatch[1] : nameMatch ? nameMatch[1] : "",
-		title: titleMatch ? titleMatch[1] : nameMatch ? nameMatch[1] : "",
-		name: nameMatch ? nameMatch[1] : "",
-		description: descMatch ? descMatch[1] : "",
-		url: urlMatch ? urlMatch[1] : "",
-		bvid: bvidMatch ? bvidMatch[1] : "",
-	};
 	items.push(newItem);
 
 	const content = fs.readFileSync(filepath, "utf-8");
