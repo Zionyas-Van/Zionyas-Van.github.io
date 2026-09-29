@@ -45,12 +45,13 @@ const totalNum = novel.chapters.length;
   <!-- 阅读模式标记：MainGridLayout 的脚本读它并隐藏侧边栏 -->
   <div id="reader-mode-marker" style="display:none" aria-hidden="true"></div>
 
-  <!-- ===== Sticky 阅读工具栏 ===== -->
-  <div class="sticky top-20 z-30 -mx-4 px-4 py-3 mb-12
+  <!-- ===== 阅读工具栏（会被 JS 搬到 body 下 · fixed 定位） ===== -->
+  <div id="reader-toolbar"
+       class="reader-toolbar
               bg-[var(--card-bg)]/95 backdrop-blur-lg
               border-b border-black/5 dark:border-white/10
               shadow-sm">
-    <div class="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+    <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
       <!-- 左：返回目录 -->
       <a href={`/novels/${novel.id}/`}
          class="flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors flex-shrink-0 px-2 py-1">
@@ -76,11 +77,14 @@ const totalNum = novel.chapters.length;
     </div>
   </div>
 
+  <!-- 占位（给 fixed 工具栏留出空间，防止首屏内容被它盖住） -->
+  <div class="h-14" aria-hidden="true"></div>
+
   <!-- ===== 阅读主体（居中窄栏 + 移动端留内边距） ===== -->
   <article class="mx-auto max-w-3xl px-3 sm:px-4 md:px-0 onload-animation">
 
     <!-- 章节标题 -->
-    <header class="mb-10 text-center">
+    <header class="mb-10 text-center pt-4">
       <div class="text-xs text-75/50 mb-2 tracking-widest">第 {currentNum} 章</div>
       <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3 leading-snug">{ch.title}</h1>
       {ch.date && <p class="text-xs text-75/40">发布于 {ch.date}</p>}
@@ -169,8 +173,17 @@ const totalNum = novel.chapters.length;
   </article>
 </MainGridLayout>
 
-<style>
-  /* 字号通过 class 切换（不依赖属性选择器，兼容 scoped style） */
+<!-- 全局样式（非 scoped，让 fixed 定位不被作用域干扰） -->
+<style is:global>
+  .reader-toolbar {
+    position: fixed;
+    top: 0; /* 会被 JS 覆盖成 Fuwari 顶栏的高度 */
+    left: 0;
+    right: 0;
+    z-index: 40;
+  }
+
+  /* 字号通过 class 切换 */
   #chapter-content {
     font-size: 1.125rem;
     line-height: 2;
@@ -180,7 +193,6 @@ const totalNum = novel.chapters.length;
   #chapter-content.size-md { font-size: 1.125rem; line-height: 2;    }
   #chapter-content.size-lg { font-size: 1.25rem;  line-height: 2.15; }
 
-  /* 移动端字号略小 */
   @media (max-width: 767px) {
     #chapter-content         { font-size: 1rem;      line-height: 1.9;  }
     #chapter-content.size-sm { font-size: 0.9375rem; line-height: 1.85; }
@@ -188,7 +200,6 @@ const totalNum = novel.chapters.length;
     #chapter-content.size-lg { font-size: 1.0625rem; line-height: 2;    }
   }
 
-  /* 字号按钮 */
   .font-size-btn {
     color: var(--content-meta, #9ca3af);
     background: transparent;
@@ -205,39 +216,53 @@ const totalNum = novel.chapters.length;
 </style>
 
 <script>
-  function initReader() {
-    const content = document.getElementById("chapter-content");
-    const group = document.getElementById("font-size-group");
-    if (!content || !group) return;
+  function setupReaderToolbar() {
+    // ===== 1. 清理上一页遗留的工具栏（swup 切页时）=====
+    document.querySelectorAll("body > #reader-toolbar").forEach((el) => el.remove());
 
-    const KEY = "novel-font-size";
-    const applySize = (size) => {
-      // 用 class 控制字号（最稳，不受 scoped style 影响）
-      content.classList.remove("size-sm", "size-md", "size-lg");
-      content.classList.add("size-" + size);
-      // 按钮高亮
-      group.querySelectorAll(".font-size-btn").forEach((b) => {
-        b.dataset.active = b.dataset.size === size ? "true" : "false";
-      });
-      try { localStorage.setItem(KEY, size); } catch {}
-    };
+    // ===== 2. 把本页工具栏搬到 body 下（避开 swup transform）=====
+    const toolbar = document.getElementById("reader-toolbar");
+    if (toolbar) {
+      if (toolbar.parentElement !== document.body) {
+        document.body.appendChild(toolbar);
+      }
 
-    // 事件绑定（每次切页后新 DOM 都是新的，需要重新绑）
-    if (group.dataset.bound !== "1") {
-      group.dataset.bound = "1";
-      group.querySelectorAll(".font-size-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          applySize(btn.dataset.size || "md");
+      // ===== 3. 自动测量 Fuwari 顶栏高度，把工具栏贴它下方 =====
+      const placeToolbar = () => {
+        const navbar =
+          document.querySelector("#navbar-wrapper") ||
+          document.querySelector("#top-row") ||
+          document.querySelector("header");
+        if (navbar) {
+          const rect = navbar.getBoundingClientRect();
+          toolbar.style.top = Math.max(0, rect.bottom) + "px";
+        } else {
+          toolbar.style.top = "64px"; // 兜底值
+        }
+      };
+
+      placeToolbar();
+      // 布局完成后再校一次（避免首帧错位）
+      requestAnimationFrame(placeToolbar);
+      setTimeout(placeToolbar, 120);
+
+      // 窗口尺寸变化时重新测量
+      if (window.__readerToolbarResizeBound !== true) {
+        window.__readerToolbarResizeBound = true;
+        window.addEventListener("resize", () => {
+          const tb = document.getElementById("reader-toolbar");
+          if (!tb) return;
+          const navbar =
+            document.querySelector("#navbar-wrapper") ||
+            document.querySelector("#top-row");
+          if (navbar) {
+            tb.style.top = Math.max(0, navbar.getBoundingClientRect().bottom) + "px";
+          }
         });
-      });
+      }
     }
 
-    // 恢复上次字号
-    let saved = "md";
-    try { saved = localStorage.getItem(KEY) || "md"; } catch {}
-    applySize(saved);
-
-    // ---- 阅读进度条 ----
+    // ===== 4. 阅读进度条 =====
     let bar = document.getElementById("reading-progress");
     if (!bar) {
       bar = document.createElement("div");
@@ -247,7 +272,6 @@ const totalNum = novel.chapters.length;
         "background:var(--primary);transition:width .12s linear;pointer-events:none;";
       document.body.appendChild(bar);
     }
-
     const updateProgress = () => {
       const h = document.documentElement;
       const top = h.scrollTop || document.body.scrollTop;
@@ -255,16 +279,43 @@ const totalNum = novel.chapters.length;
       const pct = total > 0 ? (top / total) * 100 : 0;
       bar.style.width = pct + "%";
     };
-
     if (window.__readerProgressBound !== true) {
       window.__readerProgressBound = true;
       window.addEventListener("scroll", updateProgress, { passive: true });
     }
     updateProgress();
+
+    // ===== 5. 字号切换 =====
+    const content = document.getElementById("chapter-content");
+    const group = document.getElementById("font-size-group");
+    if (!content || !group) return;
+
+    const KEY = "novel-font-size";
+    const applySize = (size) => {
+      content.classList.remove("size-sm", "size-md", "size-lg");
+      content.classList.add("size-" + size);
+      group.querySelectorAll(".font-size-btn").forEach((b) => {
+        b.dataset.active = b.dataset.size === size ? "true" : "false";
+      });
+      try { localStorage.setItem(KEY, size); } catch {}
+    };
+
+    if (group.dataset.bound !== "1") {
+      group.dataset.bound = "1";
+      group.querySelectorAll(".font-size-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          applySize(btn.dataset.size || "md");
+        });
+      });
+    }
+
+    let saved = "md";
+    try { saved = localStorage.getItem(KEY) || "md"; } catch {}
+    applySize(saved);
   }
 
-  initReader();
+  setupReaderToolbar();
   ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
-    document.addEventListener(evt, initReader);
+    document.addEventListener(evt, setupReaderToolbar);
   });
 </script>
