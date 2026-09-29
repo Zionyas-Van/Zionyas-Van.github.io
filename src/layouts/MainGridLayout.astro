@@ -127,9 +127,12 @@ const mainPanelTop = siteConfig.banner.enable
 
 <script>
   // ====================================================
-  // 阅读模式：
+  // 全局页面初始化
+  // 关键：监听 astro:page-load —— 首次加载和 swup 切页后都会触发
   // ====================================================
-  function toggleReaderMode() {
+
+  // ---------- ① 阅读模式：隐藏侧边栏 ----------
+  function initReaderMode() {
     const isReader = document.getElementById("reader-mode-marker") !== null;
     const mainGrid = document.getElementById("main-grid");
     if (!mainGrid) return;
@@ -149,9 +152,286 @@ const mainPanelTop = siteConfig.banner.enable
     }
   }
 
-  toggleReaderMode();
-  ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
-    document.addEventListener(evt, toggleReaderMode);
+  // ---------- ② 小说列表页：三榜单渲染 ----------
+  function initNovelsPage() {
+    const dataEl = document.getElementById("novels-data");
+    const listTop = document.getElementById("list-top");
+    const listToday = document.getElementById("list-today");
+    const listAll = document.getElementById("list-all");
+    const secTop = document.getElementById("section-top");
+    const secToday = document.getElementById("section-today");
+    const secAll = document.getElementById("section-all");
+    if (!dataEl || !listTop || !listToday || !listAll) return;
+    if (listTop.dataset.rendered === "1") return;
+    listTop.dataset.rendered = "1";
+
+    let novelsData;
+    try {
+      novelsData = JSON.parse(dataEl.textContent || "[]");
+    } catch {
+      return;
+    }
+    if (!Array.isArray(novelsData) || novelsData.length === 0) return;
+
+    const today = new Date();
+    const seed =
+      today.getFullYear() * 10000 +
+      (today.getMonth() + 1) * 100 +
+      today.getDate();
+
+    const seededShuffle = (arr, s) => {
+      const result = [...arr];
+      let state = s;
+      const rand = () => {
+        state = (state * 9301 + 49297) % 233280;
+        return state / 233280;
+      };
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    };
+
+    const shuffled = seededShuffle(novelsData, seed);
+
+    const esc = (s) =>
+      String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const renderTopItem = (n, rank) => `
+      <a href="/novels/${n.id}/"
+         class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                relative flex flex-col">
+        <div class="absolute top-0 left-0 z-10 px-3 py-1.5 rounded-br-xl
+                    bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/60
+                    text-white font-black text-sm shadow-lg tracking-wider">
+          #${rank}
+        </div>
+        <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
+               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+               loading="lazy" />
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-base text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+            ${esc(n.title)}
+          </h3>
+          <p class="text-xs text-75/70 mt-1 truncate">${esc(n.author)}</p>
+          <p class="text-xs text-75 mt-2 line-clamp-2 leading-relaxed">
+            ${esc(n.description)}
+          </p>
+          <div class="flex items-center gap-2 mt-2 text-[11px] text-75/60">
+            <span>${n.chapterCount} 章</span>
+            ${n.platform ? `<span>·</span><span class="truncate">${esc(n.platform)}</span>` : ""}
+          </div>
+        </div>
+      </a>
+    `;
+
+    const renderTodayItem = (n) => `
+      <a href="/novels/${n.id}/"
+         class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                hover:scale-[1.01] active:scale-100 transition-transform duration-200
+                flex gap-3 p-3">
+        <div class="w-20 aspect-[3/4] flex-shrink-0 rounded-lg overflow-hidden bg-black/10 dark:bg-white/5">
+          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
+               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+               loading="lazy" />
+        </div>
+        <div class="flex flex-col justify-between min-w-0 flex-1 py-0.5">
+          <div class="min-w-0">
+            <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+              ${esc(n.title)}
+            </h3>
+            <p class="text-[11px] text-75/60 mt-0.5 truncate">${esc(n.author)}</p>
+            <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
+              ${esc(n.description)}
+            </p>
+          </div>
+          <div class="text-[11px] text-75/60 mt-1">
+            ${n.chapterCount} 章
+          </div>
+        </div>
+      </a>
+    `;
+
+    const renderAllItem = (n) => `
+      <a href="/novels/${n.id}/"
+         class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                hover:scale-[1.02] active:scale-100 transition-transform duration-200">
+        <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
+               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+               loading="lazy" />
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+            ${esc(n.title)}
+          </h3>
+          <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
+            ${esc(n.description)}
+          </p>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs text-75/50">${esc(n.author)}</span>
+            <span class="text-xs text-75/30">·</span>
+            <span class="text-xs text-75/50">${n.chapterCount} 章</span>
+          </div>
+        </div>
+      </a>
+    `;
+
+    const topCount = Math.min(3, shuffled.length);
+    const topItems = shuffled.slice(0, topCount);
+
+    const todayStart = topCount;
+    const todayEnd = Math.min(shuffled.length, todayStart + 3);
+    let finalTodayItems = shuffled.slice(todayStart, todayEnd);
+
+    if (finalTodayItems.length === 0 && shuffled.length > 0) {
+      const offset = shuffled.length > 1 ? 1 : 0;
+      finalTodayItems = shuffled
+        .slice(offset, offset + Math.min(3, shuffled.length))
+        .slice(0, Math.min(3, shuffled.length));
+    }
+
+    listTop.innerHTML = topItems
+      .map((n, i) => renderTopItem(n, i + 1))
+      .join("");
+    listToday.innerHTML = finalTodayItems.map(renderTodayItem).join("");
+    listAll.innerHTML = shuffled.map(renderAllItem).join("");
+
+    if (secTop) secTop.classList.remove("hidden");
+    if (finalTodayItems.length > 0 && secToday) secToday.classList.remove("hidden");
+    if (secAll) secAll.classList.remove("hidden");
+
+    const countLine = document.getElementById("novel-count-line");
+    if (countLine) {
+      countLine.textContent = `共 ${shuffled.length} 部作品 · 每天换一批推荐`;
+    }
+  }
+
+  // ---------- ③ 阅读页工具栏 + 进度条 + 字号 ----------
+  function initReaderToolbar() {
+    // 清理 body 下上一页遗留的工具栏
+    document.querySelectorAll("body > #reader-toolbar").forEach((el) => el.remove());
+
+    const toolbar = document.getElementById("reader-toolbar");
+    if (!toolbar) return;
+
+    // 搬到 body 下，避开 swup 的 transform 容器
+    if (toolbar.parentElement !== document.body) {
+      document.body.appendChild(toolbar);
+    }
+
+    // 多次测量 Fuwari 顶栏高度，直到稳定
+    const placeToolbar = () => {
+      const tb = document.getElementById("reader-toolbar");
+      if (!tb) return;
+      const navbar =
+        document.querySelector("#navbar-wrapper") ||
+        document.querySelector("#top-row") ||
+        document.querySelector("header");
+      if (navbar) {
+        tb.style.top = Math.max(0, navbar.getBoundingClientRect().bottom) + "px";
+      } else {
+        tb.style.top = "64px";
+      }
+    };
+
+    placeToolbar();
+    requestAnimationFrame(placeToolbar);
+    setTimeout(placeToolbar, 80);
+    setTimeout(placeToolbar, 200);
+    setTimeout(placeToolbar, 400);
+    setTimeout(placeToolbar, 700);
+
+    // 监听窗口尺寸变化
+    if (window.__readerToolbarResizeBound !== true) {
+      window.__readerToolbarResizeBound = true;
+      window.addEventListener("resize", () => {
+        const tb = document.getElementById("reader-toolbar");
+        if (!tb) return;
+        const navbar =
+          document.querySelector("#navbar-wrapper") ||
+          document.querySelector("#top-row");
+        if (navbar) {
+          tb.style.top = Math.max(0, navbar.getBoundingClientRect().bottom) + "px";
+        }
+      });
+    }
+
+    // 进度条
+    let bar = document.getElementById("reading-progress");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "reading-progress";
+      bar.style.cssText =
+        "position:fixed;top:0;left:0;height:2px;width:0;z-index:60;" +
+        "background:var(--primary);transition:width .12s linear;pointer-events:none;";
+      document.body.appendChild(bar);
+    }
+    const updateProgress = () => {
+      const h = document.documentElement;
+      const top = h.scrollTop || document.body.scrollTop;
+      const total = h.scrollHeight - h.clientHeight;
+      bar.style.width = (total > 0 ? (top / total) * 100 : 0) + "%";
+    };
+    if (window.__readerProgressBound !== true) {
+      window.__readerProgressBound = true;
+      window.addEventListener("scroll", updateProgress, { passive: true });
+    }
+    updateProgress();
+
+    // 字号切换
+    const content = document.getElementById("chapter-content");
+    const group = document.getElementById("font-size-group");
+    if (!content || !group) return;
+
+    const KEY = "novel-font-size";
+    const applySize = (size) => {
+      content.classList.remove("size-sm", "size-md", "size-lg");
+      content.classList.add("size-" + size);
+      group.querySelectorAll(".font-size-btn").forEach((b) => {
+        b.dataset.active = b.dataset.size === size ? "true" : "false";
+      });
+      try {
+        localStorage.setItem(KEY, size);
+      } catch {}
+    };
+
+    if (group.dataset.bound !== "1") {
+      group.dataset.bound = "1";
+      group.querySelectorAll(".font-size-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          applySize(btn.dataset.size || "md");
+        });
+      });
+    }
+
+    let saved = "md";
+    try {
+      saved = localStorage.getItem(KEY) || "md";
+    } catch {}
+    applySize(saved);
+  }
+
+  // ---------- 统一入口 ----------
+  function initAll() {
+    initReaderMode();
+    initNovelsPage();
+    initReaderToolbar();
+  }
+
+  // 首次执行 + 每次 swup 切页执行
+  initAll();
+  ["astro:page-load", "swup:page:view", "page:view"].forEach((evt) => {
+    document.addEventListener(evt, initAll);
   });
 </script>
 </Layout>
