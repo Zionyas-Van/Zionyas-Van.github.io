@@ -1,50 +1,69 @@
 ---
-import MainGridLayout from "../layouts/MainGridLayout.astro";
-import { novels } from "../data/novels";
 import { Icon } from "astro-icon/components";
+import { novels } from "../data/novels";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 只传渲染需要的字段，避免把章节正文也传过去
+const novelsMeta = novels.map((n) => ({
+	id: n.id,
+	title: n.title,
+	cover: n.cover,
+	description: n.description,
+	author: n.author,
+	chapterCount: n.chapters?.length || 0,
+	platform: n.platform || "",
+}));
+
+const novelsJson = JSON.stringify(novelsMeta).replace(/</g, "\\u003c");
 ---
 
 <MainGridLayout title="那些故事" description="我的小说作品">
-  <div class="mb-6 onload-animation">
+  <!-- 页头 -->
+  <div class="mb-8 onload-animation">
     <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
       <Icon name="material-symbols:auto-stories-rounded" class="text-[var(--primary)] text-[1.75rem]" />
       那些故事
     </h1>
-    <p class="text-75 mt-1.5 text-sm">我的小说作品</p>
+    <p class="text-75 mt-1.5 text-sm" id="novel-count-line">一个写故事的地方</p>
   </div>
 
   {novels.length > 0 ? (
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {novels.map((n) => (
-        <a
-          href={`/novels/${n.id}/`}
-          class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                 hover:scale-[1.02] active:scale-100 transition-transform duration-200 onload-animation"
-        >
-          <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
-            <img
-              src={n.cover}
-              alt={n.title}
-              class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-              loading="lazy"
-            />
-          </div>
-          <div class="p-4">
-            <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-              {n.title}
-            </h3>
-            <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
-              {n.description}
-            </p>
-            <div class="flex items-center gap-2 mt-2">
-              <span class="text-xs text-75/50">{n.author}</span>
-              <span class="text-xs text-75/30">·</span>
-              <span class="text-xs text-75/50">{n.chapters.length} 章</span>
-            </div>
-          </div>
-        </a>
-      ))}
-    </div>
+    <>
+      <!-- 必读榜 -->
+      <section id="section-top" class="mb-10 hidden">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+            <Icon name="material-symbols:workspace-premium-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+            必读榜
+          </h2>
+          <span class="text-xs text-75/60">编辑精选</span>
+        </div>
+        <div id="list-top" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- 今日推荐 -->
+      <section id="section-today" class="mb-10 hidden">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+            <Icon name="material-symbols:today-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+            今日推荐
+          </h2>
+          <span class="text-xs text-75/60">每天换一批</span>
+        </div>
+        <div id="list-today" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </section>
+
+      <!-- 全部小说 -->
+      <section id="section-all" class="mb-10 hidden">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+            <Icon name="material-symbols:library-books-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+            全部小说
+          </h2>
+        </div>
+        <div id="list-all" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+      </section>
+    </>
   ) : (
     <div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
       <Icon name="material-symbols:auto-stories-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
@@ -52,4 +71,197 @@ import { Icon } from "astro-icon/components";
       <p class="text-sm">故事还在创作中，敬请期待～</p>
     </div>
   )}
+
+  <!-- 数据源：JSON 形式嵌入，供脚本读取 -->
+  <script type="application/json" id="novels-data" set:html={novelsJson}></script>
 </MainGridLayout>
+
+<script>
+  function initNovelsPage() {
+    const dataEl = document.getElementById("novels-data");
+    const listTop = document.getElementById("list-top");
+    const listToday = document.getElementById("list-today");
+    const listAll = document.getElementById("list-all");
+    const secTop = document.getElementById("section-top");
+    const secToday = document.getElementById("section-today");
+    const secAll = document.getElementById("section-all");
+
+    // 不是小说页，直接退出
+    if (!dataEl || !listTop || !listToday || !listAll) return;
+
+    // 防重复渲染（同一份 DOM 只渲染一次）
+    if (listTop.dataset.rendered === "1") return;
+    listTop.dataset.rendered = "1";
+
+    let novelsData;
+    try {
+      novelsData = JSON.parse(dataEl.textContent || "[]");
+    } catch {
+      return;
+    }
+    if (!Array.isArray(novelsData) || novelsData.length === 0) return;
+
+    // ===== 基于日期的随机种子（同一天稳定，第二天自动换）=====
+    const today = new Date();
+    const seed =
+      today.getFullYear() * 10000 +
+      (today.getMonth() + 1) * 100 +
+      today.getDate();
+
+    const seededShuffle = (arr, s) => {
+      const result = [...arr];
+      let state = s;
+      const rand = () => {
+        state = (state * 9301 + 49297) % 233280;
+        return state / 233280;
+      };
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    };
+
+    const shuffled = seededShuffle(novelsData, seed);
+
+    // ===== 工具：转义 =====
+    const esc = (s) =>
+      String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    // ===== 卡片模板 =====
+
+    // 必读榜：竖版大卡 + 排名徽章
+    const renderTopItem = (n, rank) => `
+      <a href="/novels/${n.id}/"
+         class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                relative flex flex-col">
+        <div class="absolute top-0 left-0 z-10 px-3 py-1.5 rounded-br-xl
+                    bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/60
+                    text-white font-black text-sm shadow-lg tracking-wider">
+          #${rank}
+        </div>
+        <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
+               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+               loading="lazy" />
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-base text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+            ${esc(n.title)}
+          </h3>
+          <p class="text-xs text-75/70 mt-1 truncate">${esc(n.author)}</p>
+          <p class="text-xs text-75 mt-2 line-clamp-2 leading-relaxed">
+            ${esc(n.description)}
+          </p>
+          <div class="flex items-center gap-2 mt-2 text-[11px] text-75/60">
+            <span>${n.chapterCount} 章</span>
+            ${n.platform ? `<span>·</span><span class="truncate">${esc(n.platform)}</span>` : ""}
+          </div>
+        </div>
+      </a>
+    `;
+
+    // 今日推荐：横版紧凑卡（封面 + 信息）
+    const renderTodayItem = (n) => `
+      <a href="/novels/${n.id}/"
+         class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                hover:scale-[1.01] active:scale-100 transition-transform duration-200
+                flex gap-3 p-3">
+        <div class="w-20 aspect-[3/4] flex-shrink-0 rounded-lg overflow-hidden bg-black/10 dark:bg-white/5">
+          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
+               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+               loading="lazy" />
+        </div>
+        <div class="flex flex-col justify-between min-w-0 flex-1 py-0.5">
+          <div class="min-w-0">
+            <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+              ${esc(n.title)}
+            </h3>
+            <p class="text-[11px] text-75/60 mt-0.5 truncate">${esc(n.author)}</p>
+            <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
+              ${esc(n.description)}
+            </p>
+          </div>
+          <div class="text-[11px] text-75/60 mt-1">
+            ${n.chapterCount} 章
+          </div>
+        </div>
+      </a>
+    `;
+
+    // 全部小说：原竖版卡片
+    const renderAllItem = (n) => `
+      <a href="/novels/${n.id}/"
+         class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                hover:scale-[1.02] active:scale-100 transition-transform duration-200">
+        <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
+               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+               loading="lazy" />
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+            ${esc(n.title)}
+          </h3>
+          <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
+            ${esc(n.description)}
+          </p>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs text-75/50">${esc(n.author)}</span>
+            <span class="text-xs text-75/30">·</span>
+            <span class="text-xs text-75/50">${n.chapterCount} 章</span>
+          </div>
+        </div>
+      </a>
+    `;
+
+    // ===== 分区：必读榜取前 3，今日推荐取接下来的 3，全部小说全放 =====
+    const topCount = Math.min(3, shuffled.length);
+    const topItems = shuffled.slice(0, topCount);
+
+    const todayStart = topCount;
+    const todayEnd = Math.min(shuffled.length, todayStart + 3);
+    const todayItems = shuffled.slice(todayStart, todayEnd);
+
+    // 若小说数量 ≤ 3，今日推荐从全部里另取一批（可重合，避免空）
+    let finalTodayItems = todayItems;
+    if (finalTodayItems.length === 0 && shuffled.length > 0) {
+      const offset = shuffled.length > 1 ? 1 : 0;
+      finalTodayItems = shuffled
+        .slice(offset, offset + Math.min(3, shuffled.length))
+        .slice(0, Math.min(3, shuffled.length));
+    }
+
+    // ===== 渲染 =====
+    listTop.innerHTML = topItems
+      .map((n, i) => renderTopItem(n, i + 1))
+      .join("");
+
+    listToday.innerHTML = finalTodayItems.map(renderTodayItem).join("");
+
+    listAll.innerHTML = shuffled.map(renderAllItem).join("");
+
+    // ===== 显示区块 =====
+    if (secTop) secTop.classList.remove("hidden");
+    if (finalTodayItems.length > 0 && secToday) secToday.classList.remove("hidden");
+    if (secAll) secAll.classList.remove("hidden");
+
+    // ===== 数量文案 =====
+    const countLine = document.getElementById("novel-count-line");
+    if (countLine) {
+      countLine.textContent = `共 ${shuffled.length} 部作品 · 每天换一批推荐`;
+    }
+  }
+
+  // 首次加载 + swup 每次切页都跑一次
+  initNovelsPage();
+  ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
+    document.addEventListener(evt, initNovelsPage);
+  });
+</script>
