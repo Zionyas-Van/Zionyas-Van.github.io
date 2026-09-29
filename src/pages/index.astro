@@ -402,3 +402,20 @@ const formatNewsDate = (d: unknown) => {
   </nav>
 
 </MainGridLayout>
+
+<script>
+  // ====================================================
+  // 底部导航栏搬到 <body> 下
+  // ====================================================
+  function relocateBottomNav() {
+    const nav = document.querySelector('nav[aria-label="移动端底部导航"]');
+    if (nav && nav.parentElement !== document.body) {
+      document.body.appendChild(nav);
+    }
+  }
+
+  relocateBottomNav();
+  ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
+    document.addEventListener(evt, relocateBottomNav);
+  });
+</script>
