@@ -1,11 +1,11 @@
 ---
 import type { GetStaticPaths } from "astro";
-import { Icon } from "astro-icon/components";
-import { novels } from "../../data/novels";
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import { novels } from "../../data/novels";
+import { Icon } from "astro-icon/components";
 
 export const getStaticPaths = (() => {
-	return novels.map((n) => ({ params: { id: n.id } }));
+  return novels.map((n) => ({ params: { id: n.id } }));
 }) satisfies GetStaticPaths;
 
 const { id } = Astro.params;
@@ -42,30 +42,28 @@ const firstChapter = novel.chapters.length > 0 ? novel.chapters[0] : null;
           {novel.title}
         </h1>
 
-        <!-- 徽章 -->
+        <!-- 徽章（纯文字，不含图标） -->
         <div class="flex flex-wrap items-center gap-2 mb-5 justify-center sm:justify-start">
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
-                       bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
-            <Icon name="material-symbols:person-outline-rounded" class="text-[0.9rem]" />
-            {novel.author}
-          </span>
+          {novel.author && (
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                         bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
+              {novel.author}
+            </span>
+          )}
           {novel.publishedDate && (
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full
                          bg-black/5 dark:bg-white/10 text-75 text-xs">
-              <Icon name="material-symbols:calendar-today-rounded" class="text-[0.9rem]" />
               {novel.publishedDate}
             </span>
           )}
           {novel.platform && (
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full
                          bg-black/5 dark:bg-white/10 text-75 text-xs">
-              <Icon name="material-symbols:where-to-vote-outline-rounded" class="text-[0.9rem]" />
               {novel.platform}
             </span>
           )}
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full
                        bg-black/5 dark:bg-white/10 text-75 text-xs">
-            <Icon name="material-symbols:book-2-outline-rounded" class="text-[0.9rem]" />
             共 {novel.chapters.length} 章
           </span>
         </div>
@@ -92,7 +90,7 @@ const firstChapter = novel.chapters.length > 0 ? novel.chapters[0] : null;
           <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full
                       bg-black/5 dark:bg-white/10 text-75 text-sm
                       self-center sm:self-start">
-            <Icon name="material-symbols:hourglass-empty-rounded" class="text-[1.1rem]" />
+            <Icon name="material-symbols:edit-document-outline-rounded" class="text-[1.1rem]" />
             章节创作中
           </div>
         )}
@@ -137,7 +135,7 @@ const firstChapter = novel.chapters.length > 0 ? novel.chapters[0] : null;
       </div>
     ) : (
       <div class="py-10 text-center">
-        <Icon name="material-symbols:hourglass-empty-rounded" class="text-4xl text-75/30 mx-auto mb-3" />
+        <Icon name="material-symbols:edit-document-outline-rounded" class="text-4xl text-75/30 mx-auto mb-3" />
         <p class="text-sm text-75/50">章节还在创作中…</p>
       </div>
     )}

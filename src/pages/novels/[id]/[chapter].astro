@@ -50,7 +50,7 @@ const totalNum = novel.chapters.length;
       <!-- 左：返回目录 -->
       <a href={`/novels/${novel.id}/`}
          class="flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors flex-shrink-0 px-2 py-1">
-        <Icon name="material-symbols:format-list-bulleted-rounded" class="text-[1.15rem]" />
+        <Icon name="material-symbols:list-alt-outline-rounded" class="text-[1.15rem]" />
         <span class="hidden sm:inline">目录</span>
       </a>
 
@@ -101,7 +101,7 @@ const totalNum = novel.chapters.length;
     <!-- 章末装饰 -->
     <div class="flex items-center justify-center gap-4 my-12 text-75/30">
       <div class="h-px w-16 bg-current"></div>
-      <Icon name="material-symbols:bookmark-outline-rounded" class="text-[1rem]" />
+      <span class="text-sm tracking-widest">· · ·</span>
       <div class="h-px w-16 bg-current"></div>
     </div>
 
@@ -125,7 +125,6 @@ const totalNum = novel.chapters.length;
       ) : (
         <div class="card-base rounded-[var(--radius-large)] px-5 py-4
                     flex items-center gap-3 opacity-40">
-          <Icon name="material-symbols:block-rounded" class="text-[1.25rem] flex-shrink-0" />
           <div class="text-sm text-75">已是第一章</div>
         </div>
       )}
@@ -146,7 +145,6 @@ const totalNum = novel.chapters.length;
       ) : (
         <div class="card-base rounded-[var(--radius-large)] px-5 py-4
                     flex items-center gap-3 opacity-40">
-          <Icon name="material-symbols:check-circle-outline-rounded" class="text-[1.25rem] flex-shrink-0" />
           <div class="text-sm text-75">已读完最后一章</div>
         </div>
       )}
@@ -159,7 +157,7 @@ const totalNum = novel.chapters.length;
                 bg-[var(--primary)] text-white text-sm font-semibold
                 hover:opacity-90 active:scale-95 transition-all
                 shadow-lg shadow-[var(--primary)]/20">
-        <Icon name="material-symbols:menu-book-rounded" class="text-[1.15rem]" />
+        <Icon name="material-symbols:auto-stories-rounded" class="text-[1.15rem]" />
         返回目录
       </a>
     </div>
@@ -173,7 +171,6 @@ const totalNum = novel.chapters.length;
     font-size: 1.0625rem;
     line-height: 2;
     letter-spacing: 0.01em;
-    color: var(--content-text, inherit);
   }
 
   #chapter-content[data-size="sm"] { font-size: 0.9375rem; line-height: 1.85; }
@@ -229,7 +226,7 @@ const totalNum = novel.chapters.length;
     try { saved = localStorage.getItem(KEY) || "md"; } catch {}
     applySize(saved);
 
-    // ---- 阅读进度条（动态创建在 body 下，避免 swup transform 影响） ----
+    // ---- 阅读进度条（动态创建在 body 下）----
     let bar = document.getElementById("reading-progress");
     if (!bar) {
       bar = document.createElement("div");
