@@ -1,77 +1,145 @@
 ---
 import type { GetStaticPaths } from "astro";
-import MainGridLayout from "../../layouts/MainGridLayout.astro";
-import { novels } from "../../data/novels";
 import { Icon } from "astro-icon/components";
+import { novels } from "../../data/novels";
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
 
 export const getStaticPaths = (() => {
-  return novels.map((n) => ({ params: { id: n.id } }));
+	return novels.map((n) => ({ params: { id: n.id } }));
 }) satisfies GetStaticPaths;
 
 const { id } = Astro.params;
 const novel = novels.find((n) => n.id === id);
 
 if (!novel) return Astro.redirect("/novels/");
+
+const firstChapter = novel.chapters.length > 0 ? novel.chapters[0] : null;
 ---
 
 <MainGridLayout title={novel.title} description={novel.description}>
-  <div class="onload-animation">
-    <!-- 封面 + 信息 -->
-    <div class="flex flex-col md:flex-row gap-6 mb-8">
-      <div class="w-40 md:w-48 flex-shrink-0">
-        <div class="aspect-[3/4] rounded-[var(--radius-large)] overflow-hidden bg-black/10 dark:bg-white/5">
+  <!-- 返回 -->
+  <a href="/novels/"
+     class="inline-flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors mb-6 onload-animation">
+    <Icon name="material-symbols:arrow-back-rounded" class="text-[1.1rem]" />
+    返回故事列表
+  </a>
+
+  <!-- ===== Hero 区 ===== -->
+  <div class="card-base rounded-[var(--radius-large)] p-6 md:p-8 mb-8 onload-animation">
+    <div class="flex flex-col sm:flex-row gap-6 md:gap-8">
+
+      <!-- 封面 -->
+      <div class="w-40 md:w-52 flex-shrink-0 mx-auto sm:mx-0">
+        <div class="aspect-[3/4] rounded-[var(--radius-large)] overflow-hidden
+                    bg-black/10 dark:bg-white/5 shadow-xl">
           <img src={novel.cover} alt={novel.title} class="w-full h-full object-cover" />
         </div>
       </div>
-      <div class="flex-1 min-w-0">
-        <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3">{novel.title}</h1>
-        <div class="flex flex-wrap items-center gap-3 text-sm text-75 mb-4">
-          <span>著作：{novel.author}</span>
-          <span>发布日期：{novel.publishedDate}</span>
-          <span>已发布平台：{novel.platform}</span>
-          <span>共 {novel.chapters.length} 章</span>
-        </div>
-        <p class="text-75 leading-relaxed whitespace-pre-line">{novel.intro.replace(/\\n/g, "\n")}</p>
 
+      <!-- 信息 -->
+      <div class="flex-1 min-w-0 flex flex-col">
+        <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3 leading-tight text-center sm:text-left">
+          {novel.title}
+        </h1>
+
+        <!-- 徽章 -->
+        <div class="flex flex-wrap items-center gap-2 mb-5 justify-center sm:justify-start">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                       bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
+            <Icon name="material-symbols:person-outline-rounded" class="text-[0.9rem]" />
+            {novel.author}
+          </span>
+          {novel.publishedDate && (
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                         bg-black/5 dark:bg-white/10 text-75 text-xs">
+              <Icon name="material-symbols:calendar-today-rounded" class="text-[0.9rem]" />
+              {novel.publishedDate}
+            </span>
+          )}
+          {novel.platform && (
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                         bg-black/5 dark:bg-white/10 text-75 text-xs">
+              <Icon name="material-symbols:where-to-vote-outline-rounded" class="text-[0.9rem]" />
+              {novel.platform}
+            </span>
+          )}
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                       bg-black/5 dark:bg-white/10 text-75 text-xs">
+            <Icon name="material-symbols:book-2-outline-rounded" class="text-[0.9rem]" />
+            共 {novel.chapters.length} 章
+          </span>
+        </div>
+
+        <!-- 简介 -->
+        <div class="mb-6 flex-1">
+          <p class="text-sm md:text-base text-75 leading-relaxed whitespace-pre-line">
+            {novel.intro.replace(/\\n/g, "\n")}
+          </p>
+        </div>
+
+        <!-- 开始阅读 -->
+        {firstChapter ? (
+          <a href={`/novels/${novel.id}/${firstChapter.slug}/`}
+             class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full
+                    bg-[var(--primary)] text-white text-sm font-semibold
+                    hover:opacity-90 active:scale-95 transition-all
+                    shadow-lg shadow-[var(--primary)]/20
+                    self-center sm:self-start">
+            <Icon name="material-symbols:auto-stories-rounded" class="text-[1.2rem]" />
+            开始阅读
+          </a>
+        ) : (
+          <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full
+                      bg-black/5 dark:bg-white/10 text-75 text-sm
+                      self-center sm:self-start">
+            <Icon name="material-symbols:hourglass-empty-rounded" class="text-[1.1rem]" />
+            章节创作中
+          </div>
+        )}
       </div>
     </div>
+  </div>
 
-    <!-- 章节列表 -->
-    <div class="card-base rounded-[var(--radius-large)] p-6">
-      <h2 class="text-lg font-bold text-90 mb-4 flex items-center gap-2">
+  <!-- ===== 章节目录 ===== -->
+  <div class="card-base rounded-[var(--radius-large)] p-6 md:p-8 onload-animation">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold text-90 flex items-center gap-2">
         <Icon name="material-symbols:list-alt-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
         目录
       </h2>
-      {novel.chapters.length > 0 ? (
-        <div class="divide-y divide-black/5 dark:divide-white/10">
-          {novel.chapters.map((ch, i) => (
-            <a
-              href={`/novels/${novel.id}/${ch.slug}/`}
-              class="flex items-center gap-3 py-3 px-2 rounded-lg
-                     hover:bg-[var(--primary)]/5 transition-colors group"
-            >
-              <span class="text-xs text-75/40 font-mono w-8 text-right flex-shrink-0">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span class="text-sm text-90 group-hover:text-[var(--primary)] transition-colors flex-1">
-                {ch.title}
-                {ch.date && <span class="text-xs text-black/30 dark:text-white/30 ml-2">{ch.date}</span>}
-              </span>
-              <Icon name="material-symbols:chevron-right-rounded" class="text-75/30 text-[1rem]" />
-            </a>
-          ))}
-        </div>
-      ) : (
-        <p class="text-sm text-75/50">暂无章节</p>
-      )}
+      <span class="text-xs text-75/60">共 {novel.chapters.length} 章</span>
     </div>
 
-    <!-- 返回 -->
-    <div class="mt-6">
-      <a href="/novels/" class="inline-flex items-center gap-1 text-sm text-[var(--primary)] hover:underline">
-        <Icon name="material-symbols:arrow-back-rounded" class="text-[1rem]" />
-        返回故事列表
-      </a>
-    </div>
+    {novel.chapters.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {novel.chapters.map((ch, i) => (
+          <a
+            href={`/novels/${novel.id}/${ch.slug}/`}
+            class="flex items-center gap-3 py-3 px-3 rounded-lg
+                   hover:bg-[var(--primary)]/5 active:scale-[0.99]
+                   transition-all group border border-transparent hover:border-[var(--primary)]/20"
+          >
+            <span class="w-7 h-7 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]
+                         text-xs font-semibold flex items-center justify-center flex-shrink-0">
+              {i + 1}
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate font-medium">
+                {ch.title}
+              </div>
+              {ch.date && (
+                <div class="text-[11px] text-75/50 mt-0.5">{ch.date}</div>
+              )}
+            </div>
+            <Icon name="material-symbols:chevron-right-rounded" class="text-75/30 text-[1rem] flex-shrink-0" />
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="py-10 text-center">
+        <Icon name="material-symbols:hourglass-empty-rounded" class="text-4xl text-75/30 mx-auto mb-3" />
+        <p class="text-sm text-75/50">章节还在创作中…</p>
+      </div>
+    )}
   </div>
 </MainGridLayout>

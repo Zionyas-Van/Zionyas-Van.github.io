@@ -35,93 +35,228 @@ const unescaped = ch.content
 	.replace(/\\"/g, '"')
 	.replace(/\\\\/g, "\\");
 const renderedContent = md.render(unescaped);
+
+const currentNum = chapterIndex + 1;
+const totalNum = novel.chapters.length;
 ---
 
 <MainGridLayout title={`${ch.title} - ${novel.title}`} description={novel.description}>
-  <div class="onload-animation">
-    <!-- 面包屑导航 -->
-    <div class="flex items-center gap-2 text-sm text-black/40 dark:text-white/40 mb-6 flex-wrap">
-      <a href="/novels/" class="hover:text-[var(--primary)] transition-colors">那些故事</a>
-      <Icon name="material-symbols:chevron-right-rounded" class="text-[0.75rem]" />
-      <a href={`/novels/${novel.id}/`} class="hover:text-[var(--primary)] transition-colors">{novel.title}</a>
-      <Icon name="material-symbols:chevron-right-rounded" class="text-[0.75rem]" />
-      <span class="text-75">{ch.title}</span>
+
+  <!-- ===== Sticky 阅读工具栏 ===== -->
+  <div class="sticky top-16 z-30 -mx-4 px-4 py-2 mb-8
+              bg-[var(--card-bg)]/85 backdrop-blur-md
+              border-b border-black/5 dark:border-white/10">
+    <div class="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+      <!-- 左：返回目录 -->
+      <a href={`/novels/${novel.id}/`}
+         class="flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors flex-shrink-0 px-2 py-1">
+        <Icon name="material-symbols:format-list-bulleted-rounded" class="text-[1.15rem]" />
+        <span class="hidden sm:inline">目录</span>
+      </a>
+
+      <!-- 中：章节进度 -->
+      <div class="text-xs text-75/70 truncate text-center flex-1 min-w-0">
+        <span class="hidden md:inline">{novel.title} · </span>
+        <span>{currentNum} / {totalNum}</span>
+      </div>
+
+      <!-- 右：字号切换 -->
+      <div class="flex items-center gap-0.5 flex-shrink-0" id="font-size-group">
+        <button type="button" data-size="sm" title="小字号"
+          class="font-size-btn w-8 h-8 rounded-md text-xs font-semibold transition-colors">A</button>
+        <button type="button" data-size="md" title="中字号"
+          class="font-size-btn w-8 h-8 rounded-md text-sm font-semibold transition-colors">A</button>
+        <button type="button" data-size="lg" title="大字号"
+          class="font-size-btn w-8 h-8 rounded-md text-base font-semibold transition-colors">A</button>
+      </div>
     </div>
+  </div>
+
+  <!-- ===== 阅读主体（居中窄栏） ===== -->
+  <article class="mx-auto max-w-3xl onload-animation">
 
     <!-- 章节标题 -->
-    <h1 class="text-xl md:text-2xl font-bold text-90 mb-2">{ch.title}</h1>
-    {ch.date && <p class="text-sm text-black/30 dark:text-white/30 mb-8">发布于 {ch.date}</p>}
-    {!ch.date && <div class="mb-8"></div>}
+    <header class="mb-10 text-center">
+      <div class="text-xs text-75/50 mb-2 tracking-widest">第 {currentNum} 章</div>
+      <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3 leading-snug">{ch.title}</h1>
+      {ch.date && <p class="text-xs text-75/40">发布于 {ch.date}</p>}
+    </header>
 
     <!-- 正文 -->
-    <div class="card-base rounded-[var(--radius-large)] p-6 md:p-10 mb-8">
-      <article class="prose-a:text-[var(--primary)] text-90 text-base md:text-lg leading-loose tracking-wide [&>p]:indent-8 [&>p>img]:max-w-full [&>p>img]:rounded-lg [&>p>img]:mx-auto" style="word-spacing: 0.05em; line-height: 2;" set:html={renderedContent} />
+    <div id="chapter-content"
+         class="novel-content text-90
+                [&>p]:mb-5
+                [&>p>img]:max-w-full [&>p>img]:rounded-lg [&>p>img]:mx-auto [&>p>img]:my-6
+                [&>h2]:text-xl [&>h2]:md:text-2xl [&>h2]:font-bold [&>h2]:mt-10 [&>h2]:mb-4
+                [&>h3]:text-lg [&>h3]:md:text-xl [&>h3]:font-semibold [&>h3]:mt-8 [&>h3]:mb-3
+                [&>blockquote]:border-l-4 [&>blockquote]:border-[var(--primary)]/40 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-75 [&>blockquote]:my-6
+                [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5
+                [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-5
+                [&>li]:mb-2
+                [&>hr]:my-8 [&>hr]:border-black/10 dark:[&>hr]:border-white/10"
+         style="word-spacing: 0.05em;"
+         set:html={renderedContent}>
     </div>
 
-    <!-- 上下章导航 -->
-    <div class="flex justify-between gap-4">
-      {prevChapter ? (
-        <a
-          href={`/novels/${novel.id}/${prevChapter.slug}/`}
-          class="card-base rounded-[var(--radius-large)] px-5 py-3 flex items-center gap-2
-                 hover:bg-[var(--primary)]/5 transition-colors group"
-        >
-          <Icon name="material-symbols:chevron-left-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-          <div class="text-left">
-            <div class="text-xs text-75/40">上一章</div>
-            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors">{prevChapter.title}</div>
-          </div>
-        </a>
-      ) : <div />}
-      {nextChapter ? (
-        <a
-          href={`/novels/${novel.id}/${nextChapter.slug}/`}
-          class="card-base rounded-[var(--radius-large)] px-5 py-3 flex items-center gap-2
-                 hover:bg-[var(--primary)]/5 transition-colors group text-right"
-        >
-          <div>
-            <div class="text-xs text-75/40">下一章</div>
-            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors">{nextChapter.title}</div>
-          </div>
-          <Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-        </a>
-      ) : <div />}
+    <!-- 章末装饰 -->
+    <div class="flex items-center justify-center gap-4 my-12 text-75/30">
+      <div class="h-px w-16 bg-current"></div>
+      <Icon name="material-symbols:bookmark-outline-rounded" class="text-[1rem]" />
+      <div class="h-px w-16 bg-current"></div>
     </div>
 
+    <p class="text-center text-xs text-75/40 mb-10 tracking-widest">— 本章完 —</p>
 
-    <!-- 底部上下章 -->
-    <div class="flex justify-center gap-4 mt-8">
+    <!-- 上/下章导航 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
       {prevChapter ? (
-        <a
-          href={`/novels/${novel.id}/${prevChapter.slug}/`}
-          class="card-base rounded-[var(--radius-large)] px-8 py-4 flex items-center gap-3
-                 hover:bg-[var(--primary)]/10 transition-colors group"
-        >
-          <Icon name="material-symbols:chevron-left-rounded" class="text-[var(--primary)] text-[1.5rem]" />
-          <div class="text-left">
-            <div class="text-xs text-black/30 dark:text-white/30">上一章</div>
-            <div class="text-sm font-semibold text-90 group-hover:text-[var(--primary)] transition-colors">{prevChapter.title}</div>
+        <a href={`/novels/${novel.id}/${prevChapter.slug}/`}
+           class="card-base rounded-[var(--radius-large)] px-5 py-4
+                  hover:bg-[var(--primary)]/5 transition-colors group
+                  flex items-center gap-3 min-w-0">
+          <Icon name="material-symbols:chevron-left-rounded" class="text-[var(--primary)] text-[1.5rem] flex-shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="text-xs text-75/40 mb-0.5">上一章</div>
+            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+              {prevChapter.title}
+            </div>
           </div>
         </a>
       ) : (
-        <div class="px-8 py-4 text-sm text-black/20 dark:text-white/20">已是第一章</div>
+        <div class="card-base rounded-[var(--radius-large)] px-5 py-4
+                    flex items-center gap-3 opacity-40">
+          <Icon name="material-symbols:block-rounded" class="text-[1.25rem] flex-shrink-0" />
+          <div class="text-sm text-75">已是第一章</div>
+        </div>
       )}
+
       {nextChapter ? (
-        <a
-          href={`/novels/${novel.id}/${nextChapter.slug}/`}
-          class="card-base rounded-[var(--radius-large)] px-8 py-4 flex items-center gap-3
-                 hover:bg-[var(--primary)]/10 transition-colors group"
-        >
-          <div class="text-right">
-            <div class="text-xs text-black/30 dark:text-white/30">下一章</div>
-            <div class="text-sm font-semibold text-90 group-hover:text-[var(--primary)] transition-colors">{nextChapter.title}</div>
+        <a href={`/novels/${novel.id}/${nextChapter.slug}/`}
+           class="card-base rounded-[var(--radius-large)] px-5 py-4
+                  hover:bg-[var(--primary)]/5 transition-colors group
+                  flex items-center gap-3 min-w-0 md:flex-row-reverse md:text-right">
+          <Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-[1.5rem] flex-shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="text-xs text-75/40 mb-0.5">下一章</div>
+            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+              {nextChapter.title}
+            </div>
           </div>
-          <Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-[1.5rem]" />
         </a>
       ) : (
-        <div class="px-8 py-4 text-sm text-black/20 dark:text-white/20">已是最后一章</div>
+        <div class="card-base rounded-[var(--radius-large)] px-5 py-4
+                    flex items-center gap-3 opacity-40">
+          <Icon name="material-symbols:check-circle-outline-rounded" class="text-[1.25rem] flex-shrink-0" />
+          <div class="text-sm text-75">已读完最后一章</div>
+        </div>
       )}
     </div>
 
-  </div>
+    <!-- 返回目录大按钮 -->
+    <div class="text-center mb-8">
+      <a href={`/novels/${novel.id}/`}
+         class="inline-flex items-center gap-2 px-6 py-3 rounded-full
+                bg-[var(--primary)] text-white text-sm font-semibold
+                hover:opacity-90 active:scale-95 transition-all
+                shadow-lg shadow-[var(--primary)]/20">
+        <Icon name="material-symbols:menu-book-rounded" class="text-[1.15rem]" />
+        返回目录
+      </a>
+    </div>
+
+  </article>
 </MainGridLayout>
+
+<style>
+  /* 默认字号（中）—— 会被脚本覆盖 */
+  #chapter-content {
+    font-size: 1.0625rem;
+    line-height: 2;
+    letter-spacing: 0.01em;
+    color: var(--content-text, inherit);
+  }
+
+  #chapter-content[data-size="sm"] { font-size: 0.9375rem; line-height: 1.85; }
+  #chapter-content[data-size="md"] { font-size: 1.0625rem; line-height: 2; }
+  #chapter-content[data-size="lg"] { font-size: 1.1875rem; line-height: 2.15; }
+
+  @media (min-width: 768px) {
+    #chapter-content[data-size="sm"] { font-size: 1rem;     line-height: 1.9;  }
+    #chapter-content[data-size="md"] { font-size: 1.125rem; line-height: 2;    }
+    #chapter-content[data-size="lg"] { font-size: 1.25rem;  line-height: 2.15; }
+  }
+
+  /* 字号按钮 */
+  .font-size-btn {
+    color: var(--content-meta, #9ca3af);
+    background: transparent;
+    cursor: pointer;
+  }
+  .font-size-btn:hover {
+    color: var(--primary);
+    background: rgba(124,58,237,0.08);
+  }
+  .font-size-btn[data-active="true"] {
+    color: var(--primary) !important;
+    background: rgba(124,58,237,0.08) !important;
+  }
+</style>
+
+<script>
+  function initReader() {
+    const content = document.getElementById("chapter-content");
+    const group = document.getElementById("font-size-group");
+    if (!content || !group) return;
+
+    // ---- 字号切换 ----
+    const KEY = "novel-font-size";
+    const applySize = (size) => {
+      content.dataset.size = size;
+      group.querySelectorAll(".font-size-btn").forEach((b) => {
+        b.dataset.active = b.dataset.size === size ? "true" : "false";
+      });
+      try { localStorage.setItem(KEY, size); } catch {}
+    };
+
+    if (group.dataset.bound !== "1") {
+      group.dataset.bound = "1";
+      group.querySelectorAll(".font-size-btn").forEach((btn) => {
+        btn.addEventListener("click", () => applySize(btn.dataset.size || "md"));
+      });
+    }
+
+    let saved = "md";
+    try { saved = localStorage.getItem(KEY) || "md"; } catch {}
+    applySize(saved);
+
+    // ---- 阅读进度条（动态创建在 body 下，避免 swup transform 影响） ----
+    let bar = document.getElementById("reading-progress");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "reading-progress";
+      bar.style.cssText =
+        "position:fixed;top:0;left:0;height:2px;width:0;z-index:60;" +
+        "background:var(--primary);transition:width .12s linear;pointer-events:none;";
+      document.body.appendChild(bar);
+    }
+
+    const updateProgress = () => {
+      const h = document.documentElement;
+      const top = h.scrollTop || document.body.scrollTop;
+      const total = h.scrollHeight - h.clientHeight;
+      const pct = total > 0 ? (top / total) * 100 : 0;
+      bar.style.width = pct + "%";
+    };
+
+    if (window.__readerProgressBound !== true) {
+      window.__readerProgressBound = true;
+      window.addEventListener("scroll", updateProgress, { passive: true });
+    }
+    updateProgress();
+  }
+
+  initReader();
+  ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
+    document.addEventListener(evt, initReader);
+  });
+</script>
