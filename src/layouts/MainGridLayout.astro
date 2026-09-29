@@ -124,4 +124,34 @@ const mainPanelTop = siteConfig.banner.enable
         {!siteConfig.toc.enable && <div id="toc"></div>}
     </div>
 </div>
+
+<script>
+  // ====================================================
+  // 阅读模式：
+  // ====================================================
+  function toggleReaderMode() {
+    const isReader = document.getElementById("reader-mode-marker") !== null;
+    const mainGrid = document.getElementById("main-grid");
+    if (!mainGrid) return;
+
+    const sidebar =
+      document.getElementById("main-sidebar") ||
+      mainGrid.querySelector(':scope > [class*="lg:max-w-"]') ||
+      mainGrid.querySelector(":scope > aside");
+    if (!sidebar) return;
+
+    if (isReader) {
+      sidebar.style.display = "none";
+      mainGrid.style.gridTemplateColumns = "1fr";
+    } else {
+      sidebar.style.display = "";
+      mainGrid.style.gridTemplateColumns = "";
+    }
+  }
+
+  toggleReaderMode();
+  ["page:view", "swup:page:view", "astro:page-load"].forEach((evt) => {
+    document.addEventListener(evt, toggleReaderMode);
+  });
+</script>
 </Layout>

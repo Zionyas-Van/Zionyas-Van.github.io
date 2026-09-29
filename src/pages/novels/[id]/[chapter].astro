@@ -42,10 +42,14 @@ const totalNum = novel.chapters.length;
 
 <MainGridLayout title={`${ch.title} - ${novel.title}`} description={novel.description}>
 
+  <!-- 阅读模式标记：MainGridLayout 的脚本读它并隐藏侧边栏 -->
+  <div id="reader-mode-marker" style="display:none" aria-hidden="true"></div>
+
   <!-- ===== Sticky 阅读工具栏 ===== -->
-  <div class="sticky top-16 z-30 -mx-4 px-4 py-2 mb-8
-              bg-[var(--card-bg)]/85 backdrop-blur-md
-              border-b border-black/5 dark:border-white/10">
+  <div class="sticky top-20 z-30 -mx-4 px-4 py-3 mb-12
+              bg-[var(--card-bg)]/95 backdrop-blur-lg
+              border-b border-black/5 dark:border-white/10
+              shadow-sm">
     <div class="flex items-center justify-between gap-3 max-w-3xl mx-auto">
       <!-- 左：返回目录 -->
       <a href={`/novels/${novel.id}/`}
@@ -72,8 +76,8 @@ const totalNum = novel.chapters.length;
     </div>
   </div>
 
-  <!-- ===== 阅读主体（居中窄栏） ===== -->
-  <article class="mx-auto max-w-3xl onload-animation">
+  <!-- ===== 阅读主体（居中窄栏 + 移动端留内边距） ===== -->
+  <article class="mx-auto max-w-3xl px-3 sm:px-4 md:px-0 onload-animation">
 
     <!-- 章节标题 -->
     <header class="mb-10 text-center">
@@ -166,21 +170,22 @@ const totalNum = novel.chapters.length;
 </MainGridLayout>
 
 <style>
-  /* 默认字号（中）—— 会被脚本覆盖 */
+  /* 字号通过 class 切换（不依赖属性选择器，兼容 scoped style） */
   #chapter-content {
-    font-size: 1.0625rem;
+    font-size: 1.125rem;
     line-height: 2;
     letter-spacing: 0.01em;
   }
+  #chapter-content.size-sm { font-size: 1rem;     line-height: 1.9;  }
+  #chapter-content.size-md { font-size: 1.125rem; line-height: 2;    }
+  #chapter-content.size-lg { font-size: 1.25rem;  line-height: 2.15; }
 
-  #chapter-content[data-size="sm"] { font-size: 0.9375rem; line-height: 1.85; }
-  #chapter-content[data-size="md"] { font-size: 1.0625rem; line-height: 2; }
-  #chapter-content[data-size="lg"] { font-size: 1.1875rem; line-height: 2.15; }
-
-  @media (min-width: 768px) {
-    #chapter-content[data-size="sm"] { font-size: 1rem;     line-height: 1.9;  }
-    #chapter-content[data-size="md"] { font-size: 1.125rem; line-height: 2;    }
-    #chapter-content[data-size="lg"] { font-size: 1.25rem;  line-height: 2.15; }
+  /* 移动端字号略小 */
+  @media (max-width: 767px) {
+    #chapter-content         { font-size: 1rem;      line-height: 1.9;  }
+    #chapter-content.size-sm { font-size: 0.9375rem; line-height: 1.85; }
+    #chapter-content.size-md { font-size: 1rem;      line-height: 1.9;  }
+    #chapter-content.size-lg { font-size: 1.0625rem; line-height: 2;    }
   }
 
   /* 字号按钮 */
@@ -191,11 +196,11 @@ const totalNum = novel.chapters.length;
   }
   .font-size-btn:hover {
     color: var(--primary);
-    background: rgba(124,58,237,0.08);
+    background: rgba(124, 58, 237, 0.08);
   }
   .font-size-btn[data-active="true"] {
     color: var(--primary) !important;
-    background: rgba(124,58,237,0.08) !important;
+    background: rgba(124, 58, 237, 0.08) !important;
   }
 </style>
 
@@ -205,28 +210,34 @@ const totalNum = novel.chapters.length;
     const group = document.getElementById("font-size-group");
     if (!content || !group) return;
 
-    // ---- 字号切换 ----
     const KEY = "novel-font-size";
     const applySize = (size) => {
-      content.dataset.size = size;
+      // 用 class 控制字号（最稳，不受 scoped style 影响）
+      content.classList.remove("size-sm", "size-md", "size-lg");
+      content.classList.add("size-" + size);
+      // 按钮高亮
       group.querySelectorAll(".font-size-btn").forEach((b) => {
         b.dataset.active = b.dataset.size === size ? "true" : "false";
       });
       try { localStorage.setItem(KEY, size); } catch {}
     };
 
+    // 事件绑定（每次切页后新 DOM 都是新的，需要重新绑）
     if (group.dataset.bound !== "1") {
       group.dataset.bound = "1";
       group.querySelectorAll(".font-size-btn").forEach((btn) => {
-        btn.addEventListener("click", () => applySize(btn.dataset.size || "md"));
+        btn.addEventListener("click", () => {
+          applySize(btn.dataset.size || "md");
+        });
       });
     }
 
+    // 恢复上次字号
     let saved = "md";
     try { saved = localStorage.getItem(KEY) || "md"; } catch {}
     applySize(saved);
 
-    // ---- 阅读进度条（动态创建在 body 下）----
+    // ---- 阅读进度条 ----
     let bar = document.getElementById("reading-progress");
     if (!bar) {
       bar = document.createElement("div");
