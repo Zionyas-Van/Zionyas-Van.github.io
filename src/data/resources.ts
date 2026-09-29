@@ -160,5 +160,12 @@ export const resources: Resource[] = [
     url: "https://www.2t58.com/",
     category: "网站",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r5o3nnp95akfcDIYPAIDyAqayAGxzDdU0Dqe=.png",
+  },
+  {
+    id: "res-1790694272857",
+    name: "百度贴吧",
+    description: "中文论坛。",
+    url: "https://tieba.baidu.com/",
+    category: "网站",
   }
 ];

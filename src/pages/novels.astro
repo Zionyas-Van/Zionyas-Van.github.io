@@ -48,7 +48,7 @@ const novelsJson = JSON.stringify(novelsMeta).replace(/</g, "\\u003c");
             <Icon name="material-symbols:today-rounded" class="text-[var(--primary)] text-[1.25rem]" />
             今日推荐
           </h2>
-          <span class="text-xs text-75/60">每天换一批</span>
+          <span class="text-xs text-75/60">定期更换</span>
         </div>
         <div id="list-today" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
       </section>
@@ -255,7 +255,7 @@ const novelsJson = JSON.stringify(novelsMeta).replace(/</g, "\\u003c");
     // ===== 数量文案 =====
     const countLine = document.getElementById("novel-count-line");
     if (countLine) {
-      countLine.textContent = `共 ${shuffled.length} 部作品 · 每天换一批推荐`;
+      countLine.textContent = `共 ${shuffled.length} 部作品`;
     }
   }
 
