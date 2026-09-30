@@ -54,12 +54,12 @@ export const navBarConfig: NavBarConfig = {
 			url: "/posts/",
 		},
 		{
-			name: "游戏",
-			url: "/plays/",
+			name: "应用",
+			url: "/appstore/",
 		},
 		{
-			name: "应用",
-			url: "/things/",
+			name: "阅读",
+			url: "/novels/",
 		},
 		{
 			name: "视频",

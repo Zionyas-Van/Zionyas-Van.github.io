@@ -405,7 +405,7 @@ const mainPanelTop = siteConfig.banner.enable
       if (tags.length === 0) return "";
       const all = ["全部", ...tags];
       return `
-        <div class="flex gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
+                <div class="flex flex-wrap md:flex-nowrap gap-2 mb-5 md:overflow-x-auto md:pb-1 md:-mx-1 md:px-1">
           ${all.map((t) => {
             const isActive = (t === "全部" && !state.tag) || t === state.tag;
             return `
