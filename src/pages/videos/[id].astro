@@ -3,6 +3,7 @@ import type { GetStaticPaths } from "astro";
 import { Icon } from "astro-icon/components";
 import { videos } from "../../data/videos";
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import Comments from "../../components/Comments.astro";
 
 export const getStaticPaths = (() => {
 	return videos.map((v) => ({
@@ -140,4 +141,8 @@ const biliUrl = `https://www.bilibili.com/video/${video.bvid}/`;
     </aside>
 
   </div>
+
+  <!-- ==================== 评论 ==================== -->
+  <Comments serverURL="https://waline-on-worker.zionyasvan.workers.dev" />
+
 </MainGridLayout>

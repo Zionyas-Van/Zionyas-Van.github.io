@@ -4,6 +4,7 @@ import { Icon } from "astro-icon/components";
 import MarkdownIt from "markdown-it";
 import { novels } from "../../../data/novels";
 import MainGridLayout from "../../../layouts/MainGridLayout.astro";
+import Comments from "@components/Comments.astro";
 
 export const getStaticPaths = (() => {
 	const paths: { params: { id: string; chapter: string } }[] = [];
@@ -171,6 +172,11 @@ const totalNum = novel.chapters.length;
     </div>
 
   </article>
+
+  <!-- ==================== 评论 ==================== -->
+  <Comments serverURL="https://waline-on-worker.zionyasvan.workers.dev" />
+
+
 </MainGridLayout>
 
 <!-- 全局样式（非 scoped，让 fixed 定位不被作用域干扰） -->

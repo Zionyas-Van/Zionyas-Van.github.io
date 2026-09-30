@@ -1,0 +1,72 @@
+---
+import "@waline/client/waline.css";
+
+interface Props {
+	serverURL: string;
+}
+const { serverURL } = Astro.props;
+---
+
+<div class="waline-wrapper" data-waline-server={serverURL}>
+  <h2 class="waline-title">
+    <span>💬</span> 评论
+  </h2>
+  <div id="waline-comments"></div>
+</div>
+
+<style>
+  .waline-wrapper {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(128, 128, 128, 0.1);
+  }
+  .waline-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+</style>
+
+<script>
+  import { init } from "@waline/client";
+
+  let walineInstance = null;
+
+  function initWaline() {
+    const wrapper = document.querySelector(".waline-wrapper");
+    const container = document.getElementById("waline-comments");
+    if (!wrapper || !container) return;
+
+    const serverURL = wrapper.dataset.walineServer;
+    if (!serverURL) return;
+
+    if (walineInstance && typeof walineInstance.destroy === "function") {
+      try { walineInstance.destroy(); } catch (e) {}
+      walineInstance = null;
+    }
+    container.innerHTML = "";
+
+    walineInstance = init({
+      el: "#waline-comments",
+      serverURL: serverURL,
+      lang: "zh-CN",
+      dark: "html.dark",
+      path: location.pathname,
+      meta: ["nick", "mail", "link"],
+      requiredMeta: ["nick"],
+      imageUploader: false,
+      search: false,
+      reaction: false,
+    });
+  }
+
+  document.addEventListener("astro:page-load", initWaline);
+  if (document.readyState !== "loading") {
+    initWaline();
+  } else {
+    document.addEventListener("DOMContentLoaded", initWaline);
+  }
+</script>
