@@ -22,14 +22,14 @@ const hasFeatured = featuredVideos.length > 0;
                  class="absolute inset-0 w-full h-full object-cover
                         transition duration-500 group-hover:scale-105" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-5 md:p-7 text-white">
+            <div class="absolute bottom-0 left-0 right-0 p-4 md:p-7 text-white">
               <div class="text-[11px] font-semibold tracking-[0.2em] mb-2 opacity-80">
                 精选视频
               </div>
-              <h2 class="text-base md:text-2xl font-bold mb-2 line-clamp-2 leading-snug">
+              <h2 class="text-sm md:text-2xl font-bold mb-2 line-clamp-2 leading-snug">
                 {v.title}
               </h2>
-              <p class="text-xs md:text-sm opacity-85 line-clamp-1">
+              <p class="text-xs md:text-sm opacity-85 line-clamp-1 hidden md:block">
                 {v.description}
               </p>
             </div>
@@ -43,30 +43,28 @@ const hasFeatured = featuredVideos.length > 0;
   {videos.length > 0 ? (
     <div class="onload-animation">
       <h2 class="text-lg font-bold text-90 mb-4 px-1">全部视频</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {videos.map((v) => (
           <a href={`/videos/${v.id}/`}
-             class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                    hover:scale-[1.01] active:scale-100 transition-transform duration-200">
+             class="card-base group rounded-xl overflow-hidden
+                    hover:scale-[1.02] active:scale-100 transition-transform duration-200">
             <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5 relative">
               <img src={v.cover} alt={v.title}
                    class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
                    loading="lazy" />
               {v.featured && (
-                <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full
+                <div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md
                             bg-[var(--primary)] text-white text-[10px] font-semibold
-                            shadow-lg">
+                            shadow-md">
                   精选
                 </div>
               )}
             </div>
-            <div class="p-4">
-              <h3 class="font-semibold text-sm text-90 group-hover:text-[var(--primary)] transition-colors line-clamp-2 leading-relaxed">
+            <div class="p-2.5 md:p-3">
+              <h3 class="font-medium text-xs md:text-sm text-90 leading-snug line-clamp-2
+                         group-hover:text-[var(--primary)] transition-colors">
                 {v.title}
               </h3>
-              <p class="text-xs text-75 mt-2 line-clamp-2 leading-relaxed">
-                {v.description}
-              </p>
             </div>
           </a>
         ))}
