@@ -2,10 +2,6 @@
 import type { GetStaticPaths } from "astro";
 import { Icon } from "astro-icon/components";
 import { projects } from "../../data/projects";
-// ============================================
-// 作品详情页
-// URL: /projects/作品id/
-// ============================================
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 
 export const getStaticPaths = (() => {
@@ -21,114 +17,191 @@ if (!project) {
 	return Astro.redirect("/404");
 }
 
-const typeLabel = project.type === "game" ? "🎮 游戏" : "💻 软件";
-const typeColorClass =
-	project.type === "game"
-		? "bg-green-500/10 text-green-600 dark:text-green-400"
-		: "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+const typeLabel = project.type === "game" ? "游戏" : "应用";
+
+// 相关推荐：同类型（最多 6 个）
+const related = projects
+	.filter((p) => p.id !== project.id && p.type === project.type)
+	.slice(0, 6);
+
+// 你可能还喜欢：另一类型（最多 4 个）
+const others = projects
+	.filter((p) => p.id !== project.id && p.type !== project.type)
+	.slice(0, 4);
 ---
 
 <MainGridLayout title={project.title} description={project.description}>
-  <!-- ===== 顶部横幅区（Steam 风格） ===== -->
+
+  <!-- ==================== 顶部 Hero ==================== -->
+  <div class="onload-animation mb-6">
+    <div class="rounded-[var(--radius-large)] p-6 md:p-8 relative overflow-hidden"
+         style="background: linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent) 0%, color-mix(in oklab, var(--primary) 6%, transparent) 100%);">
+      <div class="flex flex-col md:flex-row gap-5 md:items-center">
+        <!-- 方形图标 -->
+        <div class="w-24 h-24 md:w-32 md:h-32 rounded-[1.5rem] overflow-hidden flex-shrink-0
+                    bg-white shadow-lg ring-1 ring-black/5 dark:ring-white/10">
+          <img src={project.cover} alt={project.title}
+               class="w-full h-full object-cover" />
+        </div>
+
+        <!-- 信息 -->
+        <div class="flex-1 min-w-0">
+          <h1 class="text-2xl md:text-3xl font-bold text-90 leading-tight">
+            {project.title}
+          </h1>
+          <p class="text-sm text-75 mt-1.5 line-clamp-2">
+            {project.description}
+          </p>
+
+          <!-- 下载按钮组 -->
+          {project.downloadLinks.length > 0 ? (
+            <div class="flex flex-wrap gap-2 mt-4">
+              {project.downloadLinks.map((link, i) => (
+                <a href={link.url} target="_blank" rel="noopener noreferrer"
+                   class:list={[
+                     "inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold transition-all active:scale-95",
+                     i === 0
+                       ? "bg-[var(--primary)] text-white hover:opacity-90 shadow-lg shadow-[var(--primary)]/20"
+                       : "bg-[var(--card-bg)] text-[var(--primary)] border border-[var(--primary)]/30 hover:bg-[var(--primary)]/5"
+                   ]}>
+                  {link.icon && <Icon name={link.icon} class="text-[1.1rem]" />}
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div class="mt-4 inline-flex items-center px-5 py-2 rounded-full text-sm
+                        bg-black/5 dark:bg-white/5 text-75/70">
+              暂未发布
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 横向信息条 ==================== -->
   <div class="onload-animation mb-8">
-    <!-- 封面大图 -->
-    <div class="aspect-video w-full rounded-[var(--radius-large)] overflow-hidden bg-black/10 dark:bg-white/5 mb-6">
-      <img
-        src={project.cover}
-        alt={project.title}
-        class="w-full h-full object-cover"
-      />
-    </div>
-
-    <!-- 标题 + 基本信息 -->
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-      <div class="flex-1">
-        <div class="flex flex-wrap items-center gap-2 mb-2">
-          <span class="text-xs font-medium px-2.5 py-1 rounded-full {typeColorClass}">
-            {typeLabel}
-          </span>
-          <span class="text-xs px-2.5 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-            {project.status}
-          </span>
-          <span class="text-xs px-2.5 py-1 rounded-full bg-gray-500/10 text-gray-600 dark:text-gray-400">
-            {project.platform}
-          </span>
-        </div>
-        <h1 class="text-2xl md:text-3xl font-bold text-90">{project.title}</h1>
-        <p class="text-75 mt-2 text-sm leading-relaxed">{project.description}</p>
+    <div class="card-base rounded-[var(--radius-large)] p-5
+                grid grid-cols-3 gap-4 text-center divide-x divide-black/5 dark:divide-white/10">
+      <div>
+        <div class="text-[11px] text-75/60 uppercase tracking-wider mb-1">类别</div>
+        <div class="text-sm font-semibold text-90">{typeLabel}</div>
       </div>
-
-      <!-- 下载按钮区 -->
-      {project.downloadLinks.length > 0 && (
-        <div class="flex flex-wrap gap-3 md:min-w-[240px] md:justify-end">
-          {project.downloadLinks.map((link) => (
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-regular rounded-[var(--radius-large)] px-6 py-3 font-bold
-                     bg-[var(--primary)] text-white hover:opacity-90 active:scale-95
-                     transition-all duration-150 flex items-center gap-2"
-            >
-              {link.icon && <Icon name={link.icon} class="text-[1.25rem]" />}
-              {link.label}
-              <Icon name="material-symbols:arrow-outward-rounded" class="text-[1rem]" />
-            </a>
-          ))}
-        </div>
-      )}
+      <div>
+        <div class="text-[11px] text-75/60 uppercase tracking-wider mb-1">平台</div>
+        <div class="text-sm font-semibold text-90">{project.platform || "—"}</div>
+      </div>
+      <div>
+        <div class="text-[11px] text-75/60 uppercase tracking-wider mb-1">状态</div>
+        <div class="text-sm font-semibold text-90">{project.status || "—"}</div>
+      </div>
     </div>
   </div>
 
-  <!-- ===== 标签区 ===== -->
-  {project.tags.length > 0 && (
-    <div class="card-base rounded-[var(--radius-large)] p-5 mb-4 onload-animation">
-      <div class="flex flex-wrap gap-2">
-        {project.tags.map((tag) => (
-          <span class="text-sm px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] font-medium">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </div>
-  )}
-
-  <!-- ===== 详细介绍区 ===== -->
-  <div class="card-base rounded-[var(--radius-large)] p-6 onload-animation">
-    <h2 class="text-lg font-bold text-90 mb-4 flex items-center gap-2">
-      <Icon name="material-symbols:description-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-      关于本作品
-    </h2>
-    <div class="text-75 leading-relaxed whitespace-pre-line text-sm">
-      {project.longDescription}
-    </div>
-  </div>
-
-  <!-- ===== 截图区 ===== -->
+  <!-- ==================== 截图（横滑） ==================== -->
   {project.screenshots.length > 0 && (
-    <div class="card-base rounded-[var(--radius-large)] p-6 mt-4 onload-animation">
-      <h2 class="text-lg font-bold text-90 mb-4 flex items-center gap-2">
-        <Icon name="material-symbols:screenshot-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-        截图
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="onload-animation mb-8">
+      <h2 class="text-lg font-bold text-90 mb-3 px-1">预览</h2>
+      <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
         {project.screenshots.map((src) => (
-          <div class="aspect-video rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
-            <img src={src} alt="截图" class="w-full h-full object-cover hover:scale-105 transition duration-300" loading="lazy" />
+          <div class="flex-shrink-0 w-72 md:w-96 aspect-video rounded-2xl overflow-hidden
+                      bg-black/10 dark:bg-white/5 snap-start
+                      ring-1 ring-black/5 dark:ring-white/10">
+            <img src={src} alt="截图"
+                 class="w-full h-full object-cover hover:scale-105 transition duration-300"
+                 loading="lazy" />
           </div>
         ))}
       </div>
     </div>
   )}
 
-  <!-- ===== 底部返回链接 ===== -->
-  <div class="mt-6 onload-animation">
-    <a
-      href={project.type === "game" ? "/plays/" : "/things/"}
-      class="inline-flex items-center gap-1 text-sm text-[var(--primary)] hover:underline"
-    >
+  <!-- ==================== 简介 ==================== -->
+  <div class="onload-animation mb-8">
+    <h2 class="text-lg font-bold text-90 mb-3 px-1">简介</h2>
+    <div class="card-base rounded-[var(--radius-large)] p-5">
+      <p class="text-sm text-75 leading-relaxed whitespace-pre-line">
+        {project.longDescription}
+      </p>
+
+      {project.tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mt-5 pt-5 border-t border-black/5 dark:border-white/10">
+          {project.tags.map((tag) => (
+            <span class="text-xs px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] font-medium">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- ==================== 相关推荐（同类型） ==================== -->
+  {related.length > 0 && (
+    <div class="onload-animation mb-8">
+      <h2 class="text-lg font-bold text-90 mb-3 px-1">
+        更多{typeLabel === "游戏" ? "游戏" : "应用"}
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {related.map((item) => (
+          <a href={`/projects/${item.id}/`}
+             class="card-base group rounded-2xl p-3 flex items-center gap-3
+                    hover:bg-[var(--primary)]/5 active:scale-[0.98] transition-all">
+            <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
+              <img src={item.cover} alt={item.title}
+                   class="w-full h-full object-cover" loading="lazy" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-semibold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                {item.title}
+              </h3>
+              <p class="text-xs text-75/70 mt-0.5 truncate">{item.description}</p>
+            </div>
+            <span class="flex-shrink-0 px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
+              查看
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- ==================== 你可能还喜欢（不同类型） ==================== -->
+  {others.length > 0 && (
+    <div class="onload-animation mb-8">
+      <h2 class="text-lg font-bold text-90 mb-3 px-1">你可能还喜欢</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {others.map((item) => (
+          <a href={`/projects/${item.id}/`}
+             class="card-base group rounded-2xl p-3 flex items-center gap-3
+                    hover:bg-[var(--primary)]/5 active:scale-[0.98] transition-all">
+            <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
+              <img src={item.cover} alt={item.title}
+                   class="w-full h-full object-cover" loading="lazy" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-semibold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                {item.title}
+              </h3>
+              <p class="text-xs text-75/70 mt-0.5 truncate">{item.description}</p>
+            </div>
+            <span class="flex-shrink-0 px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
+              查看
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- ==================== 底部返回 ==================== -->
+  <div class="onload-animation">
+    <a href="/appstore/"
+       class="inline-flex items-center gap-1.5 text-sm text-[var(--primary)] hover:underline">
       <Icon name="material-symbols:arrow-back-rounded" class="text-[1rem]" />
-      返回{project.type === "game" ? "ZIONYASVAN PLAYS" : "ZIONYASVAN THINGS"}
+      返回应用商店
     </a>
   </div>
+
 </MainGridLayout>

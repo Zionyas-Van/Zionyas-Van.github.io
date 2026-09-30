@@ -316,6 +316,220 @@ const mainPanelTop = siteConfig.banner.enable
     }
   }
 
+  // ---------- ③ 应用商店页（/appstore/）----------
+  function initAppstore() {
+    const dataEl = document.getElementById("appstore-data");
+    const contentEl = document.getElementById("appstore-content");
+    const sidebarEl = document.querySelector(".appstore-sidebar");
+    const searchEl = document.getElementById("appstore-search");
+    if (!dataEl || !contentEl || !sidebarEl) return;
+
+    let data;
+    try {
+      data = JSON.parse(dataEl.textContent || "{}");
+    } catch { return; }
+    if (!data || !Array.isArray(data.games)) return;
+
+    const tabBtns = Array.from(sidebarEl.querySelectorAll("[data-appstore-tab]"));
+    const catBtns = Array.from(sidebarEl.querySelectorAll("[data-appstore-cat]"));
+
+    const state = { tab: "today", cat: null, tag: null, query: "" };
+
+    const esc = (s) =>
+      String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    // ===== 大 Banner（保留原样）=====
+    const renderBanner = (item) => {
+      if (!item) return "";
+      const isRes = item._kind === "resource";
+      const href = isRes ? item.url : `/projects/${item.id}/`;
+      const title = item.title || item.name;
+      return `
+        <div class="card-base rounded-[var(--radius-large)] overflow-hidden mb-6 relative"
+             style="background: linear-gradient(135deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 65%, black) 100%);">
+          ${item.cover ? `
+            <div class="absolute inset-0 opacity-25">
+              <img src="${esc(item.cover)}" alt="" class="w-full h-full object-cover" />
+            </div>
+          ` : ""}
+          <div class="relative p-6 md:p-8 text-white">
+            <div class="text-[11px] font-semibold tracking-[0.2em] mb-2 opacity-80">精选推荐</div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">${esc(title)}</h2>
+            <p class="text-sm mb-5 opacity-90 line-clamp-2 max-w-xl">${esc(item.description || "")}</p>
+            <a href="${esc(href)}" ${isRes ? 'target="_blank" rel="noopener noreferrer"' : ""}
+               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full
+                      bg-white text-[var(--primary)] text-sm font-semibold
+                      hover:opacity-90 active:scale-95 transition-all">
+              查看
+            </a>
+          </div>
+        </div>
+      `;
+    };
+
+    // ===== 紧凑列表卡片（App Store 风格）=====
+    const renderListCard = (item) => {
+      const isRes = item._kind === "resource";
+      const href = isRes ? item.url : `/projects/${item.id}/`;
+      const title = item.title || item.name;
+      const cover = item.cover || "";
+      return `
+        <a href="${esc(href)}" ${isRes ? 'target="_blank" rel="noopener noreferrer"' : ""}
+           class="card-base group rounded-2xl p-3 flex items-center gap-3
+                  hover:bg-[var(--primary)]/5 active:scale-[0.98] transition-all">
+          <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
+            ${cover ? `<img src="${esc(cover)}" alt="${esc(title)}" class="w-full h-full object-cover" loading="lazy" />` : ""}
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="font-semibold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+              ${esc(title)}
+            </h3>
+            <p class="text-xs text-75/70 mt-0.5 truncate">
+              ${esc(item.description || "")}
+            </p>
+          </div>
+          <span class="flex-shrink-0 px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
+            查看
+          </span>
+        </a>
+      `;
+    };
+
+    // ===== 顶部横向标签 =====
+    const renderTags = (tags) => {
+      if (tags.length === 0) return "";
+      const all = ["全部", ...tags];
+      return `
+        <div class="flex gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
+          ${all.map((t) => {
+            const isActive = (t === "全部" && !state.tag) || t === state.tag;
+            return `
+              <button type="button" data-appstore-tag="${esc(t)}" data-active="${isActive ? "true" : "false"}"
+                class="appstore-tag flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap">
+                ${esc(t)}
+              </button>
+            `;
+          }).join("")}
+        </div>
+      `;
+    };
+
+    const render = () => {
+      const q = state.query.trim().toLowerCase();
+      let items = [];
+      let titleText = "Today";
+      let tagsForFilter = [];
+
+      if (state.tab === "games") {
+        items = data.games.map((g) => ({ ...g, _kind: "game" }));
+        titleText = "游戏";
+        const tagSet = new Set();
+        items.forEach((it) => (it.tags || []).forEach((t) => tagSet.add(t)));
+        tagsForFilter = Array.from(tagSet);
+      } else if (state.tab === "apps") {
+        items = data.apps.map((a) => ({ ...a, _kind: "app" }));
+        titleText = "应用";
+        const tagSet = new Set();
+        items.forEach((it) => (it.tags || []).forEach((t) => tagSet.add(t)));
+        tagsForFilter = Array.from(tagSet);
+      } else if (state.tab === "category") {
+        items = data.resources
+          .filter((r) => r.category === state.cat)
+          .map((r) => ({ ...r, _kind: "resource" }));
+        titleText = state.cat || "";
+      } else {
+        items = [
+          ...data.games.map((g) => ({ ...g, _kind: "game" })),
+          ...data.apps.map((a) => ({ ...a, _kind: "app" })),
+        ];
+      }
+
+      if (state.tag) {
+        items = items.filter((it) => (it.tags || []).includes(state.tag));
+      }
+
+      if (q) {
+        items = items.filter((it) => {
+          const t = (it.title || it.name || "").toLowerCase();
+          const d = (it.description || "").toLowerCase();
+          return t.includes(q) || d.includes(q);
+        });
+      }
+
+      const banner =
+        !q && items.length > 0
+          ? items.find((it) => it.featured) || items[0]
+          : null;
+      const gridItems = banner ? items.filter((it) => it !== banner) : items;
+
+      contentEl.innerHTML = `
+        <div class="mb-4">
+          <h1 class="text-2xl font-bold text-90">${esc(titleText)}</h1>
+        </div>
+        ${renderTags(tagsForFilter)}
+        ${banner ? renderBanner(banner) : ""}
+        ${
+          gridItems.length > 0
+            ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${gridItems.map(renderListCard).join("")}</div>`
+            : `<div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75">
+                 <p class="font-medium text-lg text-90 mb-2">空空如也</p>
+                 <p class="text-sm">换个分类或关键词试试～</p>
+               </div>`
+        }
+      `;
+
+      contentEl.querySelectorAll("[data-appstore-tag]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const t = btn.dataset.appstoreTag;
+          state.tag = t === "全部" ? null : t;
+          render();
+        });
+      });
+    };
+
+    for (const btn of tabBtns) {
+      if (btn.dataset.bound === "1") continue;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        state.tab = btn.dataset.appstoreTab;
+        state.cat = null;
+        state.tag = null;
+        for (const b of tabBtns) b.dataset.active = b === btn ? "true" : "false";
+        for (const b of catBtns) b.dataset.active = "false";
+        render();
+      });
+    }
+
+    for (const btn of catBtns) {
+      if (btn.dataset.bound === "1") continue;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        state.tab = "category";
+        state.cat = btn.dataset.appstoreCat;
+        state.tag = null;
+        for (const b of catBtns) b.dataset.active = b === btn ? "true" : "false";
+        for (const b of tabBtns) b.dataset.active = "false";
+        render();
+      });
+    }
+
+    if (searchEl && searchEl.dataset.bound !== "1") {
+      searchEl.dataset.bound = "1";
+      searchEl.addEventListener("input", () => {
+        state.query = searchEl.value;
+        render();
+      });
+    }
+
+    render();
+  }
+
+  // ---------- ④ 阅读页工具栏 + 进度条 + 字号 ----------
   function initReaderToolbar() {
     // ① 先在 main（当前页面内容区）里找工具栏：
     //    - swup 切页后，新页面的工具栏一定还在 main 里；
@@ -341,7 +555,7 @@ const mainPanelTop = siteConfig.banner.enable
     const toolbar = document.querySelector("body > #reader-toolbar");
     if (!toolbar) return;
 
-    // 多次测量 Fuwari 顶栏高度，直到稳定
+    // 计算工具栏位置：
     const placeToolbar = () => {
       const tb = document.getElementById("reader-toolbar");
       if (!tb) return;
@@ -350,32 +564,25 @@ const mainPanelTop = siteConfig.banner.enable
         document.querySelector("#top-row") ||
         document.querySelector("header");
       if (navbar) {
-        tb.style.top = Math.max(0, navbar.getBoundingClientRect().bottom) + "px";
+        tb.style.top =
+          Math.max(0, navbar.getBoundingClientRect().bottom) + "px";
       } else {
         tb.style.top = "64px";
       }
     };
 
+    // 初次 + 首屏几次测量（处理布局抖动）
     placeToolbar();
     requestAnimationFrame(placeToolbar);
     setTimeout(placeToolbar, 80);
     setTimeout(placeToolbar, 200);
-    setTimeout(placeToolbar, 400);
-    setTimeout(placeToolbar, 700);
 
-    // 监听窗口尺寸变化
-    if (window.__readerToolbarResizeBound !== true) {
-      window.__readerToolbarResizeBound = true;
-      window.addEventListener("resize", () => {
-        const tb = document.getElementById("reader-toolbar");
-        if (!tb) return;
-        const navbar =
-          document.querySelector("#navbar-wrapper") ||
-          document.querySelector("#top-row");
-        if (navbar) {
-          tb.style.top = Math.max(0, navbar.getBoundingClientRect().bottom) + "px";
-        }
-      });
+    // 【关键】滚动 / 缩放时持续更新位置
+    // 之前只在初始化算了一次，所以滚动后位置不跟着变
+    if (window.__readerToolbarPosBound !== true) {
+      window.__readerToolbarPosBound = true;
+      window.addEventListener("scroll", placeToolbar, { passive: true });
+      window.addEventListener("resize", placeToolbar);
     }
 
     // 进度条
@@ -437,6 +644,7 @@ const mainPanelTop = siteConfig.banner.enable
   function initAll() {
     initReaderMode();
     initNovelsPage();
+    initAppstore();
     initReaderToolbar();
   }
 

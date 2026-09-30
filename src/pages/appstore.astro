@@ -1,0 +1,288 @@
+---
+import { Icon } from "astro-icon/components";
+import { projects } from "../data/projects";
+import { resources } from "../data/resources";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const games = projects.filter((p) => p.type === "game");
+const softwares = projects.filter((p) => p.type === "software");
+
+// 资源分类固定顺序，只显示用过的
+const RESOURCE_CATEGORY_ORDER = ["网站", "应用", "游戏", "文件", "其他"];
+const usedCategories = RESOURCE_CATEGORY_ORDER.filter((c) =>
+	resources.some((r) => r.category === c),
+);
+
+// 打包数据，交给客户端渲染
+const appstoreData = {
+	games: games.map((g) => ({
+		id: g.id,
+		title: g.title,
+		description: g.description,
+		cover: g.cover,
+		featured: g.featured,
+		tags: g.tags || [],
+	})),
+	apps: softwares.map((s) => ({
+		id: s.id,
+		title: s.title,
+		description: s.description,
+		cover: s.cover,
+		featured: s.featured,
+		tags: s.tags || [],
+	})),
+	resources: resources.map((r) => ({
+		id: r.id,
+		name: r.name,
+		description: r.description,
+		url: r.url,
+		category: r.category || "未分类",
+		cover: r.cover || "",
+	})),
+	categories: usedCategories,
+};
+const safeJson = JSON.stringify(appstoreData).replace(/</g, "\\u003c");
+---
+
+<MainGridLayout title="应用商店" description="游戏、应用与资源分享">
+
+  <!-- 让 MainGridLayout 隐藏原本的个人侧栏（复用阅读模式机制） -->
+  <div id="reader-mode-marker" style="display:none" aria-hidden="true"></div>
+
+  <!-- 数据 -->
+  <script type="application/json" id="appstore-data" set:html={safeJson}></script>
+
+  <div class="appstore-layout">
+
+    <!-- 侧栏 -->
+    <aside class="appstore-sidebar">
+
+      <!-- 搜索 -->
+      <div class="appstore-search">
+        <Icon name="material-symbols:search-rounded" class="text-[1rem] flex-shrink-0 opacity-60" />
+        <input id="appstore-search" type="text" placeholder="搜索…" autocomplete="off" />
+      </div>
+
+      <!-- 三个固定按钮 -->
+      <nav class="appstore-tabs">
+        <button type="button" data-appstore-tab="today" data-active="true">
+          <Icon name="material-symbols:today-rounded" class="text-[1.1rem]" />
+          <span>Today</span>
+        </button>
+        <button type="button" data-appstore-tab="games">
+          <Icon name="material-symbols:sports-esports-outline-rounded" class="text-[1.1rem]" />
+          <span>游戏</span>
+        </button>
+        <button type="button" data-appstore-tab="apps">
+          <Icon name="material-symbols:code-blocks-outline-rounded" class="text-[1.1rem]" />
+          <span>应用</span>
+        </button>
+      </nav>
+
+      <!-- 资源分类（自动扫描） -->
+      {usedCategories.length > 0 && (
+        <div class="appstore-cats">
+          <div class="appstore-cats-title">分类</div>
+          {usedCategories.map((c) => (
+            <button type="button" data-appstore-cat={c}>
+              <span class="appstore-cat-dot"></span>
+              <span>{c}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </aside>
+
+    <!-- 主内容（JS 渲染） -->
+    <section class="appstore-main">
+      <div id="appstore-content"></div>
+    </section>
+
+  </div>
+</MainGridLayout>
+
+<style>
+  /* ===== 布局 ===== */
+  .appstore-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+
+  .appstore-sidebar {
+    width: 13rem;
+    flex-shrink: 0;
+    position: sticky;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+  .appstore-sidebar::-webkit-scrollbar { width: 4px; }
+  .appstore-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(128,128,128,0.2);
+    border-radius: 4px;
+  }
+
+  .appstore-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ===== 搜索框 ===== */
+  .appstore-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 0.75rem;
+    background: var(--card-bg);
+    border: 1px solid rgba(128,128,128,0.12);
+    margin-bottom: 1rem;
+    transition: border-color 0.15s;
+  }
+  .appstore-search:focus-within {
+    border-color: color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+  .appstore-search input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    outline: none;
+    border: none;
+    font-size: 0.85rem;
+    color: inherit;
+  }
+
+  /* ===== 三个固定按钮 ===== */
+  .appstore-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-bottom: 1.25rem;
+  }
+  .appstore-tabs button {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    border-radius: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--content-meta, #666);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .appstore-tabs button:hover {
+    background: rgba(124, 58, 237, 0.06);
+    color: var(--primary);
+  }
+  .appstore-tabs button[data-active="true"] {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* ===== 分类区 ===== */
+  .appstore-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .appstore-cats-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--content-meta, #999);
+    padding: 0 0.85rem 0.4rem;
+    margin-top: 0.25rem;
+  }
+  .appstore-cats button {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--content-meta, #666);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .appstore-cats button:hover {
+    background: rgba(124, 58, 237, 0.06);
+    color: var(--primary);
+  }
+  .appstore-cats button[data-active="true"] {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .appstore-cat-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  /* ===== 移动端 ===== */
+  @media (max-width: 767px) {
+    .appstore-layout {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .appstore-sidebar {
+      position: static;
+      width: 100%;
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
+    }
+    .appstore-tabs {
+      flex-direction: row;
+      overflow-x: auto;
+      margin-bottom: 0.75rem;
+    }
+    .appstore-tabs button {
+      width: auto;
+      flex-shrink: 0;
+    }
+    .appstore-cats {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .appstore-cats button {
+      width: auto;
+    }
+    .appstore-cats-title {
+      width: 100%;
+      padding-left: 0;
+    }
+  }
+
+
+  /* ===== 顶部横向标签 ===== */
+  .appstore-tag {
+    transition: all 0.15s;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    background: var(--card-bg);
+    color: var(--content-meta, #888);
+  }
+  .appstore-tag[data-active="true"] {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+  }
+  .appstore-tag[data-active="false"]:hover {
+    color: var(--primary) !important;
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent) !important;
+  }
+</style>
