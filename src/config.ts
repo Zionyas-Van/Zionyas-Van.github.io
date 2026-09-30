@@ -109,6 +109,22 @@ export const licenseConfig: LicenseConfig = {
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/", // 许可证详情链接
 };
 
+// 评论系统配置（全站唯一开关，以后只改这里）
+// ------------------------------------------------------------------
+// 背景：Waline 的后端地址是 Cloudflare 免费送的 xxx.workers.dev，
+//       这个后缀在国内被运营商屏蔽，所以国内读者看不到评论区。
+//       所以现在先把评论区整体关掉（访客看不到，也不会白白下载评论代码）。
+//
+// 等你成年、买好域名之后，恢复评论区只需要改下面两行：
+//   1. enabled 改成 true
+//   2. serverURL 改成你把 Waline 后端绑定到的新域名
+// 四个页面（文章 / 作品 / 视频 / 小说章节）会自动跟着一起恢复。
+// ------------------------------------------------------------------
+export const commentsConfig = {
+	enabled: false, // 是否显示评论区：false = 隐藏（等换好国内可用的后端再打开）
+	serverURL: "https://waline-on-worker.zionyasvan.workers.dev", // Waline 后端地址
+};
+
 // 代码块样式配置
 export const expressiveCodeConfig: ExpressiveCodeConfig = {
 	// 注意：某些样式（如背景色）可能在astro.config.mjs文件中被覆盖

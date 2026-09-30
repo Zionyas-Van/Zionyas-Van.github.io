@@ -1,18 +1,25 @@
 ---
-import "@waline/client/waline.css";
+import { commentsConfig } from "../config";
 
 interface Props {
-	serverURL: string;
+	serverURL?: string;
 }
-const { serverURL } = Astro.props;
+
+// 后端地址优先用页面传入的，没传就用 config.ts 里的统一配置
+const { serverURL = commentsConfig.serverURL } = Astro.props;
+const enabled = commentsConfig.enabled;
 ---
 
-<div class="waline-wrapper" data-waline-server={serverURL}>
-  <h2 class="waline-title">
-    <span>💬</span> 评论
-  </h2>
-  <div id="waline-comments"></div>
-</div>
+{
+	enabled && (
+		<div class="waline-wrapper" data-waline-server={serverURL}>
+			<h2 class="waline-title">
+				<span>💬</span> 评论
+			</h2>
+			<div id="waline-comments" />
+		</div>
+	)
+}
 
 <style>
   .waline-wrapper {
@@ -31,13 +38,14 @@ const { serverURL } = Astro.props;
 </style>
 
 <script>
-  import { init } from "@waline/client";
-
   let walineInstance = null;
 
-  function initWaline() {
+  async function initWaline() {
     const wrapper = document.querySelector(".waline-wrapper");
     const container = document.getElementById("waline-comments");
+
+    // 评论区在 config.ts 里被关掉时，页面上根本没有这些元素：
+    // 直接退出，连 Waline 的代码和样式都不会被下载。
     if (!wrapper || !container) return;
 
     const serverURL = wrapper.dataset.walineServer;
@@ -48,6 +56,12 @@ const { serverURL } = Astro.props;
       walineInstance = null;
     }
     container.innerHTML = "";
+
+    // 按需加载：只有真的要显示评论区时，才去下载 Waline 本体和样式
+    const [{ init }] = await Promise.all([
+      import("@waline/client"),
+      import("@waline/client/waline.css"),
+    ]);
 
     walineInstance = init({
       el: "#waline-comments",

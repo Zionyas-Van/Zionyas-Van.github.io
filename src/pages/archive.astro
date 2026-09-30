@@ -3,9 +3,10 @@ import ArchivePanel from "@components/ArchivePanel.svelte";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { getSortedPostsList } from "../utils/content-utils";
+import { getSortedPostsExcludingDaily } from "../utils/content-utils";
 
-const sortedPostsList = await getSortedPostsList();
+// 归档页排除「日常」类文章（日常内容集中在 /daily/ 页面）
+const sortedPostsList = await getSortedPostsExcludingDaily();
 ---
 
 <MainGridLayout title={i18n(I18nKey.archive)}>

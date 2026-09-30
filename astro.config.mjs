@@ -1,4 +1,3 @@
-import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import svelte from "@astrojs/svelte";
 import tailwind from "@astrojs/tailwind";
@@ -102,7 +101,6 @@ export default defineConfig({
 			},
 		}),
 		svelte(),
-		react(),
 		sitemap(),
 	],
 	markdown: {
