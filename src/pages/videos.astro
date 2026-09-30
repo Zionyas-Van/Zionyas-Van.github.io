@@ -12,7 +12,7 @@ const hasFeatured = featuredVideos.length > 0;
   <!-- ==================== 顶部精选 Banner ==================== -->
   {hasFeatured && (
     <div class="onload-animation mb-8">
-      <div class="video-banner-scroll flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-2 px-2 pb-2">
+      <div class="video-banner-scroll flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-2 px-2 pb-2 max-md:scroll-pl-2">
         {featuredVideos.map((v) => (
           <a href={`/videos/${v.id}/`}
              class="snap-start flex-shrink-0 w-full relative aspect-video
@@ -71,7 +71,7 @@ const hasFeatured = featuredVideos.length > 0;
       </div>
     </div>
   ) : (
-    <div class="card-base rounded-[var(--radius-large)] p-12 text-center text-75 onload-animation">
+    <div class="card-base rounded-[var(--radius-large)] p-8 md:p-12 text-center text-75 onload-animation">
       <Icon name="material-symbols:list-alt-outline-rounded" class="text-6xl mx-auto mb-4 opacity-25" />
       <p class="font-medium text-lg text-90 mb-2">暂无视频</p>
       <p class="text-sm">还没有发布视频，敬请期待～</p>

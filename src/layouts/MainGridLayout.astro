@@ -1,6 +1,7 @@
 ---
 import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
+import MobileBottomNav from "@components/MobileBottomNav.astro";
 import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
 import type { MarkdownHeading } from "astro";
@@ -64,7 +65,7 @@ const mainPanelTop = siteConfig.banner.enable
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
     <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
         <div id="main-grid" class="transition duration-700 w-full left-0 right-0 grid grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto]
-    mx-auto gap-4 px-0 md:px-4"
+    mx-auto gap-4 px-2 md:px-4"
         >
             <!-- Banner image credit -->
             {hasBannerCredit && <a href={siteConfig.banner.credit.url} id="banner-credit" target="_blank" rel="noopener" aria-label="Visit image source"
@@ -99,6 +100,9 @@ const mainPanelTop = siteConfig.banner.enable
                 <Footer></Footer>
             </div>
         </div>
+
+        <!-- 移动端底部导航栏（全站，放在 main 之外，切页不丢、刷新也在） -->
+        <MobileBottomNav />
 
         <BackToTop></BackToTop>
     </div>
@@ -218,8 +222,8 @@ const mainPanelTop = siteConfig.banner.enable
                class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
                loading="lazy" />
         </div>
-        <div class="p-4">
-          <h3 class="font-bold text-base text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+        <div class="p-3 md:p-4">
+          <h3 class="font-bold text-sm md:text-base text-90 group-hover:text-[var(--primary)] transition-colors truncate">
             ${esc(n.title)}
           </h3>
           <p class="text-xs text-75/70 mt-1 truncate">${esc(n.author)}</p>
@@ -270,7 +274,7 @@ const mainPanelTop = siteConfig.banner.enable
                class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
                loading="lazy" />
         </div>
-        <div class="p-4">
+        <div class="p-3 md:p-4">
           <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
             ${esc(n.title)}
           </h3>
@@ -405,7 +409,7 @@ const mainPanelTop = siteConfig.banner.enable
       if (tags.length === 0) return "";
       const all = ["全部", ...tags];
       return `
-                <div class="flex flex-wrap md:flex-nowrap gap-2 mb-5 md:overflow-x-auto md:pb-1 md:-mx-1 md:px-1">
+                <div class="flex flex-nowrap gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
           ${all.map((t) => {
             const isActive = (t === "全部" && !state.tag) || t === state.tag;
             return `
@@ -640,12 +644,34 @@ const mainPanelTop = siteConfig.banner.enable
     applySize(saved);
   }
 
+  // ---------- ⑤ 移动端底部导航：同步当前页面的高亮 ----------
+  function initMobileNav() {
+    const nav = document.getElementById("mobile-bottom-nav");
+    if (!nav) return;
+    const path = location.pathname;
+
+    nav.querySelectorAll("[data-nav-match]").forEach((item) => {
+      // data-nav-match 里可以写多个前缀，用空格分隔（例如「应用」同时匹配 /appstore 和 /projects）
+      const matches = (item.dataset.navMatch || "").split(/\s+/).filter(Boolean);
+      const active = matches.some((match) =>
+        match === "/" ? path === "/" : path === match || path.startsWith(match + "/"),
+      );
+      item.dataset.active = active ? "true" : "false";
+      if (active) {
+        item.setAttribute("aria-current", "page");
+      } else {
+        item.removeAttribute("aria-current");
+      }
+    });
+  }
+
   // ---------- 统一入口 ----------
   function initAll() {
     initReaderMode();
     initNovelsPage();
     initAppstore();
     initReaderToolbar();
+    initMobileNav();
   }
 
   // 首次执行 + 每次 swup 切页执行

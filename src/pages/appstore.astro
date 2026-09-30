@@ -246,24 +246,54 @@ const safeJson = JSON.stringify(appstoreData).replace(/</g, "\\u003c");
       overflow: visible;
       padding-right: 0;
     }
+    /* 移动端搜索框字号提到 1rem：iOS 对小于 16px 的输入框会自动放大整页 */
+    .appstore-search input {
+      font-size: 1rem;
+    }
+    /* 标签条横滑，同时隐藏滚动条，避免 iOS 上滚动条外露、滚动发涩 */
     .appstore-tabs {
       flex-direction: row;
       overflow-x: auto;
-      margin-bottom: 0.75rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin-bottom: 0.5rem;
+    }
+    .appstore-tabs::-webkit-scrollbar {
+      display: none;
     }
     .appstore-tabs button {
       width: auto;
       flex-shrink: 0;
     }
+    /* 分类条改成单行横滑，不再换行堆叠把整个首屏占满 */
     .appstore-cats {
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 0.25rem;
+    }
+    .appstore-cats::-webkit-scrollbar {
+      display: none;
     }
     .appstore-cats button {
       width: auto;
+      flex-shrink: 0;
     }
+    /* 分类/标签按钮的触摸目标至少 44px，手机上更好点中
+       （用 px 而不是 rem：手机端根字号是 14px，2.75rem 只有 38.5px） */
+    .appstore-cats button,
+    .appstore-tabs button {
+      min-height: 44px;
+    }
+    /* 分类标题在横滑行里保持自身宽度、不参与压缩，
+       否则宽度 100% 会把按钮挤出屏幕，或被压成「分/类」竖排 */
     .appstore-cats-title {
-      width: 100%;
+      width: auto;
+      flex-shrink: 0;
+      white-space: nowrap;
+      align-self: center;
       padding-left: 0;
     }
   }

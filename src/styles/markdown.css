@@ -112,6 +112,31 @@
 
     }
 
+    /* ---------- 移动端溢出保护 ----------
+       手机上正文列只有 300px 左右，而外层 main 是 overflow-hidden：
+       表格 / 长链接 / 长行内代码一旦超出就会被直接裁掉、无法滚动查看。
+       以下规则全部包在 max-width:767px 里，桌面端一字不改。 */
+    @media (max-width: 767px) {
+        table {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        a:not(.no-styling) {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        :not(pre) > code {
+            overflow-x: auto;
+            overflow-y: hidden;
+            max-width: 100%;
+        }
+    }
+
     .katex-display-container {
         max-width: 100%;
         overflow-x: auto;

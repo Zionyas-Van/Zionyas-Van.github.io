@@ -55,7 +55,7 @@ const totalNum = novel.chapters.length;
     <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
       <!-- 左：返回目录 -->
       <a href={`/novels/${novel.id}/`}
-         class="flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors flex-shrink-0 px-2 py-1">
+         class="flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors flex-shrink-0 px-2 py-3 max-md:min-h-[44px] md:py-1">
         <Icon name="material-symbols:list-alt-outline-rounded" class="text-[1.15rem]" />
         <span class="hidden sm:inline">目录</span>
       </a>
@@ -69,17 +69,17 @@ const totalNum = novel.chapters.length;
       <!-- 右：字号切换 -->
       <div class="flex items-center gap-0.5 flex-shrink-0" id="font-size-group">
         <button type="button" data-size="sm" title="小字号"
-          class="font-size-btn w-8 h-8 rounded-md text-xs font-semibold transition-colors">A</button>
+          class="font-size-btn w-[44px] h-[44px] md:w-8 md:h-8 rounded-md text-xs font-semibold transition-colors">A</button>
         <button type="button" data-size="md" title="中字号"
-          class="font-size-btn w-8 h-8 rounded-md text-sm font-semibold transition-colors">A</button>
+          class="font-size-btn w-[44px] h-[44px] md:w-8 md:h-8 rounded-md text-sm font-semibold transition-colors">A</button>
         <button type="button" data-size="lg" title="大字号"
-          class="font-size-btn w-8 h-8 rounded-md text-base font-semibold transition-colors">A</button>
+          class="font-size-btn w-[44px] h-[44px] md:w-8 md:h-8 rounded-md text-base font-semibold transition-colors">A</button>
       </div>
     </div>
   </div>
 
   <!-- 占位（给 fixed 工具栏留出空间，防止首屏内容被它盖住） -->
-  <div class="h-14" aria-hidden="true"></div>
+  <div class="h-[68px] md:h-14" aria-hidden="true"></div>
 
   <!-- ===== 阅读主体（居中窄栏 + 移动端留内边距） ===== -->
   <article class="mx-auto max-w-3xl px-3 sm:px-4 md:px-0 onload-animation">
@@ -93,7 +93,7 @@ const totalNum = novel.chapters.length;
 
     <!-- 正文 -->
     <div id="chapter-content"
-         class="novel-content text-90
+         class="novel-content text-90 max-md:[overflow-wrap:anywhere]
                 [&>p]:mb-5
                 [&>p>img]:max-w-full [&>p>img]:rounded-lg [&>p>img]:mx-auto [&>p>img]:my-6
                 [&>h2]:text-xl [&>h2]:md:text-2xl [&>h2]:font-bold [&>h2]:mt-10 [&>h2]:mb-4
@@ -202,8 +202,8 @@ const totalNum = novel.chapters.length;
   @media (max-width: 767px) {
     #chapter-content         { font-size: 1rem;      line-height: 1.9;  }
     #chapter-content.size-sm { font-size: 0.9375rem; line-height: 1.85; }
-    #chapter-content.size-md { font-size: 1rem;      line-height: 1.9;  }
-    #chapter-content.size-lg { font-size: 1.0625rem; line-height: 2;    }
+    #chapter-content.size-md { font-size: 1.0625rem; line-height: 1.9;  }
+    #chapter-content.size-lg { font-size: 1.25rem;   line-height: 2;    }
   }
 
   .font-size-btn {

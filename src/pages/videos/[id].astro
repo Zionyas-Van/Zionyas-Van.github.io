@@ -38,12 +38,12 @@ const biliUrl = `https://www.bilibili.com/video/${video.bvid}/`;
         <img src={video.cover} alt={video.title}
              class="w-full h-full object-cover" />
 
-        <!-- hover 遮罩 + 播放按钮 -->
+        <!-- hover 遮罩 + 播放按钮（手机无 hover：手机默认显示遮罩与播放键，≥768px 仍是原来的 hover 才出现） -->
         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition duration-300
-                    flex items-center justify-center">
+                    flex items-center justify-center max-md:bg-black/25">
           <div class="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center
                       opacity-0 group-hover:opacity-100 transition duration-300
-                      scale-90 group-hover:scale-100 shadow-2xl">
+                      scale-90 group-hover:scale-100 shadow-2xl max-md:opacity-100 max-md:scale-100">
             <Icon name="material-symbols:play-arrow-rounded" class="text-[var(--primary)] text-[2rem]" />
           </div>
         </div>
@@ -73,10 +73,11 @@ const biliUrl = `https://www.bilibili.com/video/${video.bvid}/`;
           <div class="font-semibold text-90 text-sm">ZionyasVan</div>
           <div class="text-xs text-75/70">视频作者</div>
         </div>
+        <!-- 关注按钮：手机触摸目标偏小，≥768px 前用 min-h-[44px] 抬到 44px（py-1.5 不动，桌面端不变） -->
         <a href="https://space.bilibili.com/3493111443490971" target="_blank" rel="noopener noreferrer"
            class="flex-shrink-0 px-4 py-1.5 rounded-full
                   bg-[var(--primary)] text-white text-xs font-medium
-                  hover:opacity-90 active:scale-95 transition">
+                  hover:opacity-90 active:scale-95 transition max-md:min-h-[44px]">
           关注
         </a>
       </div>
@@ -84,7 +85,7 @@ const biliUrl = `https://www.bilibili.com/video/${video.bvid}/`;
       <!-- 描述 -->
       {video.description && (
         <div class="card-base rounded-[var(--radius-large)] p-5 mt-4">
-          <p class="text-sm text-75 leading-relaxed whitespace-pre-line">
+          <p class="text-sm text-75 leading-relaxed whitespace-pre-line max-md:[overflow-wrap:anywhere]">
             {video.description}
           </p>
         </div>

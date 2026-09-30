@@ -17,15 +17,16 @@ const firstChapter = novel.chapters.length > 0 ? novel.chapters[0] : null;
 ---
 
 <MainGridLayout title={novel.title} description={novel.description}>
-  <!-- 返回 -->
+  <!-- 返回（手机触摸高度不足，用 py-3 + min-h-[44px] 撑到 44px；≥768px 用 py-0 还原，桌面端不变） -->
   <a href="/novels/"
-     class="inline-flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors mb-6 onload-animation">
+     class="inline-flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors mb-6 onload-animation py-3 max-md:min-h-[44px] md:py-0">
     <Icon name="material-symbols:arrow-back-rounded" class="text-[1.1rem]" />
     返回故事列表
   </a>
 
   <!-- ===== Hero 区 ===== -->
-  <div class="card-base rounded-[var(--radius-large)] p-6 md:p-8 mb-8 onload-animation">
+  <!-- Hero 卡片：手机收窄内边距，避免双层内边距把内容挤窄（≥768px 恢复 p-8） -->
+  <div class="card-base rounded-[var(--radius-large)] p-4 md:p-8 mb-8 onload-animation">
     <div class="flex flex-col sm:flex-row gap-6 md:gap-8">
 
       <!-- 封面 -->
@@ -99,7 +100,8 @@ const firstChapter = novel.chapters.length > 0 ? novel.chapters[0] : null;
   </div>
 
   <!-- ===== 章节目录 ===== -->
-  <div class="card-base rounded-[var(--radius-large)] p-6 md:p-8 onload-animation">
+  <!-- 目录卡片：同上，手机内边距收窄（≥768px 恢复 p-8） -->
+  <div class="card-base rounded-[var(--radius-large)] p-4 md:p-8 onload-animation">
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-lg font-bold text-90 flex items-center gap-2">
         <Icon name="material-symbols:list-alt-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />

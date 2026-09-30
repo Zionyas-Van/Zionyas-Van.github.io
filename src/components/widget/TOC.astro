@@ -164,8 +164,14 @@ class TableOfContents extends HTMLElement {
         if (!this.sections.length) return;
 
         for (let i = 0; i < this.sections.length; i++) {
-            let offsetTop = this.sections[i].getBoundingClientRect().top;
-            let offsetBottom = this.sections[i].getBoundingClientRect().bottom;
+            // 少数目录项的标题在正文里找不到，数组会留下空洞（sparse array）。
+            // forEach 会跳过空洞，但这里用的是 for 循环，必须先判空，
+            // 否则会抛 "Cannot read properties of undefined"，中断整个目录的初始化。
+            const section = this.sections[i];
+            if (!section) continue;
+
+            let offsetTop = section.getBoundingClientRect().top;
+            let offsetBottom = section.getBoundingClientRect().bottom;
 
             if (this.isInRange(offsetTop, 0, window.innerHeight)
                 || this.isInRange(offsetBottom, 0, window.innerHeight)

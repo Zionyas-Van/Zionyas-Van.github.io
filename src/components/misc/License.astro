@@ -18,14 +18,15 @@ const profileConf = profileConfig;
 const licenseConf = licenseConfig;
 const postUrl = decodeURIComponent(Astro.url.toString());
 ---
-<div class={`relative transition overflow-hidden bg-[var(--license-block-bg)] py-5 px-6 ${className}`}>
+<div class={`relative transition overflow-hidden bg-[var(--license-block-bg)] py-5 px-4 md:px-6 ${className}`}>
     <div class="transition font-bold text-black/75 dark:text-white/75">
         {title}
     </div>
-    <a href={postUrl} class="link text-[var(--primary)]">
+    {/* 永久链接是一整串无空格网址，手机上必须允许任意字符断行，否则会被外层 overflow-hidden 裁掉 */}
+    <a href={postUrl} class="link text-[var(--primary)] max-md:break-all">
         {postUrl}
     </a>
-    <div class="flex gap-6 mt-2">
+    <div class="flex gap-6 max-md:gap-3 mt-2">
         <div>
             <div class="transition text-black/30 dark:text-white/30 text-sm">{i18n(I18nKey.author)}</div>
             <div class="transition text-black/75 dark:text-white/75 line-clamp-2">{profileConf.name}</div>
