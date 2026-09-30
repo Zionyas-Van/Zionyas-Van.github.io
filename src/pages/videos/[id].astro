@@ -1,0 +1,143 @@
+---
+import type { GetStaticPaths } from "astro";
+import { Icon } from "astro-icon/components";
+import { videos } from "../../data/videos";
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+
+export const getStaticPaths = (() => {
+	return videos.map((v) => ({
+		params: { id: v.id },
+	}));
+}) satisfies GetStaticPaths;
+
+const { id } = Astro.params;
+const video = videos.find((v) => v.id === id);
+if (!video) return Astro.redirect("/videos/");
+
+// 推荐：除当前视频外的其他视频
+const recommendations = videos.filter((v) => v.id !== video.id).slice(0, 8);
+
+const biliUrl = `https://www.bilibili.com/video/${video.bvid}/`;
+---
+
+<MainGridLayout title={video.title} description={video.description}>
+
+  <!-- 隐藏左侧个人信息栏 -->
+  <div id="reader-mode-marker" style="display:none" aria-hidden="true"></div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-6">
+
+    <!-- ==================== 左侧：视频主区 ==================== -->
+    <div class="min-w-0">
+
+      <!-- 封面图（点击跳 B 站） -->
+      <a href={biliUrl} target="_blank" rel="noopener noreferrer"
+         class="group block relative aspect-video rounded-[var(--radius-large)] overflow-hidden
+                bg-black/10 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+        <img src={video.cover} alt={video.title}
+             class="w-full h-full object-cover" />
+
+        <!-- hover 遮罩 + 播放按钮 -->
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition duration-300
+                    flex items-center justify-center">
+          <div class="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center
+                      opacity-0 group-hover:opacity-100 transition duration-300
+                      scale-90 group-hover:scale-100 shadow-2xl">
+            <Icon name="material-symbols:play-arrow-rounded" class="text-[var(--primary)] text-[2rem]" />
+          </div>
+        </div>
+
+        <!-- 右下角提示 -->
+        <div class="absolute bottom-3 right-3 px-3 py-1 rounded-full
+                    bg-black/60 backdrop-blur-sm text-white text-[11px] font-medium
+                    flex items-center gap-1">
+          <Icon name="material-symbols:arrow-outward-rounded" class="text-[0.9rem]" />
+          点击前往 B 站
+        </div>
+      </a>
+
+      <!-- 标题 -->
+      <h1 class="text-lg md:text-xl font-bold text-90 mt-5 leading-snug">
+        {video.title}
+      </h1>
+
+      <!-- 作者栏 -->
+      <div class="flex items-center gap-3 mt-4 py-4 border-b border-black/5 dark:border-white/10">
+        <div class="w-10 h-10 rounded-full
+                    bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/60
+                    flex items-center justify-center text-white font-bold text-sm shadow-md">
+          Z
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-90 text-sm">ZionyasVan</div>
+          <div class="text-xs text-75/70">视频作者</div>
+        </div>
+        <a href="https://space.bilibili.com/3493111443490971" target="_blank" rel="noopener noreferrer"
+           class="flex-shrink-0 px-4 py-1.5 rounded-full
+                  bg-[var(--primary)] text-white text-xs font-medium
+                  hover:opacity-90 active:scale-95 transition">
+          关注
+        </a>
+      </div>
+
+      <!-- 描述 -->
+      {video.description && (
+        <div class="card-base rounded-[var(--radius-large)] p-5 mt-4">
+          <p class="text-sm text-75 leading-relaxed whitespace-pre-line">
+            {video.description}
+          </p>
+        </div>
+      )}
+
+      <!-- 底部大按钮 -->
+      <div class="mt-5">
+        <a href={biliUrl} target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 px-6 py-3 rounded-full
+                  bg-[var(--primary)] text-white text-sm font-semibold
+                  hover:opacity-90 active:scale-95 transition-all
+                  shadow-lg shadow-[var(--primary)]/20">
+          <Icon name="material-symbols:play-arrow-rounded" class="text-[1.2rem]" />
+          在 B 站观看
+          <Icon name="material-symbols:arrow-outward-rounded" class="text-[1rem]" />
+        </a>
+      </div>
+    </div>
+
+    <!-- ==================== 右侧：接下来播放 ==================== -->
+    <aside class="lg:sticky lg:top-20 lg:self-start
+                  lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <h2 class="text-base font-bold text-90 mb-3 flex items-center gap-2">
+        <Icon name="material-symbols:list-alt-outline-rounded" class="text-[var(--primary)] text-[1.15rem]" />
+        接下来播放
+      </h2>
+
+      {recommendations.length > 0 ? (
+        <div class="flex flex-col gap-2">
+          {recommendations.map((v) => (
+            <a href={`/videos/${v.id}/`}
+               class="card-base group flex gap-2.5 p-2 rounded-xl
+                      hover:bg-[var(--primary)]/5 transition-colors">
+              <div class="w-28 aspect-video rounded-lg overflow-hidden flex-shrink-0
+                          bg-black/10 dark:bg-white/5">
+                <img src={v.cover} alt={v.title}
+                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                     loading="lazy" />
+              </div>
+              <div class="min-w-0 flex-1 py-0.5">
+                <h3 class="text-xs font-medium text-90 leading-snug line-clamp-2
+                           group-hover:text-[var(--primary)] transition-colors">
+                  {v.title}
+                </h3>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="card-base rounded-xl p-6 text-center text-75/60">
+          <p class="text-xs">暂无更多视频</p>
+        </div>
+      )}
+    </aside>
+
+  </div>
+</MainGridLayout>
