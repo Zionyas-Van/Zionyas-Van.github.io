@@ -54,11 +54,11 @@ function isActive(matches: string[], path: string) {
 <!-- 给固定导航栏留出滚动空间。
      注意：这里必须用「文档流里的占位元素」，不能给 body 加 padding-bottom ——
      本页内容是绝对定位的，滚动高度由内容溢出决定，body 的 padding 不起作用。 -->
-<div class="mobile-nav-spacer lg:hidden" aria-hidden="true"></div>
+<div class="mobile-nav-spacer md:hidden" aria-hidden="true"></div>
 
 <nav
 	id="mobile-bottom-nav"
-	class="lg:hidden"
+	class="md:hidden"
 	aria-label="移动端底部导航"
 >
 	{
@@ -144,6 +144,19 @@ function isActive(matches: string[], path: string) {
 
   .mobile-nav-item[data-active="true"] .mobile-nav-label {
     font-weight: 700;
+  }
+
+  /* ====================================================
+     关键：底部导航栏是手机端专属，桌面端必须彻底隐藏。
+     不能只靠 Tailwind 的 lg:hidden —— 上面 #mobile-bottom-nav 里的
+     display: flex 是 ID 选择器（权重 100），会盖掉 lg:hidden（class，权重 10），
+     结果桌面端也会显示出来。所以这里用同等的 ID 优先级 + 媒体查询显式关掉。
+     ==================================================== */
+  @media (min-width: 768px) {
+    #mobile-bottom-nav,
+    .mobile-nav-spacer {
+      display: none !important;
+    }
   }
 
   /* 占位高度 = 导航栏高度 + 一点余量，手机上保证最后一行内容不被遮住 */

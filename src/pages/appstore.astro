@@ -250,6 +250,10 @@ const safeJson = JSON.stringify(appstoreData).replace(/</g, "\\u003c");
     .appstore-search input {
       font-size: 1rem;
     }
+    /* 手机上把「搜索 + 三个入口 + 分类」这组控件的垂直间距收紧，给内容让出首屏 */
+    .appstore-search {
+      margin-bottom: 0.6rem;
+    }
     /* 标签条横滑，同时隐藏滚动条，避免 iOS 上滚动条外露、滚动发涩 */
     .appstore-tabs {
       flex-direction: row;
