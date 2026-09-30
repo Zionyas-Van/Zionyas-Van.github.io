@@ -316,18 +316,30 @@ const mainPanelTop = siteConfig.banner.enable
     }
   }
 
-  // ---------- ③ 阅读页工具栏 + 进度条 + 字号 ----------
   function initReaderToolbar() {
-    // 清理 body 下上一页遗留的工具栏
-    document.querySelectorAll("body > #reader-toolbar").forEach((el) => el.remove());
+    // ① 先在 main（当前页面内容区）里找工具栏：
+    //    - swup 切页后，新页面的工具栏一定还在 main 里；
+    //    - 同一页被重复触发时，工具栏已被搬到 body 下，main 里找不到。
+    const mainEl =
+      document.querySelector("main#swup-container") ||
+      document.querySelector("main");
+    const toolbarInMain = mainEl ? mainEl.querySelector("#reader-toolbar") : null;
+    const isReaderPage =
+      document.getElementById("reader-mode-marker") !== null;
 
-    const toolbar = document.getElementById("reader-toolbar");
-    if (!toolbar) return;
-
-    // 搬到 body 下，避开 swup 的 transform 容器
-    if (toolbar.parentElement !== document.body) {
-      document.body.appendChild(toolbar);
+    if (toolbarInMain) {
+      // 当前是阅读页且工具栏还在 main 里 → 清理 body 下遗留的旧工具栏，再搬新的过去
+      document.querySelectorAll("body > #reader-toolbar").forEach((el) => el.remove());
+      document.body.appendChild(toolbarInMain);
+    } else if (!isReaderPage) {
+      // 当前不是阅读页 → 清掉任何残留的工具栏，然后结束
+      document.querySelectorAll("body > #reader-toolbar").forEach((el) => el.remove());
+      return;
     }
+
+    // ② 此时阅读页的工具栏应当在 body 下
+    const toolbar = document.querySelector("body > #reader-toolbar");
+    if (!toolbar) return;
 
     // 多次测量 Fuwari 顶栏高度，直到稳定
     const placeToolbar = () => {
