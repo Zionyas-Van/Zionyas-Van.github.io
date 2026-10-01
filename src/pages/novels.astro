@@ -3,65 +3,322 @@ import { Icon } from "astro-icon/components";
 import { novels } from "../data/novels";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 
-// 只传渲染需要的字段，避免把章节正文也传过去
-const novelsMeta = novels.map((n) => ({
-	id: n.id,
-	title: n.title,
-	cover: n.cover,
-	description: n.description,
-	author: n.author,
-	chapterCount: n.chapters?.length || 0,
-	platform: n.platform || "",
+// ============================================================
+// 数据准备：全部用真实数据算出来的指标（字数按章节正文字符数统计）
+// ============================================================
+const stripHtml = (s: string) => String(s || "").replace(/<[^>]*>/g, "");
+const countWords = (s: string) => stripHtml(s).replace(/\s/g, "").length;
+
+const all = novels.map((n) => {
+	const chapters = (n.chapters || []).map((c) => ({
+		slug: c.slug,
+		title: c.title,
+		date: c.date || "",
+		words: countWords(c.content || ""),
+	}));
+	const words = chapters.reduce((a, c) => a + c.words, 0);
+	const dates = chapters.map((c) => c.date).filter(Boolean).sort();
+	const latest = dates[dates.length - 1] || n.publishedDate || "";
+	return {
+		id: n.id,
+		title: n.title,
+		cover: n.cover,
+		description: n.description,
+		intro: n.intro || "",
+		author: n.author || "",
+		platform: n.platform || "",
+		publishedDate: n.publishedDate || "",
+		chapterCount: chapters.length,
+		words,
+		latest,
+	};
+});
+
+// 只把渲染需要的字段传给客户端（不含章节正文）
+const novelsJson = JSON.stringify(all).replace(/</g, "\\u003c");
+
+const fmtWords = (w: number) =>
+	w >= 10000 ? `${(w / 10000).toFixed(1).replace(/\.0$/, "")} 万字` : `${w} 字`;
+
+// 顶部统计
+const totalWords = all.reduce((a, n) => a + n.words, 0);
+const totalChapters = all.reduce((a, n) => a + n.chapterCount, 0);
+
+// 主编力荐：章节最多的那本（并列时取最近更新的）
+const featured =
+	[...all].sort(
+		(a, b) =>
+			b.chapterCount - a.chapterCount ||
+			String(b.latest).localeCompare(String(a.latest)),
+	)[0] || null;
+
+// 排行榜（七猫那种多列编号榜）
+const byWords = [...all].sort((a, b) => b.words - a.words).slice(0, 5);
+const byChapters = [...all].sort((a, b) => b.chapterCount - a.chapterCount).slice(0, 5);
+const byLatest = [...all]
+	.sort((a, b) => String(b.latest).localeCompare(String(a.latest)))
+	.slice(0, 5);
+
+const rankings = [
+	{ key: "words", title: "篇幅榜", icon: "material-symbols:menu-book-rounded", items: byWords },
+	{ key: "chapters", title: "章节榜", icon: "material-symbols:format-list-numbered-rounded", items: byChapters },
+	{ key: "latest", title: "更新榜", icon: "material-symbols:schedule-rounded", items: byLatest },
+];
+
+// 筛选栏选项（全部来自真实数据）
+const platforms = Array.from(new Set(all.map((n) => n.platform).filter(Boolean))).map(
+	(p) => ({ name: p, count: all.filter((n) => n.platform === p).length }),
+);
+
+const lengthOptions = [
+	{ key: "短篇", label: "10 万字以下", test: (w: number) => w < 100000 },
+	{ key: "中篇", label: "10–50 万字", test: (w: number) => w >= 100000 && w < 500000 },
+	{ key: "长篇", label: "50 万字以上", test: (w: number) => w >= 500000 },
+];
+const lengthCounts = lengthOptions.map((o) => ({
+	key: o.key,
+	label: o.label,
+	count: all.filter((n) => o.test(n.words)).length,
 }));
 
-const novelsJson = JSON.stringify(novelsMeta).replace(/</g, "\\u003c");
+const sortOptions = [
+	{ key: "latest", label: "最近更新" },
+	{ key: "words", label: "字数最多" },
+	{ key: "chapters", label: "章节最多" },
+	{ key: "title", label: "按书名" },
+];
+
+// 初始列表：按「最近更新」排（与客户端默认状态一致，保证无 JS 时也是完整可读的一页）
+const initialList = [...all].sort((a, b) =>
+	String(b.latest).localeCompare(String(a.latest)),
+);
+
+const metricOf = (n: (typeof all)[number], key: string) =>
+	key === "words" ? fmtWords(n.words) : key === "chapters" ? `${n.chapterCount} 章` : n.latest || "—";
 ---
 
 <MainGridLayout title="那些故事" description="我的小说作品">
-  <!-- 页头 -->
-  <div class="mb-8 onload-animation">
+  <!-- ==================== 页头 ==================== -->
+  <div class="mb-6 onload-animation">
     <h1 class="text-2xl font-bold text-90 flex items-center gap-2">
       <Icon name="material-symbols:auto-stories-rounded" class="text-[var(--primary)] text-[1.75rem]" />
       那些故事
     </h1>
-    <p class="text-75 mt-1.5 text-sm" id="novel-count-line">一个写故事的地方</p>
+    <p class="text-75 mt-1.5 text-[13px]" id="novel-count-line">
+      共 {all.length} 部作品 · {totalChapters} 章 · {fmtWords(totalWords)}
+    </p>
   </div>
 
-  {novels.length > 0 ? (
+  {all.length > 0 ? (
     <>
-      <!-- 必读榜 -->
-      <section id="section-top" class="mb-10 hidden">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-            <Icon name="material-symbols:workspace-premium-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-            必读榜
-          </h2>
-          <span class="text-xs text-75/60">编辑精选</span>
+      <!-- ==================== 主编力荐（起点/纵横的大卡） ==================== -->
+      {featured && (
+        <section class="mb-8 onload-animation">
+          <div class="card-base rounded-[var(--radius-large)] p-4 md:p-6 flex flex-col sm:flex-row gap-5">
+            <div class="w-[150px] sm:w-[178px] aspect-[3/4] flex-none rounded-2xl overflow-hidden bg-black/10 dark:bg-white/5 mx-auto sm:mx-0">
+              {featured.cover && (
+                <img
+                  src={featured.cover}
+                  alt={featured.title}
+                  class="w-full h-full object-cover"
+                  loading="eager"
+                />
+              )}
+            </div>
+            <div class="min-w-0 flex-1 flex flex-col">
+              <div class="flex items-center gap-2 flex-wrap mb-2">
+                <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[var(--primary)] text-white">
+                  主编力荐
+                </span>
+                {featured.platform && (
+                  <span class="text-[11px] px-2.5 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+                    {featured.platform}
+                  </span>
+                )}
+              </div>
+              <h2 class="text-xl md:text-2xl font-bold text-90">{featured.title}</h2>
+              <div class="text-[12.5px] text-75 mt-2 flex items-center gap-2 flex-wrap">
+                <span>作者：{featured.author || "佚名"}</span>
+                <span class="opacity-30">·</span>
+                <span>共 {featured.chapterCount} 章</span>
+                <span class="opacity-30">·</span>
+                <span>{fmtWords(featured.words)}</span>
+              </div>
+              <p class="text-[13.5px] text-75/85 mt-3 line-clamp-3 leading-relaxed whitespace-pre-line">
+                {(featured.intro || featured.description).replace(/\\n/g, "\n")}
+              </p>
+              <div class="flex items-center gap-3 flex-wrap mt-4">
+                <a
+                  href={`/novels/${featured.id}/`}
+                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--primary)] text-white text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
+                >
+                  开始阅读
+                  <Icon name="material-symbols:arrow-forward-rounded" class="text-[1.1rem]" />
+                </a>
+                <span class="text-[11.5px] text-75/60">最近更新：{featured.latest || "—"}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <!-- ==================== 筛选 + 排序（番茄那种筛选栏） ==================== -->
+      <section
+        class="card-base rounded-[var(--radius-large)] p-4 md:p-5 mb-8 onload-animation"
+        data-novel-filterbar
+      >
+        <div class="novel-frow">
+          <span class="novel-flabel">平台</span>
+          <div class="novel-chips">
+            <button type="button" class="novel-chip" data-novel-filter="platform" data-novel-value="全部" data-active="true">
+              全部 <em>{all.length}</em>
+            </button>
+            {platforms.map((p) => (
+              <button type="button" class="novel-chip" data-novel-filter="platform" data-novel-value={p.name}>
+                {p.name} <em>{p.count}</em>
+              </button>
+            ))}
+          </div>
         </div>
-        <div id="list-top" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+
+        <div class="novel-frow">
+          <span class="novel-flabel">篇幅</span>
+          <div class="novel-chips">
+            <button type="button" class="novel-chip" data-novel-filter="length" data-novel-value="全部" data-active="true">
+              全部
+            </button>
+            {lengthCounts.map((o) => (
+              <button type="button" class="novel-chip" data-novel-filter="length" data-novel-value={o.key}>
+                {o.label} <em>{o.count}</em>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="novel-frow">
+          <span class="novel-flabel">排序</span>
+          <div class="novel-chips">
+            {sortOptions.map((o, i) => (
+              <button
+                type="button"
+                class="novel-chip"
+                data-novel-filter="sort"
+                data-novel-value={o.key}
+                data-active={i === 0 ? "true" : "false"}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="novel-frow">
+          <span class="novel-flabel">查找</span>
+          <input
+            id="novel-search"
+            class="novel-search"
+            type="text"
+            placeholder="输入书名或作者，立即筛选"
+            autocomplete="off"
+          />
+        </div>
       </section>
 
-      <!-- 今日推荐 -->
-      <section id="section-today" class="mb-10 hidden">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
-            <Icon name="material-symbols:today-rounded" class="text-[var(--primary)] text-[1.25rem]" />
-            今日推荐
-          </h2>
-          <span class="text-xs text-75/60">定期更换</span>
+      <!-- ==================== 排行榜（七猫那种多列编号榜） ==================== -->
+      <section class="mb-8 onload-animation">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {rankings.map((r) => (
+            <div class="card-base rounded-[var(--radius-large)] p-4">
+              <h3 class="flex items-center gap-2 text-sm font-bold text-90 mb-3">
+                <Icon name={r.icon} class="text-[var(--primary)] text-[1.15rem]" />
+                {r.title}
+              </h3>
+              <ol class="flex flex-col gap-2.5">
+                {r.items.map((n, i) => (
+                  <li>
+                    <a href={`/novels/${n.id}/`} class="flex items-center gap-2.5 group">
+                      <span
+                        class:list={[
+                          "w-5 h-5 flex-none rounded-md text-[11px] font-bold flex items-center justify-center",
+                          i === 0
+                            ? "bg-[var(--primary)] text-white"
+                            : i === 1
+                              ? "bg-[var(--primary)]/25 text-[var(--primary)]"
+                              : "bg-black/5 dark:bg-white/10 text-75",
+                        ]}
+                      >
+                        {i + 1}
+                      </span>
+                      <span class="min-w-0 flex-1 text-[13px] text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                        {n.title}
+                      </span>
+                      <span class="flex-none text-[11px] text-75/60">{metricOf(n, r.key)}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
         </div>
-        <div id="list-today" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
       </section>
 
-      <!-- 全部小说 -->
-      <section id="section-all" class="mb-10 hidden">
-        <div class="flex items-center justify-between mb-5">
+      <!-- ==================== 全部小说（番茄那种列表行） ==================== -->
+      <section class="onload-animation">
+        <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-90 flex items-center gap-2">
             <Icon name="material-symbols:library-books-rounded" class="text-[var(--primary)] text-[1.25rem]" />
             全部小说
           </h2>
+          <span class="text-xs text-75/60" id="novel-list-count">共 {all.length} 部</span>
         </div>
-        <div id="list-all" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+
+        <div id="novel-list" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {initialList.map((n) => (
+            <a
+              href={`/novels/${n.id}/`}
+              class="card-base group rounded-[18px] p-3 flex gap-3.5 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+            >
+              <div class="w-[76px] sm:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
+                {n.cover && (
+                  <img
+                    src={n.cover}
+                    alt={n.title}
+                    class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              <div class="min-w-0 flex-1 flex flex-col">
+                <h3 class="font-bold text-[15px] text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                  {n.title}
+                </h3>
+                <div class="flex items-center gap-2 flex-wrap mt-1.5 text-[11.5px] text-75">
+                  <span>{n.author || "佚名"}</span>
+                  {n.platform && (
+                    <span class="px-1.5 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)]">
+                      {n.platform}
+                    </span>
+                  )}
+                  <span class="text-75/60">
+                    共 {n.chapterCount} 章 · {fmtWords(n.words)}
+                  </span>
+                </div>
+                <p class="text-[12.5px] text-75/80 mt-1.5 line-clamp-2 leading-relaxed">
+                  {n.description}
+                </p>
+                <div class="mt-auto pt-1.5 text-[11px] text-75/55">最近更新：{n.latest || "—"}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <div
+          id="novel-list-empty"
+          class="hidden card-base rounded-[var(--radius-large)] p-10 text-center text-75 mt-3"
+        >
+          <Icon name="material-symbols:search-off-rounded" class="text-4xl mx-auto mb-3 opacity-25" />
+          <p class="text-sm">没有符合条件的作品，换个条件试试～</p>
+        </div>
       </section>
     </>
   ) : (
@@ -75,3 +332,103 @@ const novelsJson = JSON.stringify(novelsMeta).replace(/</g, "\\u003c");
   <!-- 数据源：JSON 形式嵌入，供脚本读取 -->
   <script type="application/json" id="novels-data" set:html={novelsJson}></script>
 </MainGridLayout>
+
+<style>
+  /* ===== 筛选栏（番茄式：标签行，选中高亮）===== */
+  .novel-frow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.15rem 0;
+  }
+  .novel-frow + .novel-frow {
+    margin-top: 0.4rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(128, 128, 128, 0.1);
+  }
+  .novel-flabel {
+    flex: none;
+    width: 2.5rem;
+    font-size: 12.5px;
+    line-height: 28px;
+    color: var(--content-meta, #8a8a8a);
+  }
+  .novel-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+  .novel-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 28px;
+    padding: 0 0.75rem;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--content-meta, #6b7280);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .novel-chip em {
+    font-style: normal;
+    font-size: 10.5px;
+    opacity: 0.55;
+  }
+  .novel-chip:hover {
+    background: color-mix(in oklab, var(--primary) 8%, transparent);
+    color: var(--primary);
+  }
+  .novel-chip[data-active="true"] {
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .novel-search {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0 0.9rem;
+    border-radius: 999px;
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    background: transparent;
+    font-size: 13.5px;
+    color: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .novel-search:focus {
+    border-color: var(--primary);
+  }
+
+  /* ===== 手机端：标签行改成单行横滑（和番茄手机端一样）===== */
+  @media (max-width: 767px) {
+    .novel-frow {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .novel-flabel {
+      width: auto;
+      line-height: 1.3;
+    }
+    .novel-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      width: 100%;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .novel-chips::-webkit-scrollbar {
+      display: none;
+    }
+    .novel-chip {
+      flex: none;
+      height: 32px;
+    }
+  }
+</style>

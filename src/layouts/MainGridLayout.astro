@@ -157,166 +157,110 @@ const mainPanelTop = siteConfig.banner.enable
   }
 
   // ---------- ② 小说列表页：三榜单渲染 ----------
+  // ---------- ② 小说页（/novels/）：筛选 + 排序 + 列表重绘 ----------
   function initNovelsPage() {
     const dataEl = document.getElementById("novels-data");
-    const listTop = document.getElementById("list-top");
-    const listToday = document.getElementById("list-today");
-    const listAll = document.getElementById("list-all");
-    const secTop = document.getElementById("section-top");
-    const secToday = document.getElementById("section-today");
-    const secAll = document.getElementById("section-all");
-    if (!dataEl || !listTop || !listToday || !listAll) return;
-    if (listTop.dataset.rendered === "1") return;
-    listTop.dataset.rendered = "1";
+    const listEl = document.getElementById("novel-list");
+    const filterEl = document.querySelector("[data-novel-filterbar]");
+    if (!dataEl || !listEl || !filterEl) return;
+    if (listEl.dataset.wired === "1") return;
+    listEl.dataset.wired = "1";
 
-    let novelsData;
+    let data;
     try {
-      novelsData = JSON.parse(dataEl.textContent || "[]");
+      data = JSON.parse(dataEl.textContent || "[]");
     } catch {
       return;
     }
-    if (!Array.isArray(novelsData) || novelsData.length === 0) return;
+    if (!Array.isArray(data) || data.length === 0) return;
 
-    const today = new Date();
-    const seed =
-      today.getFullYear() * 10000 +
-      (today.getMonth() + 1) * 100 +
-      today.getDate();
-
-    const seededShuffle = (arr, s) => {
-      const result = [...arr];
-      let state = s;
-      const rand = () => {
-        state = (state * 9301 + 49297) % 233280;
-        return state / 233280;
-      };
-      for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(rand() * (i + 1));
-        [result[i], result[j]] = [result[j], result[i]];
-      }
-      return result;
-    };
-
-    const shuffled = seededShuffle(novelsData, seed);
+    const countEl = document.getElementById("novel-list-count");
+    const emptyEl = document.getElementById("novel-list-empty");
+    const searchEl = document.getElementById("novel-search");
 
     const esc = (s) =>
-      String(s || "")
+      String(s == null ? "" : s)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
-    const renderTopItem = (n, rank) => `
-      <a href="/novels/${n.id}/"
-         class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                hover:scale-[1.02] active:scale-100 transition-transform duration-200
-                relative flex flex-col">
-        <div class="absolute top-0 left-0 z-10 px-3 py-1.5 rounded-br-xl
-                    bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/60
-                    text-white font-black text-sm shadow-lg tracking-wider">
-          #${rank}
+    const fmtWords = (w) =>
+      w >= 10000 ? `${(w / 10000).toFixed(1).replace(/\.0$/, "")} 万字` : `${w} 字`;
+
+    const state = { platform: "全部", length: "全部", sort: "latest", q: "" };
+
+    const inLength = (n, key) => {
+      if (key === "短篇") return n.words < 100000;
+      if (key === "中篇") return n.words >= 100000 && n.words < 500000;
+      if (key === "长篇") return n.words >= 500000;
+      return true;
+    };
+
+    const sorters = {
+      latest: (a, b) => String(b.latest || "").localeCompare(String(a.latest || "")),
+      words: (a, b) => b.words - a.words,
+      chapters: (a, b) => b.chapterCount - a.chapterCount,
+      title: (a, b) => String(a.title || "").localeCompare(String(b.title || ""), "zh-Hans-CN"),
+    };
+
+    // 注意：这段结构必须和 novels.astro 里服务端渲染的列表行保持一致
+    const rowHtml = (n) => `
+      <a href="/novels/${esc(n.id)}/"
+         class="card-base group rounded-[18px] p-3 flex gap-3.5 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
+        <div class="w-[76px] sm:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
+          ${n.cover ? `<img src="${esc(n.cover)}" alt="${esc(n.title)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />` : ""}
         </div>
-        <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
-          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
-               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-               loading="lazy" />
-        </div>
-        <div class="p-3 md:p-4">
-          <h3 class="font-bold text-sm md:text-base text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-            ${esc(n.title)}
-          </h3>
-          <p class="text-xs text-75/70 mt-1 truncate">${esc(n.author)}</p>
-          <p class="text-xs text-75 mt-2 line-clamp-2 leading-relaxed">
-            ${esc(n.description)}
-          </p>
-          <div class="flex items-center gap-2 mt-2 text-[11px] text-75/60">
-            <span>${n.chapterCount} 章</span>
-            ${n.platform ? `<span>·</span><span class="truncate">${esc(n.platform)}</span>` : ""}
+        <div class="min-w-0 flex-1 flex flex-col">
+          <h3 class="font-bold text-[15px] text-90 group-hover:text-[var(--primary)] transition-colors truncate">${esc(n.title)}</h3>
+          <div class="flex items-center gap-2 flex-wrap mt-1.5 text-[11.5px] text-75">
+            <span>${esc(n.author || "佚名")}</span>
+            ${n.platform ? `<span class="px-1.5 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)]">${esc(n.platform)}</span>` : ""}
+            <span class="text-75/60">共 ${n.chapterCount} 章 · ${fmtWords(n.words)}</span>
           </div>
+          <p class="text-[12.5px] text-75/80 mt-1.5 line-clamp-2 leading-relaxed">${esc(n.description)}</p>
+          <div class="mt-auto pt-1.5 text-[11px] text-75/55">最近更新：${esc(n.latest || "—")}</div>
         </div>
-      </a>
-    `;
+      </a>`;
 
-    const renderTodayItem = (n) => `
-      <a href="/novels/${n.id}/"
-         class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                hover:scale-[1.01] active:scale-100 transition-transform duration-200
-                flex gap-3 p-3">
-        <div class="w-20 aspect-[3/4] flex-shrink-0 rounded-lg overflow-hidden bg-black/10 dark:bg-white/5">
-          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
-               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-               loading="lazy" />
-        </div>
-        <div class="flex flex-col justify-between min-w-0 flex-1 py-0.5">
-          <div class="min-w-0">
-            <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-              ${esc(n.title)}
-            </h3>
-            <p class="text-[11px] text-75/60 mt-0.5 truncate">${esc(n.author)}</p>
-            <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
-              ${esc(n.description)}
-            </p>
-          </div>
-          <div class="text-[11px] text-75/60 mt-1">
-            ${n.chapterCount} 章
-          </div>
-        </div>
-      </a>
-    `;
+    const apply = () => {
+      const q = state.q.trim().toLowerCase();
+      const items = data.filter(
+        (n) =>
+          (state.platform === "全部" || n.platform === state.platform) &&
+          inLength(n, state.length) &&
+          (!q || `${n.title} ${n.author}`.toLowerCase().includes(q)),
+      );
+      items.sort(sorters[state.sort] || sorters.latest);
+      listEl.innerHTML = items.map(rowHtml).join("");
+      if (countEl) countEl.textContent = `共 ${items.length} 部`;
+      if (emptyEl) emptyEl.classList.toggle("hidden", items.length > 0);
+    };
 
-    const renderAllItem = (n) => `
-      <a href="/novels/${n.id}/"
-         class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                hover:scale-[1.02] active:scale-100 transition-transform duration-200">
-        <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
-          <img src="${esc(n.cover)}" alt="${esc(n.title)}"
-               class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-               loading="lazy" />
-        </div>
-        <div class="p-3 md:p-4">
-          <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-            ${esc(n.title)}
-          </h3>
-          <p class="text-xs text-75 mt-1.5 line-clamp-2 leading-relaxed">
-            ${esc(n.description)}
-          </p>
-          <div class="flex items-center gap-2 mt-2">
-            <span class="text-xs text-75/50">${esc(n.author)}</span>
-            <span class="text-xs text-75/30">·</span>
-            <span class="text-xs text-75/50">${n.chapterCount} 章</span>
-          </div>
-        </div>
-      </a>
-    `;
+    const chips = Array.from(filterEl.querySelectorAll("[data-novel-filter]"));
+    chips.forEach((chip) => {
+      if (chip.dataset.bound === "1") return;
+      chip.dataset.bound = "1";
+      chip.addEventListener("click", () => {
+        const group = chip.dataset.novelFilter;
+        const value = chip.dataset.novelValue || "全部";
+        if (group === "sort") state.sort = value;
+        else if (group === "platform") state.platform = value;
+        else if (group === "length") state.length = value;
+        chips
+          .filter((c) => c.dataset.novelFilter === group)
+          .forEach((c) => (c.dataset.active = c === chip ? "true" : "false"));
+        apply();
+      });
+    });
 
-    const topCount = Math.min(3, shuffled.length);
-    const topItems = shuffled.slice(0, topCount);
-
-    const todayStart = topCount;
-    const todayEnd = Math.min(shuffled.length, todayStart + 3);
-    let finalTodayItems = shuffled.slice(todayStart, todayEnd);
-
-    if (finalTodayItems.length === 0 && shuffled.length > 0) {
-      const offset = shuffled.length > 1 ? 1 : 0;
-      finalTodayItems = shuffled
-        .slice(offset, offset + Math.min(3, shuffled.length))
-        .slice(0, Math.min(3, shuffled.length));
-    }
-
-    listTop.innerHTML = topItems
-      .map((n, i) => renderTopItem(n, i + 1))
-      .join("");
-    listToday.innerHTML = finalTodayItems.map(renderTodayItem).join("");
-    listAll.innerHTML = shuffled.map(renderAllItem).join("");
-
-    if (secTop) secTop.classList.remove("hidden");
-    if (finalTodayItems.length > 0 && secToday) secToday.classList.remove("hidden");
-    if (secAll) secAll.classList.remove("hidden");
-
-    const countLine = document.getElementById("novel-count-line");
-    if (countLine) {
-      countLine.textContent = `共 ${shuffled.length} 部作品 · 每天换一批推荐`;
+    if (searchEl && searchEl.dataset.bound !== "1") {
+      searchEl.dataset.bound = "1";
+      searchEl.addEventListener("input", () => {
+        state.q = searchEl.value || "";
+        apply();
+      });
     }
   }
 
