@@ -69,7 +69,7 @@ export const projects: Project[] = [
     platform: "Windows",
     status: "开发中",
     downloadLinks: [
-
+      { label: "源码", url: "https://zionyasvan.lanzouq.com/ie6Rv4ajn7dc" }
     ],
     featured: true,
   }
