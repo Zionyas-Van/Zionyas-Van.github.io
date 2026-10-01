@@ -665,6 +665,74 @@ const mainPanelTop = siteConfig.banner.enable
     });
   }
 
+  // ---------- ⑥ 首页「猜你喜欢」大图轮播 ----------
+  function initFeatured() {
+    const box = document.querySelector("[data-featured]");
+    if (!box) return;
+    if (box.dataset.wired === "1") return;
+    box.dataset.wired = "1";
+
+    const slides = Array.from(box.querySelectorAll("[data-slide]"));
+    const thumbs = Array.from(box.querySelectorAll("[data-feat-thumb]"));
+    const dots = Array.from(box.querySelectorAll("[data-feat-dot]"));
+    if (slides.length < 2) return;
+
+    const interval = Math.max(3000, Number(box.dataset.interval) || 6000);
+    let idx = 0;
+    let timer = null;
+
+    const show = (i) => {
+      idx = (i + slides.length) % slides.length;
+      slides.forEach((el, k) => (el.dataset.active = k === idx ? "1" : "0"));
+      thumbs.forEach((el, k) => (el.dataset.active = k === idx ? "1" : "0"));
+      dots.forEach((el, k) => (el.dataset.active = k === idx ? "1" : "0"));
+    };
+    const stop = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    const start = () => {
+      stop();
+      timer = setInterval(() => {
+        // 切走页面时暂停；元素已被 swup 换掉时自动收工，避免残留定时器
+        if (document.hidden) return;
+        if (!document.body.contains(box)) return stop();
+        show(idx + 1);
+      }, interval);
+    };
+
+    thumbs.forEach((el, k) =>
+      el.addEventListener("click", () => {
+        show(k);
+        start();
+      }),
+    );
+    dots.forEach((el, k) =>
+      el.addEventListener("click", () => {
+        show(k);
+        start();
+      }),
+    );
+    const prev = box.querySelector("[data-feat-prev]");
+    const next = box.querySelector("[data-feat-next]");
+    if (prev)
+      prev.addEventListener("click", () => {
+        show(idx - 1);
+        start();
+      });
+    if (next)
+      next.addEventListener("click", () => {
+        show(idx + 1);
+        start();
+      });
+    box.addEventListener("mouseenter", stop);
+    box.addEventListener("mouseleave", start);
+
+    start();
+  }
+
   // ---------- 统一入口 ----------
   function initAll() {
     initReaderMode();
@@ -672,6 +740,7 @@ const mainPanelTop = siteConfig.banner.enable
     initAppstore();
     initReaderToolbar();
     initMobileNav();
+    initFeatured();
   }
 
   // 首次执行 + 每次 swup 切页执行

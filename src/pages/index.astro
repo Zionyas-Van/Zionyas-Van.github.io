@@ -92,7 +92,108 @@ const formatNewsDate = (d: unknown) => {
           猜你喜欢
         </h2>
       </div>
-      <div class="flex gap-4 overflow-x-auto pb-3 max-md:flex-col max-md:gap-3 max-md:overflow-visible max-md:pb-0 md:grid md:grid-cols-2 md:overflow-visible md:pb-0" style="scrollbar-width: thin;">
+      <!-- ================= 桌面端：一张大图轮播 + 右侧待播小列表 ================= -->
+      <div class="hidden md:grid md:grid-cols-[minmax(0,1fr)_19rem] gap-4" data-featured data-interval="6000">
+        <!-- 左侧大图 -->
+        <div class="feat-stage card-base rounded-[var(--radius-large)] overflow-hidden relative">
+          {featuredItems.map((item, i) => {
+            const isProj = item.kind === "project";
+            const href = isProj ? `/projects/${item.id}/` : `https://www.bilibili.com/video/${item.bvid}`;
+            const kindText = isProj ? (item.type === "game" ? "游戏" : "软件") : "视频";
+            return (
+              <a
+                href={href}
+                target={isProj ? undefined : "_blank"}
+                rel={isProj ? undefined : "noopener noreferrer"}
+                class="feat-slide group"
+                data-slide={i}
+                data-active={i === 0 ? "1" : "0"}
+              >
+                {item.cover ? (
+                  <img src={item.cover} alt={item.title} loading={i === 0 ? "eager" : "lazy"} class="feat-cover" />
+                ) : (
+                  <div class="w-full h-full bg-gradient-to-br from-blue-900/40 to-pink-900/40"></div>
+                )}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none"></div>
+
+                {!isProj && (
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-xl transition duration-300 group-hover:scale-110">
+                      <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-3xl ml-0.5" />
+                    </div>
+                  </div>
+                )}
+
+                <div class="absolute inset-x-0 bottom-0 p-6 max-w-3xl pointer-events-none">
+                  <span
+                    class:list={[
+                      "inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3 text-white",
+                      isProj ? "bg-[var(--primary)]" : "bg-red-500",
+                    ]}
+                  >
+                    {kindText}
+                  </span>
+                  <h3 class="text-white font-bold text-xl lg:text-2xl leading-snug mb-2 line-clamp-2">{item.title}</h3>
+                  <p class="text-white/75 text-sm leading-relaxed line-clamp-2 mb-3">{item.description}</p>
+                  <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 group-hover:text-white transition">
+                    查看详情
+                    <Icon name="material-symbols:chevron-right-rounded" class="text-[1.1rem] transition group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </a>
+            );
+          })}
+
+          <!-- 左右切换 -->
+          <div class="absolute top-4 right-4 flex gap-2 z-10">
+            <button type="button" class="feat-nav" data-feat-prev aria-label="上一个">
+              <Icon name="material-symbols:chevron-left-rounded" class="text-[1.3rem]" />
+            </button>
+            <button type="button" class="feat-nav" data-feat-next aria-label="下一个">
+              <Icon name="material-symbols:chevron-right-rounded" class="text-[1.3rem]" />
+            </button>
+          </div>
+
+          <!-- 进度圆点 -->
+          {featuredItems.length > 1 && (
+            <div class="absolute bottom-5 right-6 flex items-center gap-1.5 z-10">
+              {featuredItems.map((_, i) => (
+                <button
+                  type="button"
+                  class="feat-dot"
+                  data-feat-dot={i}
+                  data-active={i === 0 ? "1" : "0"}
+                  aria-label={`切换到第 ${i + 1} 个`}
+                ></button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <!-- 右侧：等待轮播的小列表 -->
+        <div class="flex flex-col gap-3">
+          {featuredItems.length > 1 && (
+            <div class="text-[11px] font-semibold text-30 uppercase tracking-[0.12em] px-1">接下来</div>
+          )}
+          {featuredItems.map((item, i) => {
+            const isProj = item.kind === "project";
+            return (
+              <button type="button" class="feat-item" data-feat-thumb={i} data-active={i === 0 ? "1" : "0"}>
+                <span class="feat-thumb">
+                  {item.cover ? <img src={item.cover} alt="" loading="lazy" /> : null}
+                </span>
+                <span class="feat-item-body">
+                  <b>{item.title}</b>
+                  <em>{isProj ? (item.type === "game" ? "游戏" : "软件") : "视频"}</em>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- ================= 手机端：紧凑竖排列表（保持不变） ================= -->
+      <div class="flex flex-col gap-3 md:hidden">
         {featuredItems.map((item) => {
           if (item.kind === "project") {
             return (
@@ -369,3 +470,122 @@ const formatNewsDate = (d: unknown) => {
   )}
 
 </MainGridLayout>
+
+<!-- ==================== 首页「猜你喜欢」轮播样式（仅桌面端） ==================== -->
+<style>
+  .feat-stage {
+    aspect-ratio: 16 / 9;
+  }
+  .feat-slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+  }
+  .feat-slide[data-active="1"] {
+    display: block;
+    animation: featIn 0.5s ease;
+  }
+  @keyframes featIn {
+    from {
+      opacity: 0.35;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .feat-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+  }
+  .feat-slide:hover .feat-cover {
+    transform: scale(1.03);
+  }
+  .feat-nav {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.38);
+    border: none;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.15s ease;
+  }
+  .feat-nav:hover {
+    background: rgba(0, 0, 0, 0.62);
+  }
+  .feat-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .feat-dot[data-active="1"] {
+    width: 22px;
+    background: #fff;
+  }
+  .feat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    background: var(--card-bg);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  }
+  .feat-item:hover {
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent);
+    transform: translateX(2px);
+  }
+  .feat-item[data-active="1"] {
+    border-color: var(--primary);
+    background: color-mix(in oklab, var(--primary) 8%, var(--card-bg));
+  }
+  .feat-thumb {
+    display: block;
+    width: 78px;
+    height: 50px;
+    flex: none;
+    border-radius: 9px;
+    overflow: hidden;
+    background: rgba(128, 128, 128, 0.12);
+  }
+  .feat-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .feat-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .feat-item-body b {
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .feat-item-body em {
+    font-style: normal;
+    font-size: 11px;
+    color: var(--content-meta, #8a8a8a);
+  }
+</style>
