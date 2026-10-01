@@ -32,9 +32,9 @@ export const projects: Project[] = [
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dkicf1bcgtoye3rntsDIYPAIDyAqayAGxzDdU0Dqe=.png",
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dkicf1nbu9umivg75vDIYPAIDyAqayAGxzDdU0Dqe=.png"],
     type: "software",
-    tags: ["开发者：ZionyasVan（DXL）", "类型：工具", "框架：Neutralionjs"],
+    tags: ["Markdown", "工具", "编辑器"],
     platform: "Windows",
-    status: "已发布 · 2026年7月16日",
+    status: "已发布",
     downloadLinks: [
       { icon: "fa6-brands:github", label: "GitHub", url: "https://github.com/Zionyas-Van/Mark" },
       { label: "蓝奏云（密码：di78）", url: "https://zionyasvan.lanzouq.com/iVFPA3x4owfc" }
@@ -49,9 +49,9 @@ export const projects: Project[] = [
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dkicf2g45yy5yhu8cgDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dkicf37fqc8ke48txgDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dkicf0v097naiw40l2DIYPAIDyAqayAGxzDdU0Dqe=.png"],
     type: "software",
-    tags: ["开发者：ZionyasVan（DXL）", "类型：工具", "框架：Neutralionjs"],
+    tags: ["AI", "工具"],
     platform: "Windows",
-    status: "预发布 · 待发布日期",
+    status: "已发布",
     downloadLinks: [
 
     ],
