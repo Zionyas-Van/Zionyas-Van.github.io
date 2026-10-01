@@ -56,5 +56,21 @@ export const projects: Project[] = [
 
     ],
     featured: false,
+  },
+  {
+    id: "com.zvbg465.games",
+    title: "ZionyasVan's BlockGrounds",
+    description: "来 ZVBG 体验网游式的俄罗斯方块。",
+    longDescription: "来 ZVBG 体验网游式的俄罗斯方块。",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r5r98rmdmesxvDIYPAIDyAqayAGxzDdU0Dqe=.png",
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0l000dlnm5pw1m0m1dm3553DIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dlnm5tqqjlr1t8wmcfDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r5r9645dm977mDIYPAIDyAqayAGxzDdU0Dqe=.png"],
+    type: "game",
+    tags: ["游戏", "俄罗斯方块", "经典"],
+    platform: "Windows",
+    status: "开发中",
+    downloadLinks: [
+
+    ],
+    featured: true,
   }
 ];
