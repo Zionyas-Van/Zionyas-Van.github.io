@@ -324,9 +324,9 @@ const mainPanelTop = siteConfig.banner.enable
   function initAppstore() {
     const dataEl = document.getElementById("appstore-data");
     const contentEl = document.getElementById("appstore-content");
-    const sidebarEl = document.querySelector(".appstore-sidebar");
+    const pageEl = document.querySelector(".appstore-top") || document;
     const searchEl = document.getElementById("appstore-search");
-    if (!dataEl || !contentEl || !sidebarEl) return;
+    if (!dataEl || !contentEl) return;
 
     let data;
     try {
@@ -334,8 +334,9 @@ const mainPanelTop = siteConfig.banner.enable
     } catch { return; }
     if (!data || !Array.isArray(data.games)) return;
 
-    const tabBtns = Array.from(sidebarEl.querySelectorAll("[data-appstore-tab]"));
-    const catBtns = Array.from(sidebarEl.querySelectorAll("[data-appstore-cat]"));
+    // 分区标签现在是页面顶部的药丸标签（已不在侧栏里），所以在整页范围里找
+    const tabBtns = Array.from(pageEl.querySelectorAll("[data-appstore-tab]"));
+    const catBtns = Array.from(document.querySelectorAll("[data-appstore-cat]"));
 
     const state = { tab: "today", cat: null, tag: null, query: "" };
 
@@ -347,61 +348,116 @@ const mainPanelTop = siteConfig.banner.enable
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
-    // ===== 大 Banner（保留原样）=====
+    // ===== 精选大卡：两端共用一套 Play 卡片语言，只是尺寸不同 =====
     const renderBanner = (item) => {
       if (!item) return "";
       const isRes = item._kind === "resource";
       const href = isRes ? item.url : `/projects/${item.id}/`;
       const title = item.title || item.name;
+      const desc = item.description || "";
+      const cover = item.cover || "";
+      const preview = item.shot || cover;
+      const linkAttr = isRes ? 'target="_blank" rel="noopener noreferrer"' : "";
       return `
-        <div class="card-base rounded-[var(--radius-large)] overflow-hidden mb-6 relative"
-             style="background: linear-gradient(135deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 65%, black) 100%);">
-          ${item.cover ? `
-            <div class="absolute inset-0 opacity-25 max-md:inset-auto max-md:right-3 max-md:top-3 max-md:w-14 max-md:h-14 max-md:rounded-xl max-md:overflow-hidden max-md:opacity-100">
-              <img src="${esc(item.cover)}" alt="" class="w-full h-full object-cover" />
-            </div>
-          ` : ""}
-          <div class="relative p-6 md:p-8 max-md:p-4 max-md:pr-20 text-white">
-            <div class="text-[11px] font-semibold tracking-[0.2em] mb-2 max-md:mb-1 opacity-80">精选推荐</div>
-            <h2 class="text-2xl md:text-3xl max-md:text-lg font-bold mb-2 max-md:mb-1">${esc(title)}</h2>
-            <p class="text-sm mb-5 max-md:text-xs max-md:mb-3 opacity-90 line-clamp-2 max-w-xl">${esc(item.description || "")}</p>
-            <a href="${esc(href)}" ${isRes ? 'target="_blank" rel="noopener noreferrer"' : ""}
-               class="inline-flex items-center gap-1.5 px-4 py-2 max-md:px-3.5 max-md:py-1.5 max-md:text-xs rounded-full
-                      bg-white text-[var(--primary)] text-sm font-semibold
-                      hover:opacity-90 active:scale-95 transition-all">
-              查看
-            </a>
+        <a href="${esc(href)}" ${linkAttr}
+           class="card-base group block rounded-[20px] md:rounded-[24px] overflow-hidden mb-5 md:mb-7 active:scale-[0.99] transition">
+          <div class="aspect-[16/9] md:aspect-[21/9] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+            ${preview ? `<img src="${esc(preview)}" alt="${esc(title)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-[1.02]" />` : ""}
           </div>
-        </div>
-      `;
+          <div class="p-3.5 md:p-5 flex items-center gap-3 md:gap-4">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-[14px] md:rounded-2xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
+              ${cover ? `<img src="${esc(cover)}" alt="" class="w-full h-full object-cover" loading="lazy" />` : ""}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[10.5px] md:text-[11px] font-bold tracking-wide text-[var(--primary)] mb-0.5 md:mb-1">精选推荐</div>
+              <h2 class="font-bold text-[16px] md:text-[20px] leading-snug text-90 truncate">${esc(title)}</h2>
+              <p class="text-[12px] md:text-[13px] text-75 mt-0.5 md:mt-1 line-clamp-1 md:line-clamp-2">${esc(desc)}</p>
+            </div>
+            <span class="flex-shrink-0 px-3.5 py-1.5 md:px-5 md:py-2 rounded-full bg-[var(--primary)] text-white text-[12.5px] md:text-sm font-semibold">查看</span>
+          </div>
+        </a>`;
     };
 
-    // ===== 紧凑列表卡片（App Store 风格）=====
+    // ===== 内容卡片：桌面端=带大预览图的 Play 卡片；手机端=紧凑图标行 =====
     const renderListCard = (item) => {
       const isRes = item._kind === "resource";
       const href = isRes ? item.url : `/projects/${item.id}/`;
       const title = item.title || item.name;
       const cover = item.cover || "";
+      const previewSrc = item.shot || cover;
+      const preview = previewSrc
+        ? `<img src="${esc(previewSrc)}" alt="" class="w-full h-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" />`
+        : `<div class="w-full h-full bg-gradient-to-br from-[var(--primary)]/18 to-[var(--primary)]/5"></div>`;
       return `
         <a href="${esc(href)}" ${isRes ? 'target="_blank" rel="noopener noreferrer"' : ""}
-           class="card-base group rounded-2xl p-3 max-md:p-2.5 flex items-center gap-3 max-md:gap-2.5
-                  hover:bg-[var(--primary)]/5 active:scale-[0.98] transition-all">
-          <div class="w-14 h-14 max-md:w-12 max-md:h-12 rounded-xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
-            ${cover ? `<img src="${esc(cover)}" alt="${esc(title)}" class="w-full h-full object-cover" loading="lazy" />` : ""}
+           class="card-base group block rounded-[18px] md:rounded-[22px] overflow-hidden
+                  hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] active:scale-[0.99] transition-all">
+          <div class="hidden md:block aspect-[16/10] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+            ${preview}
           </div>
-          <div class="min-w-0 flex-1">
-            <h3 class="font-semibold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-              ${esc(title)}
-            </h3>
-            <p class="text-xs text-75/70 mt-0.5 truncate">
-              ${esc(item.description || "")}
-            </p>
+          <div class="p-3.5 md:p-4 flex items-center gap-3.5">
+            <div class="w-14 h-14 md:w-12 md:h-12 rounded-[14px] md:rounded-xl overflow-hidden flex-shrink-0
+                        flex items-center justify-center"
+                 style="${cover ? "" : "background: color-mix(in oklab, var(--primary) 14%, transparent)"}">
+              ${
+                cover
+                  ? `<img src="${esc(cover)}" alt="${esc(title)}" class="w-full h-full object-cover" loading="lazy" />`
+                  : `<span class="font-bold text-[18px]" style="color: var(--primary); opacity: .6">${esc((title || "?").slice(0, 1))}</span>`
+              }
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-semibold text-[15px] md:text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                ${esc(title)}
+              </h3>
+              <p class="text-[12.5px] md:text-xs text-75/70 mt-0.5 truncate">
+                ${esc(item.description || "")}
+              </p>
+            </div>
+            <span class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-[var(--primary)] text-white text-[12.5px] font-semibold">
+              查看
+            </span>
           </div>
-          <span class="flex-shrink-0 px-3 py-1 max-md:px-2.5 max-md:py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs max-md:text-[11px] font-medium">
-            查看
-          </span>
         </a>
       `;
+    };
+
+    // ===== 横滑推荐区（Play 的多分区感，两端都显示）=====
+    const renderPicks = () => {
+      const all = data.resources || [];
+      const res = all.slice(0, 8);
+      if (res.length === 0) return "";
+      return `
+        <div class="mt-7 md:mt-9">
+          <div class="flex items-baseline justify-between mb-3 md:mb-4">
+            <h2 class="text-[17px] md:text-xl font-bold text-90">为你推荐</h2>
+            <span class="text-[12px] md:text-[13px] text-75">共 ${all.length} 条</span>
+          </div>
+          <div class="flex gap-3 md:gap-4 overflow-x-auto pb-2" style="scrollbar-width: none;">
+            ${res
+              .map(
+                (r) => `
+              <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"
+                 class="card-base flex-shrink-0 w-[150px] md:w-[178px] rounded-[18px] md:rounded-[20px] overflow-hidden
+                        hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] active:scale-[0.98] transition-all">
+                <div class="aspect-[16/10] w-full overflow-hidden relative">
+                  ${
+                    r.cover
+                      ? `<img src="${esc(r.cover)}" alt="" class="w-full h-full object-cover" loading="lazy" />`
+                      : `<div class="w-full h-full flex items-center justify-center"
+                              style="background: color-mix(in oklab, var(--primary) 14%, transparent)">
+                           <span class="font-bold text-[22px]" style="color: var(--primary); opacity: .55">${esc((r.name || "?").slice(0, 1))}</span>
+                         </div>`
+                  }
+                </div>
+                <div class="p-2.5 md:p-3">
+                  <div class="text-[13px] md:text-sm font-semibold text-90 truncate">${esc(r.name)}</div>
+                  <div class="text-[11px] text-75 mt-0.5 truncate">${esc(r.category || "资源")}</div>
+                </div>
+              </a>`,
+              )
+              .join("")}
+          </div>
+        </div>`;
     };
 
     // ===== 顶部横向标签 =====
@@ -409,12 +465,12 @@ const mainPanelTop = siteConfig.banner.enable
       if (tags.length === 0) return "";
       const all = ["全部", ...tags];
       return `
-                <div class="flex flex-nowrap gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
+                <div class="flex flex-nowrap gap-2 mb-5 max-md:mb-3.5 overflow-x-auto pb-1 -mx-1 px-1">
           ${all.map((t) => {
             const isActive = (t === "全部" && !state.tag) || t === state.tag;
             return `
               <button type="button" data-appstore-tag="${esc(t)}" data-active="${isActive ? "true" : "false"}"
-                class="appstore-tag flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap">
+                class="appstore-tag flex-shrink-0 px-3.5 py-1.5 max-md:px-3 max-md:py-1 rounded-full text-xs max-md:text-[12.5px] font-medium whitespace-nowrap">
                 ${esc(t)}
               </button>
             `;
@@ -473,18 +529,19 @@ const mainPanelTop = siteConfig.banner.enable
 
       contentEl.innerHTML = `
         <div class="mb-4 max-md:mb-3">
-          <h1 class="text-2xl max-md:text-xl font-bold text-90">${esc(titleText)}</h1>
+          <h1 class="text-2xl max-md:text-[21px] font-bold text-90">${esc(titleText)}</h1>
         </div>
         ${renderTags(tagsForFilter)}
         ${banner ? renderBanner(banner) : ""}
         ${
           gridItems.length > 0
-            ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${gridItems.map(renderListCard).join("")}</div>`
-            : `<div class="card-base rounded-[var(--radius-large)] p-12 max-md:p-8 text-center text-75">
-                 <p class="font-medium text-lg text-90 mb-2">空空如也</p>
-                 <p class="text-sm">换个分类或关键词试试～</p>
+            ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-md:gap-2.5">${gridItems.map(renderListCard).join("")}</div>`
+            : `<div class="card-base rounded-[var(--radius-large)] p-12 max-md:p-0 max-md:border-0 max-md:bg-transparent max-md:py-14 text-center text-75">
+                 <p class="font-medium text-lg max-md:text-[15px] text-90 mb-2">空空如也</p>
+                 <p class="text-sm max-md:text-[12.5px]">换个分类或关键词试试～</p>
                </div>`
         }
+        ${state.tab === "today" && !q && !state.tag ? renderPicks() : ""}
       `;
 
       contentEl.querySelectorAll("[data-appstore-tag]").forEach((btn) => {
