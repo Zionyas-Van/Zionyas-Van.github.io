@@ -9,37 +9,76 @@ const path = require("node:path");
 const { execSync } = require("node:child_process");
 
 const ROOT = __dirname;
-const PORT = 3456;
+// 端口可用环境变量覆盖（方便开第二个实例做测试，不影响双击启动）
+const PORT = Number(process.env.PORT) || 3456;
 const POSTS_DIR = path.join(ROOT, "src", "content", "posts");
 const PROJECTS_FILE = path.join(ROOT, "src", "data", "projects.ts");
 const VIDEOS_FILE = path.join(ROOT, "src", "data", "videos.ts");
 const COVERS_DIR = path.join(ROOT, "public", "projects");
 const COVERS_POST_DIR = path.join(ROOT, "public", "covers");
+const RESOURCES_FILE = path.join(ROOT, "src", "data", "resources.ts");
+const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
 
 // ========== 解析 TypeScript 数据文件 ==========
-function parseTsArray(filepath, arrayName) {
-	const content = fs.readFileSync(filepath, "utf-8");
+// 从内容里取出 `export const xxx = [...]` 的数组字面量。
+// 关键：必须跳过字符串内部和注释，否则字符串里的括号会让深度计数跑偏。
+function extractArrayLiteral(content, arrayName) {
 	const startMarker = `export const ${arrayName}`;
 	const startIdx = content.indexOf(startMarker);
-	if (startIdx === -1) return [];
-	// 跳过 = 号，确保找到的是数组的 [ 而非类型注解中的 [
+	if (startIdx === -1) throw new Error(`找不到 export const ${arrayName}`);
 	const eqIdx = content.indexOf("=", startIdx);
-	const bracketStart =
-		eqIdx !== -1 ? content.indexOf("[", eqIdx) : content.indexOf("[", startIdx);
-	if (bracketStart === -1) return [];
+	let i = eqIdx === -1 ? startIdx : eqIdx;
+	while (i < content.length && content[i] !== "[") i++;
+	if (i >= content.length) throw new Error("找不到数组起始位置");
 	let depth = 0;
-	let i = bracketStart;
+	let quote = null;
+	let out = "";
 	for (; i < content.length; i++) {
-		if (content[i] === "[" || content[i] === "{") depth++;
-		if (content[i] === "]" || content[i] === "}") depth--;
-		if (depth === 0 && content[i] === "]") break;
+		const ch = content[i];
+		const next = content[i + 1];
+		const prev = content[i - 1];
+		if (quote) {
+			out += ch;
+			if (ch === quote && prev !== "\\") quote = null;
+			continue;
+		}
+		if (ch === '"' || ch === "'" || ch === "`") {
+			quote = ch;
+			out += ch;
+			continue;
+		}
+		if (ch === "/" && next === "/") {
+			while (i < content.length && content[i] !== "\n") i++;
+			out += "\n";
+			continue;
+		}
+		if (ch === "/" && next === "*") {
+			const end = content.indexOf("*/", i);
+			if (end === -1) throw new Error("块注释没有闭合");
+			i = end + 1;
+			continue;
+		}
+		if (ch === "[" || ch === "{") depth++;
+		else if (ch === "]" || ch === "}") depth--;
+		out += ch;
+		if (depth === 0) return out;
 	}
-	if (i >= content.length) return [];
-	const arrayStr = content.slice(bracketStart, i + 1);
+	throw new Error("数组没有正常闭合");
+}
+
+// 严格版：语法有问题就抛错（写盘自检用它）
+function parseTsArrayStrict(filepath, arrayName) {
+	const content = fs.readFileSync(filepath, "utf-8");
+	const literal = extractArrayLiteral(content, arrayName);
+	return new Function(`return (${literal});`)();
+}
+
+// 宽松版：解析失败返回空数组（读取接口用它，保证界面不会因为一个坏文件整体崩掉）
+function parseTsArray(filepath, arrayName) {
 	try {
-		return eval(`(${arrayStr})`);
+		return parseTsArrayStrict(filepath, arrayName);
 	} catch (e) {
-		console.error("解析失败:", filepath, e.message);
+		console.error("[解析失败]", path.basename(filepath), "-", e.message);
 		return [];
 	}
 }
@@ -65,6 +104,32 @@ function rebuildArraySection(content, arrayName, items, itemFormatter) {
 	const middle =
 		items.length === 0 ? "" : `\n${items.map(itemFormatter).join(",\n")}\n`;
 	return before + middle + after;
+}
+
+// ========== 把字符串安全写进数据文件 ==========
+// 注意：换行必须转义成 \n，否则会写出「跨行的字符串字面量」——
+// 那会让 *_FILE.ts 变成非法 JS，直接导致网站构建失败（这是真实踩过的坑）。
+function ds(v) {
+	return String(v == null ? "" : v)
+		.replace(/\\/g, "\\\\")
+		.replace(/"/g, '\\"')
+		.replace(/\r?\n/g, "\\n");
+}
+
+// 写数组文件 + 写后自检：解析不回来就立刻回滚，绝不让工具把数据文件写坏
+function saveArrayFile(filepath, arrayName, newContent) {
+	const old = fs.readFileSync(filepath, "utf-8");
+	fs.writeFileSync(filepath, newContent, "utf-8");
+	try {
+		const check = parseTsArrayStrict(filepath, arrayName);
+		if (!Array.isArray(check)) throw new Error("解析结果不是数组");
+	} catch (e) {
+		fs.writeFileSync(filepath, old, "utf-8");
+		throw new Error(
+			`写入被拦截并已回滚：生成的数据文件语法有误（${e.message}）。文件未被修改。`,
+		);
+	}
+	return true;
 }
 
 function formatProject(p) {
@@ -105,12 +170,10 @@ ${dl}
 }
 
 function formatVideo(v) {
-	const desc = (v.description || "")
-		.replace(/\\/g, "\\\\")
-		.replace(/"/g, '\\"');
+	const desc = ds(v.description);
 	return `  {
     id: "${v.id}",
-    title: "${v.title}",
+    title: "${ds(v.title)}",
     bvid: "${v.bvid}",
     cover: "${v.cover || ""}",
     description: "${desc}",
@@ -305,18 +368,267 @@ function _savePostCover(base64, slug) {
 	return `/covers/${slug}.${ext}`;
 }
 
+// ========== 自动生成 slug / 标签汇总 / 网络请求 ==========
+
+// 按标题生成 URL 标识：英文数字转成短横线形式；
+// 中文标题（或英文部分太短）用「日期 + 随机串」兜底，避免出现一堆看不懂的编码
+function slugify(title, existing = new Set()) {
+	let base = String(title || "")
+		.toLowerCase()
+		.replace(/['"’”]/g, "")
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+	if (base.length < 3) {
+		const d = new Date();
+		const pad = (n) => String(n).padStart(2, "0");
+		base = `post-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${Math.random()
+			.toString(36)
+			.slice(2, 6)}`;
+	}
+	base = base.slice(0, 60).replace(/-+$/g, "");
+	let slug = base;
+	let i = 2;
+	while (existing.has(slug)) slug = `${base}-${i++}`;
+	return slug;
+}
+
+// 汇总全站已用过的标签（文章 frontmatter + 作品 + 视频）
+function collectTags() {
+	const tags = new Set();
+	const addAll = (arr) =>
+		(arr || []).forEach((t) => {
+			const v = String(t == null ? "" : t).trim();
+			if (v) tags.add(v);
+		});
+	const walk = (dir, depth = 0) => {
+		if (!fs.existsSync(dir) || depth > 4) return;
+		for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+			const full = path.join(dir, d.name);
+			if (d.isDirectory()) walk(full, depth + 1);
+			else if (d.name.endsWith(".md")) {
+				const txt = fs.readFileSync(full, "utf-8");
+				const m = txt.match(/^tags:\s*\[([^\]]*)\]/m);
+				if (m) {
+					addAll(
+						m[1]
+							.split(",")
+							.map((s) => s.trim().replace(/^["']|["']$/g, "")),
+					);
+				}
+			}
+		}
+	};
+	walk(POSTS_DIR);
+	addAll(parseTsArray(PROJECTS_FILE, "projects").flatMap((p) => p.tags || []));
+	addAll(parseTsArray(VIDEOS_FILE, "videos").flatMap((v) => v.tags || []));
+	addAll(parseTsArray(path.join(ROOT, "src", "data", "novels.ts"), "novels").flatMap((n) => n.tags || []));
+	return [...tags].filter(Boolean).sort((a, b) => a.localeCompare(b, "zh"));
+}
+
+let deployCache = { at: 0, data: null };
+
+async function fetchJSON(url, headers = {}) {
+	const r = await fetch(url, { headers });
+	if (!r.ok) throw new Error(`HTTP ${r.status}`);
+	return r.json();
+}
+
 // ========== 请求路由 ==========
 const server = http.createServer(async (req, res) => {
+	const NO_STORE = {
+		"Cache-Control": "no-store, no-cache, must-revalidate",
+		Pragma: "no-cache",
+	};
+
 	if (
 		req.method === "GET" &&
 		(req.url === "/" || req.url === "/manage-ui.html")
 	) {
 		const html = fs.readFileSync(path.join(ROOT, "manage-ui.html"), "utf-8");
-		res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+		// 必须禁止缓存：否则改完界面刷新看到的还是旧版本（这是之前"改了没用"的元凶）
+		res.writeHead(200, {
+			"Content-Type": "text/html; charset=utf-8",
+			...NO_STORE,
+		});
 		return res.end(html);
 	}
 
+	// 图标表（Material Symbols 的内联路径）单独一个文件，改界面时不用碰它
+	if (req.method === "GET" && req.url === "/manage-icons.js") {
+		const file = path.join(ROOT, "manage-icons.js");
+		const js = fs.existsSync(file)
+			? fs.readFileSync(file, "utf-8")
+			: "window.MS_ICONS = {};";
+		res.writeHead(200, {
+			"Content-Type": "application/javascript; charset=utf-8",
+			...NO_STORE,
+		});
+		return res.end(js);
+	}
+
+	// 本地图片预览：只允许 public 下的白名单目录（防目录穿越）
+	if (
+		req.method === "GET" &&
+		/^\/(uploads|projects|covers|novels|images)\//.test(req.url || "")
+	) {
+		const rel = decodeURIComponent((req.url || "").split("?")[0]).replace(
+			/^\/+/,
+			"",
+		);
+		const publicDir = path.join(ROOT, "public");
+		const full = path.resolve(publicDir, rel);
+		if (
+			full.startsWith(publicDir + path.sep) &&
+			fs.existsSync(full) &&
+			fs.statSync(full).isFile()
+		) {
+			const ext = path.extname(full).toLowerCase();
+			const mime =
+				ext === ".png"
+					? "image/png"
+					: ext === ".webp"
+						? "image/webp"
+						: ext === ".gif"
+							? "image/gif"
+							: ext === ".svg"
+								? "image/svg+xml"
+								: "image/jpeg";
+			res.writeHead(200, { "Content-Type": mime, ...NO_STORE });
+			return res.end(fs.readFileSync(full));
+		}
+		return sendJSON(res, { error: "图片不存在" }, 404);
+	}
+
 	// API: 扫描分类
+	if (req.method === "GET" && req.url === "/api/categories") {
+		return sendJSON(res, scanPostCategories());
+	}
+
+	// API: 已用过的全部标签（给标签输入做候选，不用再手打逗号）
+	if (req.method === "GET" && req.url === "/api/tags") {
+		return sendJSON(res, collectTags());
+	}
+
+	// API: 资源元信息（已有分类，供新建资源时下拉选择）
+	if (req.method === "GET" && req.url === "/api/resources/meta") {
+		const items = parseTsArray(
+			path.join(ROOT, "src", "data", "resources.ts"),
+			"resources",
+		);
+		const cats = [
+			...new Set(items.map((r) => r.category).filter(Boolean)),
+		].sort();
+		return sendJSON(res, { categories: cats, count: items.length });
+	}
+
+	// API: 概览（首页仪表盘用）
+	if (req.method === "GET" && req.url === "/api/summary") {
+		const posts = scanAllPosts();
+		const recent = posts
+			.slice()
+			.sort((a, b) => String(b.published || "").localeCompare(String(a.published || "")))
+			.slice(0, 5)
+			.map((p) => ({
+				title: p.title,
+				category: p.category,
+				slug: p.slug,
+				published: p.published,
+			}));
+		return sendJSON(res, {
+			counts: {
+				posts: posts.length,
+				projects: parseTsArray(PROJECTS_FILE, "projects").length,
+				videos: parseTsArray(VIDEOS_FILE, "videos").length,
+				novels: parseTsArray(NOVELS_FILE, "novels").length,
+				resources: parseTsArray(
+					path.join(ROOT, "src", "data", "resources.ts"),
+					"resources",
+				).length,
+			},
+			categories: scanPostCategories(),
+			tags: collectTags(),
+			recent,
+		});
+	}
+
+	// API: GitHub Actions 部署状态（公开仓库，无需 token）
+	if (req.method === "GET" && (req.url || "").startsWith("/api/deploy-status")) {
+		const now = Date.now();
+		if (deployCache.data && now - deployCache.at < 5000) {
+			return sendJSON(res, deployCache.data);
+		}
+		try {
+			const api = "https://api.github.com/repos/Zionyas-Van/Zionyas-Van.github.io";
+			const headers = {
+				"User-Agent": "zionyasvan-manage-tool",
+				Accept: "application/vnd.github+json",
+			};
+			const runs = await fetchJSON(`${api}/actions/runs?per_page=1`, headers);
+			const run = runs && runs.workflow_runs && runs.workflow_runs[0];
+			if (!run) return sendJSON(res, { error: "没有查到部署记录" }, 404);
+			let jobs = [];
+			try {
+				const j = await fetchJSON(`${api}/actions/runs/${run.id}/jobs`, headers);
+				jobs = (j.jobs || []).map((x) => ({
+					name: x.name,
+					status: x.status,
+					conclusion: x.conclusion,
+					startedAt: x.started_at,
+					completedAt: x.completed_at,
+					steps: (x.steps || []).map((s) => ({
+						name: s.name,
+						status: s.status,
+						conclusion: s.conclusion,
+					})),
+				}));
+			} catch {}
+			const data = {
+				ok: true,
+				run: {
+					number: run.run_number,
+					status: run.status,
+					conclusion: run.conclusion,
+					title: run.display_title,
+					sha: (run.head_sha || "").slice(0, 7),
+					branch: run.head_branch,
+					createdAt: run.created_at,
+					updatedAt: run.updated_at,
+					url: run.html_url,
+				},
+				jobs,
+				fetchedAt: new Date().toISOString(),
+			};
+			deployCache = { at: now, data };
+			return sendJSON(res, data);
+		} catch (e) {
+			return sendJSON(res, { error: `查询失败: ${e.message}` }, 502);
+		}
+	}
+
+	// API: 上传本地图片（存到 public/uploads，返回可直接使用的路径）
+	if (req.method === "POST" && req.url === "/api/upload-image") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const base64 = body.data || body.base64 || "";
+			const matches = String(base64).match(/^data:image\/(\w+);base64,(.+)$/);
+			if (!matches)
+				return sendJSON(res, { error: "图片格式无法识别（需要 png/jpg/webp/gif）" }, 400);
+			const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+			const dir = path.join(ROOT, "public", "uploads");
+			fs.mkdirSync(dir, { recursive: true });
+			const stamp = new Date()
+				.toISOString()
+				.replace(/[-:T]/g, "")
+				.slice(0, 14);
+			const name = `${stamp}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+			fs.writeFileSync(path.join(dir, name), Buffer.from(matches[2], "base64"));
+			return sendJSON(res, { ok: true, path: `/uploads/${name}` });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	// API: 扫描分类（旧位置保留兼容）
 	if (req.method === "GET" && req.url === "/api/categories") {
 		return sendJSON(res, scanPostCategories());
 	}
@@ -339,19 +651,31 @@ const server = http.createServer(async (req, res) => {
 				coverBase64,
 			} = body;
 
-			if (!title || !category || !slug || !content) {
-				return sendJSON(
-					res,
-					{ error: "标题、分类文件夹、slug 和内容不能为空" },
-					400,
-				);
+			if (!title || !category || !content) {
+				return sendJSON(res, { error: "标题、分类文件夹和内容不能为空" }, 400);
 			}
 
-			const filePath = path.join(POSTS_DIR, category, `${slug}.md`);
+			// slug 可以留空：留空时按标题自动生成（英文标题→短横线形式；中文标题→日期+随机串）
+			const postDir = path.join(POSTS_DIR, category);
+			const existingSlugs = fs.existsSync(postDir)
+				? new Set(
+						fs
+							.readdirSync(postDir)
+							.filter((f) => f.endsWith(".md"))
+							.map((f) => f.replace(/\.md$/, "")),
+					)
+				: new Set();
+			let finalSlug = String(slug || "")
+				.trim()
+				.replace(/[\\/:*?"<>|\s]+/g, "-")
+				.replace(/^-+|-+$/g, "");
+			if (!finalSlug) finalSlug = slugify(title, existingSlugs);
+
+			const filePath = path.join(postDir, `${finalSlug}.md`);
 			if (fs.existsSync(filePath)) {
 				return sendJSON(
 					res,
-					{ error: `文件已存在: ${category}/${slug}.md` },
+					{ error: `文件已存在: ${category}/${finalSlug}.md` },
 					400,
 				);
 			}
@@ -365,7 +689,7 @@ const server = http.createServer(async (req, res) => {
 				const matches = coverBase64.match(/^data:image\/(\w+);base64,(.+)$/);
 				if (matches) {
 					const ext = matches[1] === "png" ? "png" : "jpg";
-					const coverName = `${slug}.${ext}`;
+					const coverName = `${finalSlug}.${ext}`;
 					fs.writeFileSync(
 						path.join(COVERS_POST_DIR, coverName),
 						Buffer.from(matches[2], "base64"),
@@ -399,7 +723,11 @@ ${content}
 `;
 
 			fs.writeFileSync(filePath, md, "utf-8");
-			return sendJSON(res, { ok: true, path: `${category}/${slug}.md` });
+			return sendJSON(res, {
+				ok: true,
+				path: `${category}/${finalSlug}.md`,
+				slug: finalSlug,
+			});
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
 		}
@@ -422,6 +750,7 @@ ${content}
 				featured,
 				cover,
 				coverBase64,
+				screenshots,
 			} = body;
 
 			if (!id || !title || !type) {
@@ -448,7 +777,10 @@ ${content}
 				description: description || "",
 				longDescription: longDescription || "",
 				cover: coverPath,
-				screenshots: [],
+				// 宣传图（多张）：之前这里被写死成空数组，导致新建作品永远没有宣传图
+				screenshots: (Array.isArray(screenshots) ? screenshots : [])
+					.map((s) => String(s || "").trim())
+					.filter(Boolean),
 				type,
 				tags: tags || [],
 				platform: platform || "",
@@ -465,19 +797,15 @@ ${content}
 	}
 
 	// ========== 资源管理 API ==========
-	const RESOURCES_FILE = path.join(ROOT, "src", "data", "resources.ts");
-
 	function formatResource(r) {
-		const desc = (r.description || "")
-			.replace(/\\/g, "\\\\")
-			.replace(/"/g, '\\"');
-		const categoryLine = r.category ? `\n    category: "${r.category}",` : "";
-		const coverLine = r.cover ? `\n    cover: "${r.cover}",` : "";
+		const desc = ds(r.description);
+		const categoryLine = r.category ? `\n    category: "${ds(r.category)}",` : "";
+		const coverLine = r.cover ? `\n    cover: "${ds(r.cover)}",` : "";
 		return `  {
     id: "${r.id}",
-    name: "${r.name}",
+    name: "${ds(r.name)}",
     description: "${desc}",
-    url: "${r.url}",${categoryLine}${coverLine}
+    url: "${ds(r.url)}",${categoryLine}${coverLine}
   }`;
 	}
 
@@ -510,7 +838,7 @@ ${content}
 				items,
 				formatResource,
 			);
-			fs.writeFileSync(RESOURCES_FILE, newContent, "utf-8");
+			saveArrayFile(RESOURCES_FILE, "resources", newContent);
 			return sendJSON(res, { ok: true, id });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -531,7 +859,7 @@ ${content}
 				items,
 				formatResource,
 			);
-			fs.writeFileSync(RESOURCES_FILE, newContent, "utf-8");
+			saveArrayFile(RESOURCES_FILE, "resources", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -553,7 +881,7 @@ ${content}
 				filtered,
 				formatResource,
 			);
-			fs.writeFileSync(RESOURCES_FILE, newContent, "utf-8");
+			saveArrayFile(RESOURCES_FILE, "resources", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -821,7 +1149,7 @@ ${content}
 				projs,
 				formatProject,
 			);
-			fs.writeFileSync(PROJECTS_FILE, newContent, "utf-8");
+			saveArrayFile(PROJECTS_FILE, "projects", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -844,7 +1172,7 @@ ${content}
 				filtered,
 				formatProject,
 			);
-			fs.writeFileSync(PROJECTS_FILE, newContent, "utf-8");
+			saveArrayFile(PROJECTS_FILE, "projects", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -885,7 +1213,7 @@ ${content}
 				vids,
 				formatVideo,
 			);
-			fs.writeFileSync(VIDEOS_FILE, newContent, "utf-8");
+			saveArrayFile(VIDEOS_FILE, "videos", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -908,7 +1236,7 @@ ${content}
 				filtered,
 				formatVideo,
 			);
-			fs.writeFileSync(VIDEOS_FILE, newContent, "utf-8");
+			saveArrayFile(VIDEOS_FILE, "videos", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -916,8 +1244,6 @@ ${content}
 	}
 
 	// ========== 小说管理 API ==========
-	const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
-
 	function formatNovel(n) {
 		const intro = (n.intro || "")
 			.replace(/\\/g, "\\\\")
@@ -933,10 +1259,8 @@ ${content}
 					.replace(/\\/g, "\\\\")
 					.replace(/"/g, '\\"')
 					.replace(/\n/g, "\\n");
-				const chTitle = (ch.title || "")
-					.replace(/\\/g, "\\\\")
-					.replace(/"/g, '\\"');
-				const chDate = ch.date || "";
+				const chTitle = ds(ch.title);
+				const chDate = ds(ch.date);
 				return `    {
       slug: "${ch.slug}",
       title: "${chTitle}",${chDate ? `\n      date: "${chDate}",` : ""}
@@ -946,12 +1270,12 @@ ${content}
 			.join(",\n");
 		return `  {
     id: "${n.id}",
-    title: "${n.title}",
+    title: "${ds(n.title)}",
     cover: "${n.cover || "/novels/cover-placeholder.jpg"}",
-    description: "${desc}",
-    author: "${n.author || ""}",
-    publishedDate: "${n.publishedDate || ""}",
-    platform: "${n.platform || ""}",
+    description: "${ds(desc)}",
+    author: "${ds(n.author)}",
+    publishedDate: "${ds(n.publishedDate)}",
+    platform: "${ds(n.platform)}",
     intro: "${intro}",
     chapters: [
 ${chapters}
@@ -1026,7 +1350,7 @@ ${chapters}
 				items,
 				formatNovel,
 			);
-			fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
+			saveArrayFile(NOVELS_FILE, "novels", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -1048,7 +1372,7 @@ ${chapters}
 				filtered,
 				formatNovel,
 			);
-			fs.writeFileSync(NOVELS_FILE, newContent, "utf-8");
+			saveArrayFile(NOVELS_FILE, "novels", newContent);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
@@ -1062,12 +1386,13 @@ ${chapters}
 
 // ========== 辅助：向 TypeScript 数据文件中插入数组项 ==========
 function insertIntoArrayFile(filepath, arrayName, newItem, formatFn) {
-	const items = parseTsArray(filepath, arrayName);
+	// 用严格解析：文件一旦有语法问题就报错，绝不从空数组开始写（那会把已有内容整个抹掉）
+	const items = parseTsArrayStrict(filepath, arrayName);
 	items.push(newItem);
 
 	const content = fs.readFileSync(filepath, "utf-8");
 	const newContent = rebuildArraySection(content, arrayName, items, formatFn);
-	fs.writeFileSync(filepath, newContent, "utf-8");
+	saveArrayFile(filepath, arrayName, newContent);
 }
 
 // ========== 启动服务器 ==========

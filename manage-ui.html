@@ -2,1175 +2,1259 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZionyasVan 管理工具</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>内容管理 · ZionyasVan</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='19' font-size='19'>🛠</text></svg>">
+<script src="/manage-icons.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-
+/* ============================================================
+   设计令牌（Material 3 风格，紫色取自网站主题色）
+   ============================================================ */
 :root{
-  --bg:#f5f6fa;
-  --bg-2:#ffffff;
-  --card:#ffffff;
-  --card-2:#f9fafb;
-  --border:#e5e7ee;
-  --border-2:#d8dbe4;
-  --text:#1a1a2e;
-  --text-2:#4b5563;
-  --text-3:#9ca3af;
-  --primary:#7c3aed;
-  --primary-2:#6d28d9;
-  --primary-soft:rgba(124,58,237,0.08);
-  --success:#16a34a;
-  --danger:#dc2626;
-  --shadow-sm:0 1px 2px rgba(17,24,39,.04);
-  --shadow:0 1px 3px rgba(17,24,39,.06),0 1px 2px rgba(17,24,39,.04);
-  --shadow-lg:0 10px 24px rgba(17,24,39,.06),0 4px 8px rgba(17,24,39,.04);
+  --pri:#7c3aed; --pri-dark:#6d28d9; --pri-c:#ede9fe; --on-pri-c:#4c1d95;
+  --bg:#f5f4fa; --surf:#ffffff; --surf-2:#f3f2f9; --surf-3:#eceaf4;
+  --out:#e4e2ee; --out-2:#c9c6d8;
+  --txt:#1b1a20; --txt-2:#55525f; --txt-3:#8a8797;
+  --ok:#146c43; --ok-c:#dff3e8; --warn:#8a5300; --warn-c:#fdf0d9;
+  --err:#b3261e; --err-c:#fce9e7;
+  --r-xl:22px; --r-lg:16px; --r-md:12px; --r-sm:8px;
+  --sh-1:0 1px 2px rgba(18,16,32,.06), 0 1px 3px rgba(18,16,32,.05);
+  --sh-2:0 4px 14px rgba(18,16,32,.09);
+  --rail:240px;
 }
-
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
 body{
-  font-family:"Microsoft YaHei","PingFang SC",-apple-system,BlinkMacSystemFont,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  font-size:14px;
-  line-height:1.5;
+  background:var(--bg); color:var(--txt);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
 }
+a{color:var(--pri); text-decoration:none}
+a:hover{text-decoration:underline}
+.ic{width:20px;height:20px;fill:currentColor;flex:none;display:block}
 
-.app{display:flex;min-height:100vh}
-
-/* ============ 侧边栏 ============ */
-.sidebar{
-  width:240px;
-  flex-shrink:0;
-  background:var(--bg-2);
-  border-right:1px solid var(--border);
-  padding:20px 12px;
-  display:flex;
-  flex-direction:column;
-  gap:24px;
-  position:sticky;
-  top:0;
-  height:100vh;
-  overflow-y:auto;
+/* ============================ 左侧导航栏 ============================ */
+.rail{
+  position:fixed; inset:0 auto 0 0; width:var(--rail); background:var(--surf);
+  border-right:1px solid var(--out); padding:18px 12px; overflow-y:auto; z-index:30;
 }
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:0 8px 18px;
-  border-bottom:1px solid var(--border);
-}
-.brand-icon{
-  width:40px;height:40px;
-  border-radius:10px;
-  background:linear-gradient(135deg,#8b5cf6,#6366f1);
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;
-  flex-shrink:0;
-  box-shadow:0 4px 12px rgba(124,58,237,.25);
-}
-.brand-title{font-size:15px;font-weight:700;letter-spacing:.02em}
-.brand-sub{font-size:11px;color:var(--text-3);margin-top:1px}
-
-.nav{display:flex;flex-direction:column;gap:20px}
-.nav-group{display:flex;flex-direction:column;gap:3px}
-.nav-label{
-  font-size:11px;
-  font-weight:600;
-  color:var(--text-3);
-  letter-spacing:.08em;
-  padding:0 10px 6px;
-}
-.tab{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:9px 12px;
-  border:none;
-  background:transparent;
-  color:var(--text-2);
-  cursor:pointer;
-  border-radius:8px;
-  font-size:13.5px;
-  font-family:inherit;
-  text-align:left;
+.brand{display:flex;align-items:center;gap:10px;padding:6px 10px 18px;font-weight:650;font-size:16px}
+.brand .logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--pri),#a855f7);color:#fff;display:flex;align-items:center;justify-content:center}
+.brand small{display:block;font-weight:400;font-size:11.5px;color:var(--txt-3)}
+.nav-group{margin-bottom:14px}
+.nav-group>div{font-size:11px;letter-spacing:.1em;color:var(--txt-3);padding:6px 12px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:999px;cursor:pointer;
+  color:var(--txt-2);font-size:14px;border:none;background:none;width:100%;text-align:left;
   transition:background .15s,color .15s;
-  width:100%;
 }
-.tab:hover{background:var(--card-2);color:var(--text)}
-.tab.active{
-  background:var(--primary-soft);
-  color:var(--primary);
-  font-weight:600;
-}
-.tab-emoji{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nav-item:hover{background:var(--surf-2);color:var(--txt)}
+.nav-item[data-on="1"]{background:var(--pri-c);color:var(--on-pri-c);font-weight:600}
+.nav-item .ic{width:19px;height:19px}
 
-/* ============ 主内容 ============ */
-.main{flex:1;min-width:0;padding:32px 40px 48px}
-.panels{max-width:820px;margin:0 auto}
-.panel{display:none}
-.panel.active{display:block}
+/* ============================ 主区 ============================ */
+.main{margin-left:var(--rail); min-height:100vh; display:flex; flex-direction:column}
+.topbar{
+  position:sticky; top:0; z-index:20; background:rgba(245,244,250,.88); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--out); padding:14px 28px; display:flex; align-items:center; gap:16px;
+}
+.topbar h1{margin:0;font-size:20px;font-weight:650;letter-spacing:-.01em}
+.topbar p{margin:2px 0 0;font-size:12.5px;color:var(--txt-3)}
+.topbar .grow{flex:1;min-width:0}
+.viewport{padding:24px 28px 80px; max-width:920px; width:100%}
 
-/* ============ 卡片 ============ */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:24px;
-  margin-bottom:16px;
-  box-shadow:var(--shadow);
-}
-.card h3{
-  font-size:16px;
-  font-weight:700;
-  color:var(--text);
-  margin-bottom:20px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.card h3::before{
-  content:"";
-  width:3px;
-  height:16px;
-  background:var(--primary);
-  border-radius:2px;
-}
+/* ============================ 卡片 / 通用 ============================ */
+.card{background:var(--surf);border:1px solid var(--out);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-1);margin-bottom:18px}
+.card>h2{margin:0 0 4px;font-size:17px;font-weight:650;display:flex;align-items:center;gap:9px}
+.card>h2 .ic{color:var(--pri)}
+.card>.sub{margin:0 0 18px;font-size:13px;color:var(--txt-3)}
+.card.flush{padding:0;overflow:hidden}
+.muted{color:var(--txt-3);font-size:13px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row>*{flex:1 1 220px;min-width:0}
+.sec-title{font-size:12px;font-weight:650;color:var(--txt-3);letter-spacing:.08em;text-transform:uppercase;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+.hint{font-size:12px;color:var(--txt-3);margin-top:6px;display:flex;gap:6px;align-items:flex-start}
+.hint .ic{width:15px;height:15px;margin-top:2px;color:var(--txt-3)}
 
-/* ============ 表单 ============ */
-label{
-  display:block;
-  font-size:12.5px;
-  color:var(--text-2);
-  font-weight:500;
-  margin-bottom:6px;
-  margin-top:16px;
+/* ============================ 表单 ============================ */
+.f{margin-bottom:16px}
+.f>label{display:block;font-size:12.5px;font-weight:600;color:var(--txt-2);margin-bottom:6px}
+.f>label .req{color:var(--err)}
+input[type=text],input[type=url],input[type=date],textarea,select{
+  width:100%;padding:11px 13px;border:1px solid var(--out-2);border-radius:var(--r-md);
+  background:var(--surf);color:var(--txt);font:inherit;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;
 }
-label:first-child{margin-top:0}
+input:focus,textarea:focus,select:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+input::placeholder,textarea::placeholder{color:#b3b0be}
+textarea{resize:vertical;line-height:1.7}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238a8797'><path d='M12 15.4 6.6 10h10.8z'/></svg>");background-repeat:no-repeat;background-position:right 10px center;background-size:18px;padding-right:34px}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-size:14px;color:var(--txt-2)}
+.switch input{display:none}
+.switch .track{width:44px;height:26px;border-radius:999px;background:var(--out-2);position:relative;transition:background .18s;flex:none}
+.switch .track:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:var(--sh-1);transition:transform .18s}
+.switch input:checked+.track{background:var(--pri)}
+.switch input:checked+.track:after{transform:translateX(18px)}
 
-input,textarea,select{
-  width:100%;
-  padding:10px 13px;
-  border:1px solid var(--border-2);
-  border-radius:9px;
-  background:var(--bg-2);
-  color:var(--text);
-  font-size:14px;
-  font-family:inherit;
-  transition:border-color .15s,box-shadow .15s,background .15s;
-  resize:vertical;
-}
-input::placeholder,textarea::placeholder{color:#b8bcc7}
-input:hover,textarea:hover,select:hover{border-color:#b8bcc7}
-input:focus,textarea:focus,select:focus{
-  outline:none;
-  border-color:var(--primary);
-  background:#fff;
-  box-shadow:0 0 0 3px var(--primary-soft);
-}
-textarea{min-height:120px;line-height:1.6}
-
-.row{display:flex;gap:12px}
-.row>*{flex:1;min-width:0}
-
-/* ============ 按钮 ============ */
+/* 按钮 */
 .btn{
-  padding:10px 20px;
-  border:none;
-  border-radius:9px;
-  cursor:pointer;
-  font-size:14px;
-  font-weight:600;
-  font-family:inherit;
-  transition:background .15s,transform .08s,box-shadow .15s;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:999px;
+  border:1px solid transparent;background:var(--pri);color:#fff;font:inherit;font-size:14px;font-weight:600;
+  cursor:pointer;transition:filter .15s,background .15s,box-shadow .15s;
 }
-.btn:active{transform:scale(.97)}
-.btn-primary{
-  background:var(--primary);
-  color:#fff;
-  box-shadow:0 1px 2px rgba(124,58,237,.2);
-}
-.btn-primary:hover{background:var(--primary-2);box-shadow:0 4px 10px rgba(124,58,237,.25)}
-.btn-success{background:var(--success);color:#fff}
-.btn-success:hover{background:#15803d}
-.btn-danger{background:var(--danger);color:#fff;padding:6px 12px;font-size:12px}
-.btn-danger:hover{background:#b91c1c}
-.btn-ghost{
-  background:#eef0f5;
-  color:var(--text-2);
-  padding:10px 20px;
-}
-.btn-ghost:hover{background:#e2e5ec;color:var(--text)}
-.btns{margin-top:22px;display:flex;gap:8px;flex-wrap:wrap}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn.tonal{background:var(--pri-c);color:var(--on-pri-c)}
+.btn.outline{background:transparent;border-color:var(--out-2);color:var(--txt-2)}
+.btn.outline:hover{background:var(--surf-2);filter:none}
+.btn.danger{background:var(--err-c);color:var(--err)}
+.btn.danger:hover{background:#f8d7d4}
+.btn.icon{padding:9px;border-radius:12px;background:transparent;color:var(--txt-2)}
+.btn.icon:hover{background:var(--surf-2);filter:none}
+.btn.sm{padding:6px 12px;font-size:12.5px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:20px}
 
-/* ============ 结果提示 ============ */
-.result{
-  padding:12px 14px;
-  border-radius:9px;
-  margin-top:14px;
-  font-size:13px;
-  display:none;
-  white-space:pre-wrap;
-  line-height:1.6;
-}
-.result.success{display:block;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-.result.error{display:block;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
-.result pre{white-space:pre-wrap;margin:0;font-family:inherit}
+/* 标签 chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--out-2);border-radius:var(--r-md);padding:8px 10px;background:var(--surf);min-height:46px}
+.chips:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+.chips input{border:none!important;padding:4px 2px!important;flex:1 1 120px;min-width:90px;box-shadow:none!important}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--pri-c);color:var(--on-pri-c);border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px;font-weight:600}
+.chip button{border:none;background:none;cursor:pointer;color:inherit;opacity:.65;padding:0;display:flex}
+.chip button:hover{opacity:1}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sugg button{border:1px dashed var(--out-2);background:transparent;color:var(--txt-2);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+.sugg button:hover{border-color:var(--pri);color:var(--pri)}
 
-/* ============ 辅助 ============ */
-.tag-row{display:flex;gap:8px;align-items:center}
-.tag-row input{flex:1}
-.tag-row button{padding:8px 12px}
-.dl-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.dl-row input{flex:1}
-.dl-row select{width:120px;flex:none}
-.hint{font-size:12px;color:var(--text-3);margin-top:5px}
+/* 图片 / 列表行 */
+.imgrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.imgrow input{flex:1 1 auto;min-width:0}
+.imgrow .thumb{width:52px;height:52px;border-radius:var(--r-sm);border:1px solid var(--out);background:var(--surf-2);object-fit:cover;flex:none}
+.coverbox{display:flex;gap:14px;align-items:flex-start}
+.coverbox .preview{width:104px;height:104px;border-radius:var(--r-md);border:1px solid var(--out);background:var(--surf-2) center/cover no-repeat;flex:none;display:flex;align-items:center;justify-content:center;color:var(--txt-3);font-size:11px}
+.coverbox .grow{flex:1;min-width:0}
 
-/* ============ 表格 ============ */
-table{border-collapse:collapse;width:100%}
-table thead tr{border-bottom:1px solid var(--border)}
-table th{
-  color:var(--text-3);
-  font-size:11.5px;
-  font-weight:600;
-  text-align:left;
-  padding:10px 8px;
-  letter-spacing:.05em;
-}
-table td{
-  padding:12px 8px;
-  font-size:13.5px;
-}
-table tbody tr{border-bottom:1px solid var(--border)}
-table tbody tr:hover{background:var(--card-2)}
-table tbody tr:last-child{border-bottom:none}
-tr td:last-child{white-space:nowrap}
+/* 列表 */
+.searchbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.searchbar .box{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--out-2);border-radius:999px;padding:8px 14px}
+.searchbar .box input{border:none;padding:0;box-shadow:none!important;background:none}
+.searchbar .box .ic{color:var(--txt-3);width:18px;height:18px}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:12px;align-items:center;padding:12px;border-radius:var(--r-lg);transition:background .12s}
+.item:hover{background:var(--surf-2)}
+.item+.item{border-top:1px solid var(--out)}
+.item .thumb{width:46px;height:46px;border-radius:var(--r-sm);object-fit:cover;background:var(--surf-3);flex:none;display:flex;align-items:center;justify-content:center;color:var(--txt-3);overflow:hidden}
+.item .body{flex:1;min-width:0}
+.item .t{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.item .m{font-size:12px;color:var(--txt-3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.item .acts{display:flex;gap:4px;flex:none}
+.badge{display:inline-flex;align-items:center;gap:4px;background:var(--surf-3);color:var(--txt-2);border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600}
+.badge.pri{background:var(--pri-c);color:var(--on-pri-c)}
+.badge.ok{background:var(--ok-c);color:var(--ok)}
+.badge.warn{background:var(--warn-c);color:var(--warn)}
+.badge.err{background:var(--err-c);color:var(--err)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{background:var(--surf-2);color:var(--txt-2);border:1px solid var(--out);border-radius:999px;padding:1px 9px;font-size:11.5px;cursor:pointer}
+.tag:hover{border-color:var(--pri);color:var(--pri)}
+.empty{padding:36px;text-align:center;color:var(--txt-3);font-size:13.5px}
+.empty .ic{width:36px;height:36px;margin:0 auto 10px;opacity:.5}
 
-/* ============ 滚动条 ============ */
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:#9ca3af}
+/* 统计卡 */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.stat{background:var(--surf);border:1px solid var(--out);border-radius:var(--r-lg);padding:16px;cursor:pointer;transition:box-shadow .15s,transform .15s;box-shadow:var(--sh-1)}
+.stat:hover{box-shadow:var(--sh-2);transform:translateY(-1px)}
+.stat .n{font-size:26px;font-weight:700;line-height:1.1}
+.stat .l{font-size:12.5px;color:var(--txt-3);margin-top:4px;display:flex;align-items:center;gap:6px}
+.stat .l .ic{width:15px;height:15px}
 
-/* ============ 响应式 ============ */
-@media (max-width: 820px){
-  .app{flex-direction:column}
-  .sidebar{
-    width:100%;
-    height:auto;
-    position:static;
-    flex-direction:row;
-    align-items:center;
-    padding:12px 16px;
-    gap:16px;
-    overflow-x:auto;
-    border-right:none;
-    border-bottom:1px solid var(--border);
-  }
-  .brand{padding:0;border:none;flex-shrink:0}
-  .brand-sub{display:none}
-  .nav{flex-direction:row;gap:4px;flex-shrink:0}
-  .nav-group{flex-direction:row;gap:4px}
-  .nav-label{display:none}
-  .tab{padding:8px 12px;white-space:nowrap;width:auto}
-  .main{padding:20px 16px 40px}
+/* 编辑器 */
+.editor{margin-top:4px}
+.toolbar{display:flex;gap:4px;flex-wrap:wrap;padding:8px;background:var(--surf-2);border:1px solid var(--out);border-bottom:none;border-radius:var(--r-md) var(--r-md) 0 0}
+.toolbar button{border:none;background:transparent;color:var(--txt-2);border-radius:8px;padding:6px 8px;cursor:pointer;font:inherit;font-size:12.5px;display:flex;align-items:center;gap:5px}
+.toolbar button:hover{background:var(--surf-3);color:var(--pri)}
+.editor textarea{border-radius:0 0 var(--r-md) var(--r-md);min-height:320px;font-family:"JetBrains Mono Variable",ui-monospace,Consolas,monospace;font-size:13.5px}
+.editor.preview textarea{display:none}
+.previewbox{display:none;border:1px solid var(--out);border-radius:0 0 var(--r-md) var(--r-md);padding:18px 20px;background:var(--surf);min-height:320px;max-height:640px;overflow:auto}
+.editor.preview .previewbox{display:block}
+.previewbox h1,.previewbox h2,.previewbox h3{margin:18px 0 8px;line-height:1.35}
+.previewbox p{margin:10px 0}
+.previewbox img{max-width:100%;border-radius:var(--r-md)}
+.previewbox code{background:var(--surf-2);padding:1px 5px;border-radius:5px;font-size:12.5px}
+.previewbox pre{background:var(--surf-2);padding:12px;border-radius:var(--r-md);overflow:auto}
+.previewbox blockquote{margin:10px 0;padding:6px 14px;border-left:3px solid var(--pri);background:var(--surf-2);color:var(--txt-2)}
+.editor-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--txt-3);margin-top:6px}
+
+/* 提示条 / 结果 */
+.note{display:flex;gap:9px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-md);font-size:13px;margin-bottom:14px}
+.note .ic{width:18px;height:18px;margin-top:1px}
+.note.info{background:var(--pri-c);color:var(--on-pri-c)}
+.note.ok{background:var(--ok-c);color:var(--ok)}
+.note.warn{background:var(--warn-c);color:var(--warn)}
+.note.err{background:var(--err-c);color:var(--err)}
+.steps{display:flex;flex-direction:column;gap:2px;margin-top:12px}
+.step{display:flex;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.step .ic{width:17px;height:17px;color:var(--txt-3)}
+.step[data-s=in_progress] .ic{color:var(--pri)}
+.step[data-s=success] .ic{color:var(--ok)}
+.step[data-s=failure] .ic{color:var(--err)}
+.progress{height:6px;border-radius:999px;background:var(--surf-3);overflow:hidden;margin-top:10px}
+.progress>i{display:block;height:100%;background:var(--pri);transition:width .4s}
+.log{background:#1b1a20;color:#d7d5e0;border-radius:var(--r-md);padding:14px;font:12.5px/1.65 ui-monospace,Consolas,monospace;white-space:pre-wrap;max-height:280px;overflow:auto;margin-top:12px}
+
+/* Toast */
+#toasts{position:fixed;right:20px;bottom:20px;z-index:80;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.toast{background:#26242e;color:#fff;border-radius:var(--r-md);padding:12px 16px;font-size:13.5px;box-shadow:var(--sh-2);display:flex;gap:9px;align-items:center;max-width:380px;animation:pop .18s ease-out}
+.toast.ok .ic{color:#6ee7a8}
+.toast.err .ic{color:#ffb4ab}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 弹窗 */
+#modal-root{position:fixed;inset:0;z-index:70;display:none}
+#modal-root.on{display:block}
+.scrim{position:absolute;inset:0;background:rgba(20,18,28,.42)}
+.dialog{position:relative;margin:5vh auto;max-width:760px;width:calc(100% - 32px);background:var(--surf);border-radius:var(--r-xl);box-shadow:var(--sh-2);max-height:90vh;display:flex;flex-direction:column}
+.dialog header{padding:18px 22px;border-bottom:1px solid var(--out);display:flex;align-items:center;gap:10px}
+.dialog header h3{margin:0;font-size:16.5px;font-weight:650;flex:1}
+.dialog .body{padding:20px 22px;overflow:auto}
+.dialog footer{padding:14px 22px;border-top:1px solid var(--out);display:flex;gap:10px;justify-content:flex-end}
+
+/* 小屏：导航栏变成顶部横滚 */
+@media (max-width:900px){
+  .rail{position:static;width:auto;height:auto;border-right:none;border-bottom:1px solid var(--out);padding:12px}
+  .brand{padding:4px 6px 12px}
+  .nav-group{margin-bottom:8px}
+  .nav-group>div{padding:4px 6px}
+  .nav-group .items{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+  .nav-item{width:auto;white-space:nowrap;border-radius:999px;background:var(--surf-2)}
+  .main{margin-left:0}
+  .topbar{padding:12px 16px}
+  .viewport{padding:16px 16px 70px}
+  .card{padding:18px;border-radius:var(--r-lg)}
+  .row>*{flex:1 1 100%}
 }
 </style>
 </head>
 <body>
-
-<div class="app">
-
-  <!-- ============ 左侧导航 ============ -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-icon">🛠️</div>
-      <div>
-        <div class="brand-title">ZionyasVan</div>
-        <div class="brand-sub">内容管理工具</div>
-      </div>
-    </div>
-
-    <nav class="nav">
-      <div class="nav-group">
-        <div class="nav-label">发布</div>
-        <button class="tab active" data-panel="blog"><span class="tab-emoji">📝</span>发布博客</button>
-        <button class="tab" data-panel="project"><span class="tab-emoji">🎮</span>发布作品</button>
-        <button class="tab" data-panel="video"><span class="tab-emoji">🎬</span>发布视频</button>
-        <button class="tab" data-panel="pub-novel"><span class="tab-emoji">📖</span>发布小说</button>
-        <button class="tab" data-panel="pub-resource"><span class="tab-emoji">🔗</span>发布资源</button>
-      </div>
-      <div class="nav-group">
-        <div class="nav-label">管理</div>
-        <button class="tab" data-panel="manage-posts"><span class="tab-emoji">📋</span>管理博客</button>
-        <button class="tab" data-panel="manage-projects"><span class="tab-emoji">🗂️</span>管理作品</button>
-        <button class="tab" data-panel="manage-videos"><span class="tab-emoji">🎞️</span>管理视频</button>
-        <button class="tab" data-panel="manage-resources"><span class="tab-emoji">📦</span>管理资源</button>
-        <button class="tab" data-panel="manage-novels"><span class="tab-emoji">📚</span>管理小说</button>
-      </div>
-      <div class="nav-group">
-        <div class="nav-label">系统</div>
-        <button class="tab" data-panel="push"><span class="tab-emoji">🚀</span>实时推送</button>
-      </div>
-    </nav>
-  </aside>
-
-  <!-- ============ 右侧内容区 ============ -->
-  <main class="main">
-    <div class="panels">
-
-<!-- ========== 博客面板 ========== -->
-<div class="panel active" id="panel-blog">
-  <div class="card">
-    <h3>发布新博客文章</h3>
-    <label>文章标题 *</label>
-    <input id="blog-title" placeholder="输入文章标题">
-
-    <label>简短描述</label>
-    <input id="blog-desc" placeholder="一句话描述（可选）">
-
-    <label>标签（用逗号分隔）</label>
-    <input id="blog-tags" placeholder="例如: Minecraft, 教程, 生存">
-
-    <div class="row">
-      <div>
-        <label>分类显示名</label>
-        <input id="blog-display-cat" placeholder="例如: 我的世界（用于页面显示）">
-        <div class="hint">和分类文件夹不同，这是给访客看的名字</div>
-        <label>封面图链接</label>
-        <input id="blog-cover-input" placeholder="贴入图床链接，如 https://1815356055.cdn.123clouddisk.com/...">
-        <div class="hint">直接粘贴 123 图床或其他图片外链</div>
-        <label>分类文件夹 *</label>
-        <select id="blog-category">
-          <option value="">加载中...</option>
-        </select>
-      </div>
-      <div>
-        <label>URL 标识 (slug) *</label>
-        <input id="blog-slug" placeholder="my-first-post">
-        <div class="hint">英文+连字符，如 my-first-post</div>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:12px">
-      <div>
-        <label>发布日期（2000-01-01）</label>
-        <input id="blog-published" placeholder="留空则自动生成当前时间">
-      </div>
-      <div>
-        <label>语言</label>
-        <input id="blog-lang" placeholder="zh_CN" value="zh_CN">
-      </div>
-    </div>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
-      <input type="checkbox" id="blog-draft" style="width:auto"> 标记为草稿（不在网站显示）
-    </label>
-
-
-    <label>文章内容 (Markdown) *</label>
-    <textarea id="blog-content" placeholder="在这里写 Markdown 内容..."></textarea>
-
-    <div class="btns">
-      <button class="btn btn-primary" onclick="createPost()">✅ 生成文章文件</button>
-    </div>
-    <div class="result" id="blog-result"></div>
+<aside class="rail">
+  <div class="brand">
+    <div class="logo"><svg class="ic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 7v10l8 5 8-5V7zm0 2.3 5.5 3.4L12 11.1 6.5 7.7zM6 9.4l5 3.1v6.9l-5-3.1zm7 10V12.5l5-3.1v6.9z"/></svg></div>
+    <div>内容管理<small>ZionyasVan</small></div>
   </div>
+  <nav id="nav"></nav>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="grow">
+      <h1 id="p-title">仪表盘</h1>
+      <p id="p-sub">站点内容一览</p>
+    </div>
+    <button class="btn outline sm" data-act="reload"><span class="ic" data-ic="refresh"></span>刷新数据</button>
+  </header>
+  <div class="viewport" id="view"></div>
 </div>
 
-<!-- ========== 发布小说面板 ========== -->
-<div class="panel" id="panel-pub-novel">
-  <div class="card">
-    <h3>发布新小说</h3>
-    <div class="row">
-      <div><label>小说名 *</label><input id="pub-novel-title" placeholder="例如：星辰之约"></div>
-      <div><label>作者</label><input id="pub-novel-author" placeholder="ZionyasVan"></div>
-    </div>
-    <label>一句话描述</label>
-    <input id="pub-novel-desc" placeholder="简短的一句话简介（用于卡片显示）">
-    <label>详细介绍</label>
-    <textarea id="pub-novel-intro" style="min-height:100px" placeholder="小说背景、看点等详细描述"></textarea>
-    <div class="row">
-      <div><label>发布日期</label><input id="pub-novel-date" placeholder="2026-07-27"></div>
-      <div><label>发布平台</label><input id="pub-novel-platform" placeholder="B站专栏 / 番茄 / 起点"></div>
-    </div>
-    <label>封面图链接</label>
-    <input id="pub-novel-cover" placeholder="贴入图床链接（可留空）">
-    <div class="hint">💡 创建小说后，请到「管理小说」中为它添加章节</div>
-    <div class="btns">
-      <button class="btn btn-primary" onclick="publishNovel()">✅ 创建小说</button>
-    </div>
-    <div class="result" id="pub-novel-result"></div>
-  </div>
-</div>
-
-<!-- ========== 发布资源面板 ========== -->
-<div class="panel" id="panel-pub-resource">
-  <div class="card">
-    <h3>发布新资源</h3>
-    <div class="row">
-      <div><label>名称 *</label><input id="pub-res-name" placeholder="例如：FreeConvert"></div>
-      <div><label>链接 *</label><input id="pub-res-url" placeholder="https://..."></div>
-    </div>
-    <label>描述</label>
-    <input id="pub-res-desc" placeholder="一句话描述这个资源">
-    <div class="row">
-      <div>
-        <label>分类</label>
-        <select id="pub-res-category">
-          <option value="">（未分类）</option>
-          <option value="网站">网站</option>
-          <option value="应用">应用</option>
-          <option value="游戏">游戏</option>
-          <option value="文件">文件</option>
-          <option value="其他">其他</option>
-        </select>
-      </div>
-      <div>
-        <label>配图链接</label>
-        <input id="pub-res-cover" placeholder="贴入图床链接（可留空）">
-      </div>
-    </div>
-    <div class="btns">
-      <button class="btn btn-primary" onclick="publishResource()">✅ 创建资源</button>
-    </div>
-    <div class="result" id="pub-resource-result"></div>
-  </div>
-</div>
-
-<!-- ========== 管理小说面板 ========== -->
-<div class="panel" id="panel-manage-novels">
-  <div class="card"><h3>📋 小说列表</h3>
-    <div id="novels-admin-list"><p style="color:#888">加载中...</p></div>
-    <div class="btns"><button class="btn btn-ghost" onclick="showNovelForm()">➕ 在此快速新建</button></div>
-    <div class="result" id="novels-list-result"></div>
-  </div>
-  <!-- 编辑表单（隐藏） -->
-  <div id="novel-editor" style="display:none">
-    <div class="card">
-      <h3 id="novel-editor-title">新建小说</h3>
-      <input type="hidden" id="admin-novel-id">
-      <div class="row"><div><label>小说名 *</label><input id="admin-novel-title"></div><div><label>作者</label><input id="admin-novel-author"></div></div>
-      <label>一句话描述</label><input id="admin-novel-desc">
-      <label>详细介绍</label><textarea id="admin-novel-intro" style="min-height:80px"></textarea>
-      <div class="row"><div><label>发布日期</label><input id="admin-novel-date" placeholder="2026-07-27"></div><div><label>发布平台</label><input id="admin-novel-platform" placeholder="B站专栏"></div></div>
-      <label>封面图链接</label><input id="admin-novel-cover" placeholder="贴入图床链接">
-      <div class="btns">
-        <button class="btn btn-primary" onclick="saveNovel()">💾 保存基本信息</button>
-        <button class="btn btn-ghost" onclick="cancelNovelEdit()">取消</button>
-        <button class="btn btn-danger" onclick="deleteNovelConfirm()" id="delete-novel-btn" style="display:none">🗑 删除整部小说</button>
-      </div>
-      <div class="result" id="edit-novel-result"></div>
-    </div>
-    <!-- 章节管理 -->
-    <div class="card" id="chapters-card" style="display:none">
-      <h3>📖 章节管理</h3>
-      <div id="chapters-list"></div>
-      <div class="btns"><button class="btn btn-primary" onclick="showChapterForm()">➕ 添加章节</button></div>
-      <div id="chapter-editor" style="display:none">
-        <input type="hidden" id="edit-chapter-slug-old">
-        <div class="row"><div><label>章节 slug</label><input id="edit-chapter-slug" placeholder="chapter-01"></div><div><label>章节标题</label><input id="edit-chapter-title" placeholder="第一章：开端"></div><div><label>发布日期</label><input id="edit-chapter-date" placeholder="2026-07-28"></div></div>
-
-        <label>正文（直接回车换行即可）</label><textarea id="edit-chapter-content" style="min-height:200px"></textarea>
-        <div class="btns">
-          <button class="btn btn-primary" onclick="saveChapter()">💾 保存章节</button>
-          <button class="btn btn-ghost" onclick="$('chapter-editor').style.display='none'">取消</button>
-        </div>
-        <div class="result" id="edit-chapter-result"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ========== 作品面板 ========== -->
-<div class="panel" id="panel-project">
-  <div class="card">
-    <h3>新建作品（游戏/软件）</h3>
-    <div class="row">
-      <div><label>唯一 ID *</label><input id="proj-id" placeholder="my-awesome-game"></div>
-      <div><label>作品名称 *</label><input id="proj-title" placeholder="作品名称"></div>
-    </div>
-    <label>简短描述</label>
-    <input id="proj-desc" placeholder="一句话描述">
-    <label>详细介绍</label>
-    <textarea id="proj-long" placeholder="支持多行，详细描述作品的功能和特色" style="min-height:100px"></textarea>
-    <div class="row">
-      <div>
-        <label>类型 *</label>
-        <select id="proj-type"><option value="software">💻 软件</option><option value="game">🎮 游戏</option></select>
-      </div>
-      <div>
-        <label>平台</label>
-        <input id="proj-platform" placeholder="Windows / macOS / Web">
-      </div>
-      <div>
-        <label>状态</label>
-        <select id="proj-status"><option value="已发布">已发布</option><option value="开发中">开发中</option><option value="抢先体验">抢先体验</option><option value="已完结">已完结</option></select>
-      </div>
-    </div>
-    <label>标签（用逗号分隔）</label>
-    <input id="proj-tags" placeholder="Python, 工具, Windows">
-    <label>封面图链接</label>
-    <input id="proj-cover" placeholder="贴入图床链接（留空使用默认图）">
-    <label>下载链接</label>
-    <div id="dl-list">
-      <div class="dl-row">
-        <select class="dl-icon"><option value="">无图标</option><option value="fa6-brands:github">GitHub</option><option value="fa6-brands:steam">Steam</option><option value="fa6-brands:google-drive">网盘</option></select>
-        <input class="dl-label" placeholder="按钮文字（如 GitHub / 百度网盘）">
-        <input class="dl-url" placeholder="链接地址 https://...">
-        <button class="btn btn-danger" onclick="this.closest('.dl-row').remove()">✕</button>
-      </div>
-    </div>
-    <button class="btn btn-ghost" style="font-size:12px;margin-top:4px;padding:8px 14px" onclick="addDlRow()">+ 添加下载链接</button>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
-      <input type="checkbox" id="proj-featured" checked style="width:auto"> 显示在首页精选区
-    </label>
-    <div class="btns">
-      <button class="btn btn-primary" onclick="createProject()">✅ 新建作品</button>
-    </div>
-    <div class="result" id="project-result"></div>
-  </div>
-</div>
-
-<!-- ========== 视频面板 ========== -->
-<div class="panel" id="panel-video">
-  <div class="card">
-    <h3>🎬 新建视频</h3>
-    <div class="row">
-      <div><label>唯一 ID *</label><input id="vid-id" placeholder="video-01"></div>
-      <div><label>视频标题 *</label><input id="vid-title" placeholder="视频标题"></div>
-    </div>
-    <label>B站 BV 号 *</label>
-    <input id="vid-bvid" placeholder="BV1xx411c7mD">
-    <label>简短描述</label>
-    <input id="vid-desc" placeholder="视频简介">
-    <label>封面图链接（选填）</label>
-    <input id="vid-cover" placeholder="贴入图床链接（留空自动使用 B 站封面）">
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
-      <input type="checkbox" id="vid-featured" checked style="width:auto"> 显示在首页精选区
-    </label>
-    <div class="btns">
-      <button class="btn btn-primary" onclick="createVideo()">✅ 新建视频</button>
-    </div>
-    <div class="result" id="video-result"></div>
-  </div>
-</div>
-
-<!-- ========== 推送面板 ========== -->
-<div class="panel" id="panel-push">
-  <div class="card">
-    <h3>🚀 推送到 GitHub</h3>
-    <p style="color:#6b7280;font-size:13px;margin-bottom:12px">将本地所有改动提交并推送到 GitHub，自动触发网站部署。</p>
-    <label>提交说明</label>
-    <input id="push-msg" placeholder="通过管理工具更新内容" value="通过管理工具更新内容">
-    <div class="btns">
-      <button class="btn btn-success" onclick="doPush()">🚀 一键推送</button>
-    </div>
-    <div class="result" id="push-result"></div>
-  </div>
-</div>
-
-<!-- ========== 管理博客面板 ========== -->
-<div class="panel" id="panel-manage-posts">
-  <div class="card"><h3>📋 管理博客文章</h3>
-    <div id="posts-list"><p style="color:#888">加载中...</p></div>
-    <div id="posts-editor" style="display:none">
-      <input type="hidden" id="edit-post-cat">
-      <input type="hidden" id="edit-post-slug">
-      <label>标题</label><input id="edit-post-title">
-      <label>封面图链接</label>
-      <input id="edit-post-cover" placeholder="贴入图床链接">
-      <div class="hint">当前封面: <span id="edit-post-current-cover" style="color:#7c3aed"></span></div>
-      <label>描述</label><input id="edit-post-desc">
-      <label>标签（逗号分隔）</label><input id="edit-post-tags">
-      <div class="row"><div><label>分类显示名</label><input id="edit-post-display-cat"></div><div><label>发布日期</label><input id="edit-post-published"></div></div>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
-        <input type="checkbox" id="edit-post-draft" style="width:auto"> 草稿
-      </label>
-      <label>内容 (Markdown)</label><textarea id="edit-post-content" style="min-height:200px"></textarea>
-      <div class="btns">
-        <button class="btn btn-primary" onclick="savePostEdit()">💾 保存修改</button>
-        <button class="btn btn-ghost" onclick="cancelPostEdit()">取消</button>
-      </div>
-      <div class="result" id="edit-post-result"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 管理作品面板 ========== -->
-<div class="panel" id="panel-manage-projects">
-  <div class="card"><h3>📋 管理作品</h3>
-    <div id="projects-admin-list"><p style="color:#888">加载中...</p></div>
-    <div id="projects-admin-editor" style="display:none">
-      <input type="hidden" id="admin-proj-id">
-      <div class="row"><div><label>名称</label><input id="admin-proj-title"></div><div><label>类型</label><select id="admin-proj-type"><option value="software">💻 软件</option><option value="game">🎮 游戏</option></select></div></div>
-      <label>描述</label><input id="admin-proj-desc">
-      <label>详细介绍</label><textarea id="admin-proj-long" style="min-height:80px"></textarea>
-      <div class="row"><div><label>平台</label><input id="admin-proj-platform"></div><div><label>状态</label><select id="admin-proj-status"><option value="已发布">已发布</option><option value="开发中">开发中</option><option value="抢先体验">抢先体验</option></select></div></div>
-      <label>标签（逗号分隔）</label><input id="admin-proj-tags">
-      <label>封面图链接</label><input id="admin-proj-cover" placeholder="贴入图床链接">
-      <label>下载链接（格式：按钮文字|链接|图标名，每行一个。图标可选：github/steam/drive）</label>
-      <textarea id="admin-proj-dl" style="min-height:60px" placeholder="GitHub|https://...|github&#10;百度网盘|https://...|"></textarea>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="admin-proj-featured" style="width:auto"> 首页精选</label>
-      <div class="btns">
-        <button class="btn btn-primary" onclick="saveProjectEdit()">💾 保存修改</button>
-        <button class="btn btn-ghost" onclick="cancelProjectEdit()">取消</button>
-      </div>
-      <div class="result" id="edit-project-result"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 管理视频面板 ========== -->
-<div class="panel" id="panel-manage-videos">
-  <div class="card"><h3>管理视频</h3>
-    <div id="videos-admin-list"><p style="color:#888">加载中...</p></div>
-    <div id="videos-admin-editor" style="display:none">
-      <input type="hidden" id="admin-vid-id">
-      <div class="row"><div><label>标题</label><input id="admin-vid-title"></div><div><label>BV号</label><input id="admin-vid-bvid"></div></div>
-      <label>描述</label><input id="admin-vid-desc">
-      <label>封面图链接</label><input id="admin-vid-cover" placeholder="贴入图床链接">
-      <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="admin-vid-featured" style="width:auto"> 首页精选</label>
-      <div class="btns">
-        <button class="btn btn-primary" onclick="saveVideoEdit()">💾 保存修改</button>
-        <button class="btn btn-ghost" onclick="cancelVideoEdit()">取消</button>
-      </div>
-      <div class="result" id="edit-video-result"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 管理资源面板 ========== -->
-<div class="panel" id="panel-manage-resources">
-  <div class="card"><h3>管理资源</h3>
-    <div id="resources-admin-list"><p style="color:#888">加载中...</p></div>
-    <div id="resources-admin-editor" style="display:none">
-      <input type="hidden" id="admin-res-id">
-      <div class="row"><div><label>名称</label><input id="admin-res-name"></div><div><label>链接</label><input id="admin-res-url"></div></div>
-      <label>描述</label><input id="admin-res-desc">
-      <div class="row">
-        <div>
-          <label>分类</label>
-          <select id="admin-res-category">
-            <option value="">（未分类）</option>
-            <option value="网站">网站</option>
-            <option value="应用">应用</option>
-            <option value="游戏">游戏</option>
-            <option value="文件">文件</option>
-            <option value="其他">其他</option>
-          </select>
-        </div>
-        <div>
-          <label>配图链接</label>
-          <input id="admin-res-cover" placeholder="贴入图床链接（可留空）">
-        </div>
-      </div>
-      <div class="btns">
-        <button class="btn btn-primary" onclick="saveResourceEdit()">💾 保存修改</button>
-        <button class="btn btn-ghost" onclick="cancelResourceEdit()">取消</button>
-      </div>
-      <div class="result" id="edit-resource-result"></div>
-    </div>
-  </div>
-</div>
-
-
-    </div>
-  </main>
-</div>
+<div id="toasts"></div>
+<div id="modal-root"></div>
 
 <script>
-// ========== 基础工具 ==========
-function $(id){return document.getElementById(id)}
-function showResult(id, ok, msg){
-  const el = $(id);
-  el.className = `result ${ok?'success':'error'}`;
-  el.innerHTML = ok ? `<pre>✅ ${msg}</pre>` : `<pre>❌ ${msg}</pre>`;
-}
-async function api(url, data, method){
-  const m = method || (data?'POST':'GET');
-  const opts = {
-    method: m,
-    headers: data?{'Content-Type':'application/json'}:{},
-    body: data?JSON.stringify(data):undefined
-  };
-  const res = await fetch(url, opts);
-  return res.json();
-}
+/* ============================================================
+   基础工具
+   ============================================================ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const ICONS = window.MS_ICONS || {};
+const ic = (name, cls = "") =>
+  `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ""}</svg>`;
+const esc = (s) =>
+  String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const nl2br = (s) => esc(s).replace(/\\n/g, "<br>");
 
-// ========== 标签切换 ==========
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    $('panel-'+t.dataset.panel).classList.add('active');
-  };
-});
-
-// 切换到管理页时自动加载列表
-document.querySelectorAll('.tab[data-panel="manage-posts"]').forEach(t=>{
-  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadPostsList();};
-});
-document.querySelectorAll('.tab[data-panel="manage-projects"]').forEach(t=>{
-  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadProjectsList();};
-});
-document.querySelectorAll('.tab[data-panel="manage-videos"]').forEach(t=>{
-  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadVideosList();};
-});
-document.querySelectorAll('.tab[data-panel="manage-resources"]').forEach(t=>{
-  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadResourcesList();};
-});
-document.querySelectorAll('.tab[data-panel="manage-novels"]').forEach(t=>{
-  const orig=t.onclick;t.onclick=()=>{orig&&orig.call(t);loadNovelsList();};
-});
-
-
-// ========== 博客 ==========
-(async function loadCategories(){
-  try{const cats=await api('/api/categories');const sel=$('blog-category');
-    sel.innerHTML=cats.map(c=>`<option value="${c}">${c}</option>`).join('')||'<option value="">(手动输入)</option>';}
-  catch(e){$('blog-category').innerHTML='<option value="">加载失败</option>';}
-})();
-
-async function createPost(){
-  const title=$('blog-title').value.trim();
-  const content=$('blog-content').value.trim();
-  const category=$('blog-category').value.trim();
-  const slug=$('blog-slug').value.trim();
-  if(!title||!category||!slug||!content) return showResult('blog-result',false,'请填写所有带 * 的必填项');
-
-  const coverUrl=$('blog-cover-input').value.trim();
-  const tagsRaw=$('blog-tags').value.trim();
-  const tagsArr=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
-
-  const data = {
-    title,
-    description: $('blog-desc').value.trim(),
-    tags: tagsArr,
-    category,
-    displayCategory: $('blog-display-cat').value.trim() || category,
-    slug, content,
-    image: coverUrl,
-    draft: $('blog-draft').checked,
-    lang: $('blog-lang').value.trim() || 'zh_CN',
-    published: $('blog-published').value.trim() || ''
-  };
-  const r=await api('/api/create-post',data);
-  showResult('blog-result',r.ok, r.ok?`文章已创建: ${r.path}`:r.error);
-  if(r.ok){$('blog-cover-input').value='';$('blog-published').value='';}
-}
-
-
-// ========== 发布资源（独立面板）==========
-async function publishResource(){
-  const name=$('pub-res-name').value.trim();
-  const url=$('pub-res-url').value.trim();
-  if(!name||!url) return showResult('pub-resource-result',false,'名称和链接必填');
-  const r=await api('/api/resources/add',{
-    name, url,
-    description:$('pub-res-desc').value.trim(),
-    category:$('pub-res-category').value,
-    cover:$('pub-res-cover').value.trim(),
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
   });
-  showResult('pub-resource-result',r.ok,r.ok?'资源已创建':r.error);
-  if(r.ok){
-    $('pub-res-name').value='';
-    $('pub-res-url').value='';
-    $('pub-res-desc').value='';
-    $('pub-res-category').value='';
-    $('pub-res-cover').value='';
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 300) || "返回内容无法解析" }; }
+  if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
+  return data;
+}
+const post = (p, body) => api(p, { method: "POST", body: JSON.stringify(body) });
+const put  = (p, body) => api(p, { method: "PUT",  body: JSON.stringify(body) });
+const del  = (p)       => api(p, { method: "DELETE" });
+
+function toast(msg, kind = "ok") {
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.innerHTML = `${ic(kind === "err" ? "error" : "check-circle")}<span>${esc(msg)}</span>`;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), kind === "err" ? 6000 : 3200);
+}
+function showError(e) { toast(e && e.message ? e.message : String(e), "err"); }
+
+/* 弹窗 */
+function openDialog({ title, body, footer }) {
+  const root = $("#modal-root");
+  root.innerHTML = `
+    <div class="scrim" data-act="close-modal"></div>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header>${ic("edit")}<h3>${esc(title)}</h3>
+        <button class="btn icon" data-act="close-modal" title="关闭">${ic("close")}</button>
+      </header>
+      <div class="body">${body}</div>
+      ${footer ? `<footer>${footer}</footer>` : ""}
+    </div>`;
+  root.classList.add("on");
+  return root;
+}
+function closeDialog() { const r = $("#modal-root"); r.classList.remove("on"); r.innerHTML = ""; }
+
+/* ============================================================
+   字段系统：所有表单都由字段描述生成，避免"某个字段忘了做"
+   ============================================================ */
+const FIELD = {
+  text: (f, v) => `<input type="text" data-k="${f.k}" placeholder="${esc(f.ph || "")}" value="${esc(v ?? f.def ?? "")}">`,
+  url:  (f, v) => `<input type="url" data-k="${f.k}" placeholder="${esc(f.ph || "https://…")}" value="${esc(v ?? f.def ?? "")}">`,
+  area: (f, v) => `<textarea data-k="${f.k}" rows="${f.rows || 3}" placeholder="${esc(f.ph || "")}">${esc(v ?? f.def ?? "")}</textarea>`,
+  select: (f, v) => `<select data-k="${f.k}">${(f.options || [])
+      .map(([val, label]) => `<option value="${esc(val)}"${String(v ?? f.def) === String(val) ? " selected" : ""}>${esc(label)}</option>`)
+      .join("")}</select>`,
+  switch: (f, v) => `<label class="switch"><input type="checkbox" data-k="${f.k}"${v === true || v === "true" ? " checked" : ""}><span class="track"></span><span>${esc(f.text || f.label)}</span></label>`,
+  chips: (f, v) => {
+    const list = Array.isArray(v) ? v : [];
+    return `<div class="chips" data-chips="${f.k}">
+      ${list.map((t) => chipHtml(t)).join("")}
+      <input type="text" data-chip-input="${f.k}" placeholder="${esc(f.ph || "输入后按回车添加")}">
+    </div>
+    <div class="sugg" data-sugg="${f.k}"></div>`;
+  },
+  image: (f, v) => `<div class="coverbox">
+      <div class="preview" data-preview="${f.k}" style="${v ? `background-image:url('${esc(v)}')` : ""}">${v ? "" : "无图"}</div>
+      <div class="grow">
+        <input type="url" data-k="${f.k}" placeholder="${esc(f.ph || "贴入图片链接")}" value="${esc(v ?? "")}">
+        <div class="actions" style="margin-top:10px">
+          <button type="button" class="btn tonal sm" data-act="upload" data-target="${f.k}">${ic("upload")}上传本地图片</button>
+          <button type="button" class="btn outline sm" data-act="clear-img" data-target="${f.k}">清除</button>
+        </div>
+        ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}
+      </div>
+    </div>`,
+  imagelist: (f, v) => {
+    const list = Array.isArray(v) ? v : [];
+    return `<div data-imglist="${f.k}">
+      ${list.map((u, i) => imgRowHtml(u, i)).join("")}
+      <button type="button" class="btn outline sm" data-act="add-img" data-target="${f.k}">${ic("add")}添加一张</button>
+      ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}
+    </div>`;
+  },
+  links: (f, v) => {
+    const list = Array.isArray(v) ? v : [];
+    return `<div data-links="${f.k}">
+      ${list.map((l, i) => linkRowHtml(l, i)).join("")}
+      <button type="button" class="btn outline sm" data-act="add-link" data-target="${f.k}">${ic("add")}添加一个下载按钮</button>
+    </div>`;
+  },
+  markdown: (f, v) => `<div class="editor" data-editor="${f.k}">
+      <div class="toolbar">
+        <button type="button" data-act="md" data-md="h2">标题</button>
+        <button type="button" data-act="md" data-md="bold"><b>粗体</b></button>
+        <button type="button" data-act="md" data-md="italic"><i>斜体</i></button>
+        <button type="button" data-act="md" data-md="quote">引用</button>
+        <button type="button" data-act="md" data-md="ul">列表</button>
+        <button type="button" data-act="md" data-md="code">代码块</button>
+        <button type="button" data-act="md" data-md="link">链接</button>
+        <button type="button" data-act="md" data-md="image">${ic("image")}图片</button>
+        <button type="button" data-act="md" data-md="hr">分割线</button>
+        <span style="flex:1"></span>
+        <button type="button" data-act="mdpreview">${ic("visibility")}预览</button>
+      </div>
+      <textarea data-k="${f.k}" placeholder="${esc(f.ph || "在这里写 Markdown 正文…")}">${esc(v ?? "")}</textarea>
+      <div class="previewbox"></div>
+      <div class="editor-meta"><span data-count="${f.k}"></span><span>支持 Markdown：标题、粗体、列表、代码块、图片、链接</span></div>
+    </div>`,
+  category: (f, v) => `<input type="text" data-k="${f.k}" list="dl-cats" placeholder="${esc(f.ph || "选择或输入新的分类文件夹名")}" value="${esc(v ?? "")}">
+      <datalist id="dl-cats"></datalist>
+      ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}`,
+  rescat: (f, v) => `<select data-k="category" data-res="1">
+      <option value="">（未分类）</option>${f.opts || ""}
+      <option value="__new__">＋ 新建分类…</option></select>
+    <input type="text" data-k="category" data-res-new="1" placeholder="输入新的分类名" style="margin-top:8px;display:none">`,
+  slug: (f, v) => `<div class="row" style="align-items:flex-end">
+      <div style="flex:1 1 auto"><input type="text" data-k="${f.k}" placeholder="留空则自动生成" value="${esc(v ?? "")}"></div>
+      <button type="button" class="btn outline sm" data-act="gen-slug" style="margin-bottom:2px">${ic("sync")}按标题生成</button>
+    </div>
+    <div class="hint">${ic("info")}<span>留空就行 —— 保存时会按标题自动生成（中文标题会用日期兜底）。上面的按钮可以手动预览/改。</span></div>`,
+};
+
+const chipHtml = (t) =>
+  `<span class="chip" data-val="${esc(t)}">${esc(t)}<button type="button" data-act="del-chip" title="移除">${ic("close")}</button></span>`;
+const imgRowHtml = (u, i) => `<div class="imgrow" data-i="${i}">
+  <div class="thumb" style="${u ? `background:url('${esc(u)}') center/cover` : ""}"></div>
+  <input type="url" class="img-url" placeholder="图片链接（宣传图/截图）" value="${esc(u || "")}">
+  <button type="button" class="btn icon" data-act="up-img" title="上移">${ic("expand-more")}</button>
+  <button type="button" class="btn icon" data-act="del-img" title="删除">${ic("delete")}</button>
+</div>`;
+const linkRowHtml = (l = {}, i) => `<div class="imgrow" data-i="${i}">
+  <input type="text" class="lk-label" placeholder="按钮文字" value="${esc(l.label || "")}" style="flex:0 1 130px">
+  <input type="url" class="lk-url" placeholder="下载链接" value="${esc(l.url || "")}">
+  <input type="text" class="lk-icon" placeholder="图标(可空)" value="${esc(l.icon || "")}" style="flex:0 1 130px">
+  <button type="button" class="btn icon" data-act="del-link" title="删除">${ic("delete")}</button>
+</div>`;
+
+function fieldHtml(f, v) {
+  const need = f.required ? ' <span class="req">*</span>' : "";
+  const wide = ["markdown", "imagelist", "links", "chips"].includes(f.type);
+  return `<div class="f" data-f="${f.k}"${wide ? ' style="flex:1 1 100%"' : ""}>
+    ${f.type === "switch" ? FIELD.switch(f, v) : `<label>${esc(f.label)}${need}</label>${FIELD[f.type](f, v)}`}
+  </div>`;
+}
+function formHtml(fields, values = {}) {
+  let out = "", i = 0;
+  while (i < fields.length) {
+    const f = fields[i];
+    const wide = ["markdown", "imagelist", "links", "chips"].includes(f.type);
+    if (!wide && fields[i + 1] && !["markdown", "imagelist", "links", "chips", "switch"].includes(fields[i + 1].type)) {
+      out += `<div class="row">${fieldHtml(f, values[f.k])}${fieldHtml(fields[i + 1], values[fields[i + 1].k])}</div>`;
+      i += 2;
+    } else {
+      out += fieldHtml(f, values[f.k]);
+      i += 1;
+    }
+  }
+  return out;
+}
+function readForm(root) {
+  const out = {};
+  $$("[data-k]", root).forEach((el) => {
+    const k = el.dataset.k;
+    if (el.type === "checkbox") out[k] = el.checked;
+    else if (el.dataset.k && el.tagName === "SELECT") out[k] = el.value;
+    else out[k] = el.value;
+  });
+  $$("[data-chips]", root).forEach((box) => {
+    out[box.dataset.chips] = $$(".chip", box).map((c) => c.dataset.val);
+  });
+  $$("[data-imglist]", root).forEach((box) => {
+    out[box.dataset.imglist] = $$(".img-url", box).map((i) => i.value.trim()).filter(Boolean);
+  });
+  $$("[data-links]", root).forEach((box) => {
+    out[box.dataset.links] = $$(".imgrow", box)
+      .map((r) => ({ label: $(".lk-label", r).value.trim(), url: $(".lk-url", r).value.trim(), icon: $(".lk-icon", r).value.trim() }))
+      .filter((l) => l.label && l.url);
+  });
+  return out;
+}
+/* slug 预览（与服务器同规则，仅用于显示） */
+function slugPreview(title) {
+  let base = String(title || "").toLowerCase().replace(/['"’”]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (base.length < 3) {
+    const d = new Date(), p = (n) => String(n).padStart(2, "0");
+    base = `post-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-随机4位`;
+  }
+  return base.slice(0, 60);
+}
+
+/* ============================================================
+   实体定义：每个内容类型有哪些字段、走哪些接口
+   ============================================================ */
+const ENTITIES = {
+  post: {
+    name: "博客文章", icon: "edit-note", list: "/api/posts/list",
+    create: "/api/create-post", update: "/api/posts/update",
+    remove: (it) => `/api/posts/delete?category=${encodeURIComponent(it.category)}&slug=${encodeURIComponent(it.slug)}`,
+    detail: (it) => `/api/posts/detail?category=${encodeURIComponent(it.category)}&slug=${encodeURIComponent(it.slug)}`,
+    title: (it) => it.title, sub: (it) => `${it.category} · ${it.published || "无日期"}`,
+    thumb: () => null, searchKeys: ["title", "slug", "category", "displayCategory", "description"],
+    fields: [
+      { k: "title", label: "标题", type: "text", required: true, ph: "文章标题" },
+      { k: "category", label: "分类文件夹", type: "category", required: true, hint: "决定文件存放的文件夹；显示名可以另填" },
+      { k: "displayCategory", label: "显示分类名", type: "text", ph: "留空则与文件夹同名" },
+      { k: "description", label: "一句话描述", type: "text", ph: "用于列表卡片和搜索结果" },
+      { k: "tags", label: "标签", type: "chips", ph: "输入标签后按回车" },
+      { k: "image", label: "封面图", type: "image", hint: "可贴图床链接，也可以上传本地图片" },
+      { k: "published", label: "发布时间", type: "text", ph: "留空 = 保存时的当前时间" },
+      { k: "lang", label: "语言", type: "select", options: [["zh_CN", "中文 zh_CN"], ["en", "英文 en"]], def: "zh_CN" },
+      { k: "slug", label: "URL 标识（进阶）", type: "slug" },
+      { k: "draft", label: "草稿", type: "switch", text: "存为草稿（不在网站显示）" },
+      { k: "content", label: "正文", type: "markdown", required: true },
+    ],
+  },
+  project: {
+    name: "作品", icon: "apps", list: "/api/projects/list",
+    create: "/api/create-project", update: "/api/projects/update",
+    remove: (it) => `/api/projects/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title, sub: (it) => `${it.type === "game" ? "游戏" : "软件"} · ${it.status || ""} · ${it.platform || ""}`,
+    thumb: (it) => it.cover, searchKeys: ["id", "title", "description", "platform", "status"],
+    fields: [
+      { k: "id", label: "唯一 ID", type: "text", required: true, ph: "英文短名，如 my-app" },
+      { k: "title", label: "作品名称", type: "text", required: true },
+      { k: "type", label: "类型", type: "select", options: [["software", "软件"], ["game", "游戏"]], def: "software" },
+      { k: "status", label: "状态", type: "select", options: [["已发布", "已发布"], ["开发中", "开发中"], ["抢先体验", "抢先体验"], ["已完结", "已完结"]], def: "开发中" },
+      { k: "platform", label: "平台", type: "text", ph: "Windows / macOS / Web / Android" },
+      { k: "description", label: "一句话描述", type: "text" },
+      { k: "cover", label: "封面图（方形图标）", type: "image" },
+      { k: "screenshots", label: "宣传图 / 截图（可多张）", type: "imagelist", hint: "详情页会横向滑动展示，建议 16:9 截图" },
+      { k: "tags", label: "标签", type: "chips" },
+      { k: "longDescription", label: "详细介绍", type: "area", rows: 5 },
+      { k: "downloadLinks", label: "下载链接", type: "links" },
+      { k: "featured", label: "首页精选", type: "switch", text: "在首页「猜你喜欢」中展示" },
+    ],
+  },
+  video: {
+    name: "视频", icon: "play-circle", list: "/api/videos/list",
+    create: "/api/create-video", update: "/api/videos/update",
+    remove: (it) => `/api/videos/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title, sub: (it) => `BV${it.bvid || ""} ${it.featured ? "· 精选" : ""}`,
+    thumb: (it) => it.cover, searchKeys: ["title", "bvid", "id", "description"],
+    fields: [
+      { k: "bvid", label: "B 站 BV 号", type: "text", required: true, ph: "BV1xx411c7XX" },
+      { k: "title", label: "视频标题", type: "text", required: true },
+      { k: "id", label: "ID", type: "text", ph: "留空自动用 BV 号" },
+      { k: "cover", label: "封面图", type: "image" },
+      { k: "description", label: "简介", type: "area", rows: 5 },
+      { k: "featured", label: "首页精选", type: "switch", text: "在视频区顶部大图展示" },
+    ],
+  },
+  novel: {
+    name: "小说", icon: "auto-stories", list: "/api/novels/list",
+    create: "/api/novels/add", update: "/api/novels/update",
+    remove: (it) => `/api/novels/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title, sub: (it) => `${it.author || "佚名"} · ${it.platform || ""} · ${(it.chapters || []).length} 章`,
+    thumb: (it) => it.cover, searchKeys: ["title", "author", "platform", "description"],
+    fields: [
+      { k: "title", label: "小说名", type: "text", required: true },
+      { k: "author", label: "作者", type: "text" },
+      { k: "publishedDate", label: "发布日期", type: "text", ph: "2026-07-27" },
+      { k: "platform", label: "发布平台", type: "text", ph: "B站专栏 / 番茄 / 起点" },
+      { k: "cover", label: "封面图（竖版）", type: "image", hint: "建议 3:4 竖图" },
+      { k: "description", label: "一句话简介", type: "text" },
+      { k: "intro", label: "详细介绍", type: "area", rows: 5 },
+    ],
+  },
+  resource: {
+    name: "资源", icon: "package-2", list: "/api/resources/list",
+    create: "/api/resources/add", update: "/api/resources/update",
+    remove: (it) => `/api/resources/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.name, sub: (it) => `${it.category || "未分类"} · ${it.url || ""}`,
+    thumb: (it) => it.cover, searchKeys: ["name", "url", "category", "description"],
+    fields: [
+      { k: "name", label: "名称", type: "text", required: true },
+      { k: "url", label: "链接", type: "url", required: true },
+      { k: "description", label: "描述", type: "text" },
+      { k: "category", label: "分类", type: "select", options: [] },
+      { k: "cover", label: "配图", type: "image" },
+    ],
+  },
+};
+
+/* ============================================================
+   导航
+   ============================================================ */
+const NAV = [
+  { title: "概览", items: [{ id: "dash", label: "仪表盘", icon: "space-dashboard" }] },
+  { title: "发布新内容", items: [
+    { id: "pub-post", label: "博客文章", icon: "edit-note" },
+    { id: "pub-project", label: "作品", icon: "apps" },
+    { id: "pub-video", label: "视频", icon: "play-circle" },
+    { id: "pub-novel", label: "小说", icon: "auto-stories" },
+    { id: "pub-resource", label: "资源", icon: "package-2" },
+  ]},
+  { title: "管理内容", items: [
+    { id: "adm-post", label: "博客文章", icon: "article" },
+    { id: "adm-project", label: "作品", icon: "library-books" },
+    { id: "adm-video", label: "视频", icon: "movie" },
+    { id: "adm-novel", label: "小说", icon: "book-2" },
+    { id: "adm-resource", label: "资源", icon: "link" },
+  ]},
+  { title: "系统", items: [{ id: "deploy", label: "推送与部署", icon: "rocket-launch" }] },
+];
+const PANEL_META = {
+  dash: ["仪表盘", "站点内容与部署状态一览"],
+  "pub-post": ["发布博客文章", "写完直接保存，URL 标识留空会自动生成"],
+  "pub-project": ["发布作品", "应用 / 游戏，支持多张宣传图"],
+  "pub-video": ["发布视频", "同步 B 站视频到视频专区"],
+  "pub-novel": ["发布小说", "创建后可以继续添加章节"],
+  "pub-resource": ["发布资源", "网站 / 应用 / 游戏 / 文件等收藏"],
+  "adm-post": ["管理博客文章", "搜索、编辑、删除"],
+  "adm-project": ["管理作品", "搜索、编辑、删除"],
+  "adm-video": ["管理视频", "搜索、编辑、删除"],
+  "adm-novel": ["管理小说", "编辑信息与章节"],
+  "adm-resource": ["管理资源", "搜索、编辑、删除"],
+  deploy: ["推送与部署", "推送到 GitHub 并实时查看构建进度"],
+};
+
+let STATE = { panel: "dash", caches: {}, refs: { categories: [], tags: [], resCats: [] } };
+
+function renderNav() {
+  $("#nav").innerHTML = NAV.map((g) => `
+    <div class="nav-group">
+      <div>${g.title}</div>
+      <div class="items">
+        ${g.items.map((it) => `<button class="nav-item" data-nav="${it.id}" data-on="${STATE.panel === it.id ? 1 : 0}">
+          ${ic(it.icon)}<span>${it.label}</span></button>`).join("")}
+      </div>
+    </div>`).join("");
+}
+async function loadRefs() {
+  const [cats, tags, meta] = await Promise.all([
+    api("/api/categories").catch(() => []),
+    api("/api/tags").catch(() => []),
+    api("/api/resources/meta").catch(() => ({ categories: [] })),
+  ]);
+  STATE.refs.categories = cats || [];
+  STATE.refs.tags = tags || [];
+  STATE.refs.resCats = (meta && meta.categories) || [];
+  const dl = $("#dl-cats");
+  if (dl) dl.innerHTML = STATE.refs.categories.map((c) => `<option value="${esc(c)}">`).join("");
+  const sel = $('[data-k="category"][data-res="1"]');
+  if (sel) sel.innerHTML = STATE.refs.resCats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+}
+/* 渲染令牌：切页时丢弃"迟到的旧渲染"，否则旧结果会把新页面覆盖掉 */
+let renderToken = 0;
+
+async function go(panel) {
+  STATE.panel = panel;
+  renderNav();
+  const [t, s] = PANEL_META[panel] || ["", ""];
+  $("#p-title").textContent = t;
+  $("#p-sub").textContent = s;
+  const token = ++renderToken;
+  const view = $("#view");
+  view.innerHTML = `<div class="card"><p class="muted">加载中…</p></div>`;
+  try {
+    const html = await buildPanel(panel);
+    if (token !== renderToken) return;
+    view.innerHTML = html;
+    await afterRender(panel);
+  } catch (e) {
+    if (token !== renderToken) return;
+    view.innerHTML = `<div class="card"><div class="note err">${ic("error")}<span>${esc(e.message)}</span></div>
+      <div class="actions"><button class="btn outline" data-act="reload">${ic("refresh")}重试</button></div></div>`;
+  }
+}
+async function buildPanel(panel) {
+  if (panel === "dash") return buildDash();
+  if (panel === "deploy") return buildDeploy();
+  if (panel.startsWith("pub-")) return buildPublish(panel.slice(4));
+  if (panel.startsWith("adm-")) return buildManage(panel.slice(4));
+  return `<div class="card">未知页面</div>`;
+}
+async function afterRender(panel) {
+  await loadRefs();
+  wireDynamic($("#view"));
+  updateCounts($("#view"));
+  if (panel.startsWith("adm-")) {
+    const q = $("#q");
+    if (q) {
+      q.addEventListener("input", () => renderList(panel.slice(4), q.value.trim()));
+      renderList(panel.slice(4), "");
+    }
+  }
+  if (panel === "dash") loadDeployInto("#dash-deploy");
+  if (panel === "deploy") loadDeployInto("#deploy-box");
+}
+/* 部署状态异步填充：绝不阻塞页面渲染 */
+async function loadDeployInto(sel) {
+  if (!$(sel)) return;
+  $(sel).innerHTML = `<div class="note info">${ic("progress-activity")}<span>正在查询部署状态…</span></div>`;
+  let d = null;
+  try { d = await api("/api/deploy-status"); } catch { d = null; }
+  const el = $(sel);
+  if (el) el.innerHTML = deployHtml(d);
+  if (d && d.run && (d.run.status === "in_progress" || d.run.status === "queued")) startDeployPoll();
+}
+
+/* ============================================================
+   仪表盘
+   ============================================================ */
+async function buildDash() {
+  const s = await api("/api/summary");
+  const c = s.counts || {};
+  const card = (n, label, icon, panel) =>
+    `<div class="stat" data-nav="${panel}"><div class="n">${n ?? 0}</div><div class="l">${ic(icon)}${label}</div></div>`;
+  return `
+    <div class="stats" style="margin-bottom:18px">
+      ${card(c.posts, "篇文章", "article", "adm-post")}
+      ${card(c.projects, "个作品", "library-books", "adm-project")}
+      ${card(c.videos, "个视频", "movie", "adm-video")}
+      ${card(c.novels, "部小说", "book-2", "adm-novel")}
+      ${card(c.resources, "条资源", "link", "adm-resource")}
+    </div>
+    <div class="card">
+      <h2>${ic("rocket-launch")}最近一次部署</h2>
+      <p class="sub">推送后会自动构建并发布到 Cloudflare Pages</p>
+      <div id="dash-deploy"><div class="muted">正在查询部署状态…</div></div>
+      <div class="actions">
+        <button class="btn tonal" data-nav="deploy">${ic("upload")}去推送</button>
+        <button class="btn outline" data-act="refresh-deploy">${ic("refresh")}刷新状态</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>${ic("history")}最近的文章</h2>
+      <p class="sub">点击任意一条可以直接去管理页搜索它</p>
+      <div class="list">
+        ${(s.recent || []).map((p) => `<div class="item" data-act="find-post" data-q="${esc(p.title)}" style="cursor:pointer">
+          <div class="thumb">${ic("article")}</div>
+          <div class="body"><div class="t">${esc(p.title)}</div>
+            <div class="m"><span>${esc(p.category)}</span><span>${esc(p.published || "")}</span></div></div>
+          <div class="acts">${ic("chevron-right")}</div>
+        </div>`).join("") || `<div class="empty">还没有文章</div>`}
+      </div>
+    </div>
+    <div class="card">
+      <h2>${ic("sell")}分类与标签</h2>
+      <p class="sub">点击标签可以直接跳到「管理博客文章」并带上搜索词</p>
+      <div class="sec-title">分类文件夹</div>
+      <div class="tags">${(s.categories || []).map((x) => `<span class="tag" data-act="find-post" data-q="${esc(x)}">${esc(x)}</span>`).join("") || "<span class='muted'>无</span>"}</div>
+      <div class="sec-title">全部标签（${(s.tags || []).length}）</div>
+      <div class="tags">${(s.tags || []).map((x) => `<span class="tag" data-act="find-post" data-q="${esc(x)}">${esc(x)}</span>`).join("") || "<span class='muted'>无</span>"}</div>
+    </div>`;
+}
+
+/* ============================================================
+   发布面板
+   ============================================================ */
+async function buildPublish(key) {
+  await loadRefs();
+  const ent = ENTITIES[key];
+  let values = {};
+  if (key === "post") values = { lang: "zh_CN" };
+  if (key === "resource") values = { category: "" };
+  // 资源分类：用数据里真实存在的分类做下拉，同时留一个「新建分类」入口
+  let fields = ent.fields;
+  if (key === "resource") {
+    const opts = STATE.refs.resCats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+    fields = fields.map((f) => (f.k === "category" ? { ...f, type: "rescat", opts } : f));
+  }
+  return `
+    <div class="card">
+      <h2>${ic(ent.icon)}新建${ent.name}</h2>
+      <p class="sub">带 <span style="color:var(--err)">*</span> 的是必填项，其余留空即可</p>
+      <form id="pub-form" autocomplete="off">${formHtml(fields, values)}</form>
+      <div id="pub-result"></div>
+      <div class="actions">
+        <button class="btn" data-act="pub-save" data-ent="${key}">${ic("save")}保存并发布</button>
+        <button class="btn outline" data-act="pub-reset" data-ent="${key}">${ic("refresh")}清空重填</button>
+      </div>
+    </div>`;
+}
+
+/* 通用：给动态小组件挂事件（在容器上做事件委托，只挂一次） */
+function wireDynamic(root) {
+  root.querySelectorAll("[data-editor]").forEach((ed) => {
+    if (ed.dataset.wired === "1") return;
+    ed.dataset.wired = "1";
+    const ta = $("textarea", ed);
+    const cnt = $("[data-count]", ed) || $(`[data-count="${ta.dataset.k}"]`, root);
+    const upd = () => { if (cnt) cnt.textContent = `${ta.value.length} 字`; };
+    ta.addEventListener("input", upd);
+    upd();
+  });
+}
+function updateCounts(root) {
+  root.querySelectorAll("[data-editor]").forEach((ed) => {
+    const ta = $("textarea", ed);
+    const cnt = $("[data-count]", ed);
+    if (cnt && ta) cnt.textContent = `${ta.value.length} 字`;
+  });
+}
+
+/* ============================================================
+   管理面板（搜索 + 列表 + 编辑弹窗 + 删除）
+   ============================================================ */
+async function buildManage(key) {
+  await loadRefs();
+  const ent = ENTITIES[key];
+  const items = await api(ent.list);
+  STATE.caches[key] = items;
+  return `
+    <div class="card">
+      <h2>${ic(ent.icon)}${ent.name}列表</h2>
+      <p class="sub">共 <span id="cnt-all">${items.length}</span> 条，支持按标题/标签/分类搜索</p>
+      <div class="searchbar">
+        <label class="box">${ic("search")}<input type="text" id="q" placeholder="搜索${ent.name}…"></label>
+        <button class="btn outline sm" data-act="clear-q">清除</button>
+      </div>
+      <div id="list" class="list"><div class="empty">加载中…</div></div>
+    </div>`;
+}
+function matchItem(ent, it, q) {
+  if (!q) return true;
+  const s = q.toLowerCase();
+  return (ent.searchKeys || []).some((k) => String(it[k] ?? "").toLowerCase().includes(s))
+    || (it.tags || []).some((t) => String(t).toLowerCase().includes(s));
+}
+function renderList(key, q) {
+  const ent = ENTITIES[key];
+  const all = STATE.caches[key] || [];
+  const items = all.filter((it) => matchItem(ent, it, q));
+  const box = $("#list");
+  if (!items.length) {
+    box.innerHTML = `<div class="empty">${ic("search")}<div>${q ? `没有匹配「${esc(q)}」的内容` : "还没有内容"}</div></div>`;
+    return;
+  }
+  box.innerHTML = items.map((it, i) => {
+    const thumb = ent.thumb(it);
+    const isImg = thumb && /^(https?:|\/)/.test(thumb);
+    return `<div class="item" data-idx="${all.indexOf(it)}">
+      <div class="thumb">${isImg ? `<img src="${esc(thumb)}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='${ic(ent.icon).replace(/'/g, "&#39;")}'">` : ic(ent.icon)}</div>
+      <div class="body">
+        <div class="t">${esc(ent.title(it) || "(无标题)")}</div>
+        <div class="m"><span>${esc(ent.sub(it) || "")}</span></div>
+        ${(it.tags || []).length ? `<div class="tags">${it.tags.map((t) => `<span class="tag" data-act="filter-tag" data-q="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="acts">
+        <button class="btn icon" data-act="edit" data-key="${key}" title="编辑">${ic("edit")}</button>
+        <button class="btn icon" data-act="del" data-key="${key}" title="删除">${ic("delete")}</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* 编辑弹窗 */
+async function openEditor(key, item) {
+  const ent = ENTITIES[key];
+  let values = { ...item };
+  let editorKey = null;
+  if (key === "post") {
+    const d = await api(ent.detail(item));
+    values = { ...values, ...d, category: d.category, slug: d.slug };
+    editorKey = { category: item.category, slug: item.slug };
+  }
+  const body = `<form id="edit-form">${formHtml(ent.fields, values)}
+      ${key === "novel" ? `<div class="sec-title">${ic("list-alt")}章节管理</div><div id="chapter-mgr"></div>` : ""}
+    </form>`;
+  const footer = `
+    <button class="btn outline" data-act="close-modal">取消</button>
+    <button class="btn" data-act="save-edit" data-key="${key}">${ic("save")}保存修改</button>`;
+  openDialog({ title: `编辑${ent.name}`, body, footer });
+  await loadRefs();
+  wireDynamic($("#modal-root"));
+  if (key === "novel") renderChapterMgr(item);
+  $("#modal-root").dataset.editCtx = JSON.stringify(editorKey || {});
+}
+
+/* 小说章节管理 */
+function renderChapterMgr(item) {
+  const box = $("#chapter-mgr");
+  if (!box) return;
+  const chs = item.chapters || [];
+  box.innerHTML = `
+    <div class="note info">${ic("info")}<span>章节保存在小说数据里。改完记得点右下角「保存修改」。</span></div>
+    <div class="list">${chs.map((c, i) => `<div class="item">
+        <div class="thumb">${i + 1}</div>
+        <div class="body"><div class="t">${esc(c.title)}</div>
+          <div class="m"><span>${esc(c.slug)}</span>${c.date ? `<span>${esc(c.date)}</span>` : ""}<span>${(c.content || "").length} 字</span></div></div>
+        <div class="acts">
+          <button class="btn icon" data-act="ch-edit" data-i="${i}" title="编辑">${ic("edit")}</button>
+          <button class="btn icon" data-act="ch-del" data-i="${i}" title="删除">${ic("delete")}</button>
+        </div></div>`).join("") || `<div class="empty">还没有章节</div>`}
+    </div>
+    <button class="btn tonal sm" data-act="ch-add" style="margin-top:12px">${ic("add")}添加章节</button>`;
+  box.dataset.item = JSON.stringify(item);
+}
+function chapterDialog(idx) {
+  const box = $("#chapter-mgr");
+  const item = JSON.parse(box.dataset.item || "{}");
+  const ch = idx >= 0 ? (item.chapters || [])[idx] : { slug: "", title: "", date: "", content: "" };
+  openDialog({
+    title: idx >= 0 ? "编辑章节" : "添加章节",
+    body: `<form id="ch-form">
+      <div class="row">
+        <div class="f"><label>章节标题 <span class="req">*</span></label><input type="text" data-k="title" value="${esc(ch.title)}"></div>
+        <div class="f"><label>标识 slug</label><input type="text" data-k="slug" placeholder="留空自动用 chapter-01 形式" value="${esc(ch.slug)}"></div>
+        <div class="f"><label>日期</label><input type="text" data-k="date" value="${esc(ch.date || "")}"></div>
+      </div>
+      <div class="f"><label>正文</label>
+        <div class="editor" data-editor="content">
+          <textarea data-k="content" placeholder="章节正文（Markdown）">${esc(ch.content || "")}</textarea>
+          <div class="editor-meta"><span data-count="content"></span></div>
+        </div>
+      </div>
+    </form>`,
+    footer: `<button class="btn outline" data-act="close-modal">取消</button>
+             <button class="btn" data-act="ch-save" data-i="${idx}">${ic("save")}确定</button>`,
+  });
+  wireDynamic($("#modal-root"));
+  updateCounts($("#modal-root"));
+}
+
+/* ============================================================
+   推送与部署
+   ============================================================ */
+function deployHtml(d) {
+  if (!d) return `<div class="note warn">${ic("warning")}<span>暂时拿不到部署状态（可能是网络问题，或仓库地址变了）</span></div>`;
+  if (d.error) return `<div class="note err">${ic("error")}<span>${esc(d.error)}</span></div>`;
+  const r = d.run || {};
+  const map = { queued: ["排队中", "warn"], in_progress: ["构建中", "pri"], completed: [r.conclusion === "success" ? "部署成功" : "部署失败", r.conclusion === "success" ? "ok" : "err"] };
+  const [label, cls] = map[r.status] || [r.status, ""];
+  const steps = ((d.jobs || [])[0] || {}).steps || [];
+  const done = steps.filter((s) => s.conclusion === "success").length;
+  const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
+  return `
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span class="badge ${cls}">${esc(label)}</span>
+      <span class="muted">第 ${r.number} 次 · ${esc(r.sha || "")} · ${esc(r.title || "")}</span>
+      ${r.url ? `<a class="muted" href="${esc(r.url)}" target="_blank">在 GitHub 查看</a>` : ""}
+    </div>
+    ${r.status === "in_progress" || r.status === "queued" ? `<div class="progress"><i style="width:${pct}%"></i></div>` : ""}
+    ${steps.length ? `<div class="steps">${steps.map((s) => `<div class="step" data-s="${s.conclusion || s.status}">
+        ${ic(s.conclusion === "success" ? "check-circle" : s.status === "in_progress" ? "progress-activity" : s.conclusion === "failure" ? "error" : "schedule")}
+        <span>${esc(s.name)}</span></div>`).join("")}</div>` : ""}
+    <div class="muted" style="margin-top:10px">查询时间：${esc((d.fetchedAt || "").replace("T", " ").slice(0, 19))}</div>`;
+}
+let deployTimer = null;
+function startDeployPoll() {
+  if (deployTimer) return;
+  deployTimer = setInterval(async () => {
+    try {
+      const d = await api("/api/deploy-status");
+      const box = $("#dash-deploy") || $("#deploy-box");
+      if (box) box.innerHTML = deployHtml(d);
+      if (!d.run || d.run.status === "completed") stopDeployPoll();
+    } catch {}
+  }, 5000);
+}
+function stopDeployPoll() { if (deployTimer) { clearInterval(deployTimer); deployTimer = null; } }
+
+async function buildDeploy() {
+  return `
+    <div class="card">
+      <h2>${ic("upload")}推送到线上</h2>
+      <p class="sub">会把当前所有改动提交到 GitHub，然后自动触发构建发布</p>
+      <div class="f"><label>提交说明</label>
+        <input type="text" id="push-msg" value="更新内容" placeholder="这次改了什么"></div>
+      <div class="actions">
+        <button class="btn" data-act="push">${ic("upload")}开始推送</button>
+        <button class="btn outline" data-act="refresh-deploy">${ic("refresh")}刷新部署状态</button>
+      </div>
+      <div id="push-log"></div>
+    </div>
+    <div class="card">
+      <h2>${ic("rocket-launch")}部署进度</h2>
+      <p class="sub">每 5 秒自动刷新，构建完成后会自动停止</p>
+      <div id="deploy-box"><div class="muted">正在查询部署状态…</div></div>
+    </div>`;
+}
+
+/* ============================================================
+   事件委托
+   ============================================================ */
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-act],[data-nav]");
+  if (!t) return;
+  if (t.dataset.nav) { stopDeployPoll(); return go(t.dataset.nav); }
+  const act = t.dataset.act;
+  const view = $("#view");
+  const formRoot = t.closest("#edit-form") || t.closest("#pub-form") || $("#modal-root");
+
+  try {
+    if (act === "close-modal") return closeDialog();
+    if (act === "reload") { toast("已刷新"); return go(STATE.panel); }
+
+    /* ---- 发布：保存 / 重置 ---- */
+    if (act === "pub-save") {
+      const key = t.dataset.ent, ent = ENTITIES[key];
+      const data = readForm($("#pub-form"));
+      if (key === "resource") {
+        const sel = $('[data-k="category"][data-res="1"]');
+        const nw = $('[data-k="category"][data-res-new="1"]');
+        data.category = sel && sel.value === "__new__" ? (nw ? nw.value.trim() : "") : (sel ? sel.value : "");
+      }
+      if (key === "video" && !String(data.id || "").trim()) data.id = String(data.bvid || "").trim();
+      if (!data.slug) delete data.slug; // 交给服务器自动生成
+      t.disabled = true;
+      const r = await post(ent.create, data);
+      t.disabled = false;
+      toast(`已保存：${ent.name}`);
+      $("#pub-result").innerHTML = `<div class="note ok">${ic("check-circle")}<span>保存成功${
+        r.path ? `：src/content/posts/${esc(r.path)}` : r.id ? `，ID：${esc(r.id)}` : ""
+      }${r.slug ? `（URL 标识：${esc(r.slug)}）` : ""}</span></div>`;
+      if (key === "novel" && r.id) {
+        const it = await api("/api/novels/list").then((l) => l.find((x) => x.id === r.id));
+        if (it) return openEditor("novel", it);
+      }
+      if (key === "post") { $("#pub-form").reset(); await loadRefs(); }
+      return;
+    }
+    if (act === "pub-reset") { return go(STATE.panel); }
+
+    /* ---- 分类下拉选「新建」 ---- */
+    if (t.tagName === "SELECT" && t.dataset.res === "1") {
+      const nw = $('[data-k="category"][data-res-new="1"]');
+      if (nw) nw.style.display = t.value === "__new__" ? "block" : "none";
+    }
+
+    /* ---- 动态字段：标签 / 图片列表 / 下载链接 ---- */
+    if (act === "del-chip") { t.closest(".chip").remove(); return; }
+    if (act === "add-img") {
+      const box = $(`[data-imglist="${t.dataset.target}"]`);
+      const idx = box.querySelectorAll(".imgrow").length;
+      t.insertAdjacentHTML("beforebegin", imgRowHtml("", idx));
+      return;
+    }
+    if (act === "del-img") { t.closest(".imgrow").remove(); return; }
+    if (act === "up-img") {
+      const row = t.closest(".imgrow"), prev = row.previousElementSibling;
+      if (prev && prev.classList.contains("imgrow")) prev.before(row);
+      return;
+    }
+    if (act === "add-link") {
+      const box = $(`[data-links="${t.dataset.target}"]`);
+      t.insertAdjacentHTML("beforebegin", linkRowHtml({}, box.querySelectorAll(".imgrow").length));
+      return;
+    }
+    if (act === "del-link") { t.closest(".imgrow").remove(); return; }
+
+    /* ---- 封面：上传 / 清除 ---- */
+    if (act === "upload") { return pickImage((url) => setImageValue(t.dataset.target, url)); }
+    if (act === "clear-img") return setImageValue(t.dataset.target, "");
+
+    /* ---- Markdown 工具 ---- */
+    if (act === "md") {
+      const ed = t.closest("[data-editor]");
+      return mdInsert($("textarea", ed), t.dataset.md);
+    }
+    if (act === "mdpreview") {
+      const ed = t.closest("[data-editor]");
+      ed.classList.toggle("preview");
+      $(".previewbox", ed).innerHTML = mdToHtml($("textarea", ed).value);
+      return;
+    }
+    if (act === "gen-slug") {
+      const title = $('[data-k="title"]', formRoot).value;
+      $('[data-k="slug"]', formRoot).value = slugPreview(title);
+      return toast("已按标题生成 URL 标识");
+    }
+
+    /* ---- 列表 ---- */
+    if (act === "clear-q") { const q = $("#q"); if (q) { q.value = ""; renderList(STATE.panel.slice(4), ""); } return; }
+    if (act === "filter-tag" || act === "find-post") {
+      const q = t.dataset.q;
+      const target = act === "find-post" ? "adm-post" : STATE.panel;
+      if (STATE.panel !== target) await go(target);
+      const box = $("#q");
+      if (box) { box.value = q; renderList(target.slice(4), q); }
+      return;
+    }
+    if (act === "edit") {
+      const key = t.dataset.key;
+      const item = STATE.caches[key][Number(t.closest(".item").dataset.idx)];
+      return openEditor(key, item);
+    }
+    if (act === "del") {
+      const key = t.dataset.key, ent = ENTITIES[key];
+      const item = STATE.caches[key][Number(t.closest(".item").dataset.idx)];
+      if (!confirm(`确认删除「${ent.title(item)}」吗？此操作不可撤销。`)) return;
+      await del(ent.remove(item));
+      toast("已删除");
+      return go(STATE.panel);
+    }
+    if (act === "save-edit") {
+      const key = t.dataset.key, ent = ENTITIES[key];
+      const ctx = JSON.parse($("#modal-root").dataset.editCtx || "{}");
+      const data = { ...readForm($("#edit-form")) };
+      if (key === "post") { data.category = ctx.category; data.slug = ctx.slug; }
+      if (key === "novel") { data.id = ($("#edit-form [data-k=id]") || {}).value || $("#modal-root").dataset.novelId; }
+      if (key === "novel") data.id = JSON.parse($("#chapter-mgr").dataset.item).id;
+      if (!data.slug) delete data.slug;
+      await put(ent.update, data);
+      closeDialog();
+      toast("已保存修改");
+      return go(STATE.panel);
+    }
+
+    /* ---- 章节 ---- */
+    if (act === "ch-add") return chapterDialog(-1);
+    if (act === "ch-edit") return chapterDialog(Number(t.dataset.i));
+    if (act === "ch-del") {
+      const item = JSON.parse($("#chapter-mgr").dataset.item);
+      if (!confirm("删除这一章？")) return;
+      item.chapters.splice(Number(t.dataset.i), 1);
+      renderChapterMgr(item);
+      return;
+    }
+    if (act === "ch-save") {
+      const item = JSON.parse($("#chapter-mgr").dataset.item);
+      const d = readForm($("#ch-form"));
+      if (!d.title) return toast("章节标题不能为空", "err");
+      const idx = Number(t.dataset.i);
+      const slug = d.slug || `chapter-${String((idx >= 0 ? idx : (item.chapters || []).length) + 1).padStart(2, "0")}`;
+      const ch = { slug, title: d.title, date: d.date || "", content: d.content || "" };
+      item.chapters = item.chapters || [];
+      if (idx >= 0) item.chapters[idx] = ch; else item.chapters.push(ch);
+      closeDialog();
+      renderChapterMgr(item);
+      return toast("章节已更新，别忘了点「保存修改」写回文件");
+    }
+
+    /* ---- 推送 / 部署 ---- */
+    if (act === "push") {
+      const msg = ($("#push-msg") || {}).value || "更新内容";
+      t.disabled = true;
+      $("#push-log").innerHTML = `<div class="note info">${ic("progress-activity")}<span>正在推送…</span></div>`;
+      try {
+        const r = await post("/api/push", { message: msg });
+        $("#push-log").innerHTML = `<div class="note ok">${ic("check-circle")}<span>推送完成，正在等待构建</span></div><div class="log">${esc(r.log || "")}</div>`;
+        toast("已推送，正在构建");
+        const d = await api("/api/deploy-status").catch(() => null);
+        const box = $("#deploy-box"); if (box) box.innerHTML = deployHtml(d);
+        startDeployPoll();
+      } catch (err) {
+        $("#push-log").innerHTML = `<div class="note err">${ic("error")}<span>${esc(err.message)}</span></div>`;
+      }
+      t.disabled = false;
+      return;
+    }
+    if (act === "refresh-deploy") {
+      const d = await api("/api/deploy-status").catch(() => null);
+      const box = $("#dash-deploy") || $("#deploy-box");
+      if (box) box.innerHTML = deployHtml(d);
+      if (d && d.run && (d.run.status === "in_progress" || d.run.status === "queued")) startDeployPoll();
+      return toast("部署状态已刷新");
+    }
+  } catch (err) { showError(err); }
+});
+
+/* 标签输入：回车添加 */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && $("#modal-root").classList.contains("on")) return closeDialog();
+  const inp = e.target.closest("[data-chip-input]");
+  if (!inp) return;
+  if (e.key === "Enter" || e.key === "," || e.key === "，" ) {
+    e.preventDefault();
+    const v = inp.value.trim().replace(/[,，]$/, "");
+    if (!v) return;
+    const box = inp.closest("[data-chips]");
+    if ($$(".chip", box).some((c) => c.dataset.val === v)) { inp.value = ""; return; }
+    inp.insertAdjacentHTML("beforebegin", chipHtml(v));
+    inp.value = "";
+  } else if (e.key === "Backspace" && !inp.value) {
+    const chips = $$(".chip", inp.closest("[data-chips]"));
+    if (chips.length) chips[chips.length - 1].remove();
+  }
+});
+/* 标签候选渲染（输入框获得焦点时展示） */
+document.addEventListener("focusin", (e) => {
+  const inp = e.target.closest("[data-chip-input]");
+  if (!inp) return;
+  const key = inp.dataset.chipInput;
+  const box = $(`[data-sugg="${key}"]`);
+  if (!box) return;
+  const used = new Set($$(".chip", inp.closest("[data-chips]")).map((c) => c.dataset.val));
+  const list = STATE.refs.tags.filter((t) => !used.has(t)).slice(0, 18);
+  box.innerHTML = list.length ? list.map((t) => `<button type="button" data-tagpick="${esc(t)}">${esc(t)}</button>`).join("") : "";
+});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tagpick]");
+  if (!b) return;
+  const box = b.closest(".sugg").previousElementSibling;
+  const inp = $("[data-chip-input]", box);
+  const v = b.dataset.tagpick;
+  if (!$$(".chip", box).some((c) => c.dataset.val === v)) inp.insertAdjacentHTML("beforebegin", chipHtml(v));
+  b.remove();
+});
+/* 封面链接变化时更新预览 */
+document.addEventListener("input", (e) => {
+  const el = e.target.closest("[data-k]");
+  if (!el) return;
+  const key = el.dataset.k;
+  const pv = $(`[data-preview="${key}"]`);
+  if (pv) pv.style.backgroundImage = el.value ? `url('${el.value}')` : "";
+  const ed = el.closest("[data-editor]");
+  if (ed && ed.classList.contains("preview")) $(".previewbox", ed).innerHTML = mdToHtml(el.value);
+});
+
+/* 图片选择（本地文件 → 上传 → 回填链接） */
+function pickImage(cb) {
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "image/*";
+  inp.onchange = () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    if (file.size > 6 * 1024 * 1024) return toast("图片太大（超过 6MB），建议先压缩或用图床", "err");
+    const fr = new FileReader();
+    fr.onload = async () => {
+      try {
+        toast("正在上传…");
+        const r = await post("/api/upload-image", { data: fr.result });
+        cb(r.path);
+        toast("已上传并填入链接");
+      } catch (e) { showError(e); }
+    };
+    fr.readAsDataURL(file);
+  };
+  inp.click();
+}
+function setImageValue(key, url) {
+  const inp = $(`[data-k="${key}"]`);
+  if (inp) { inp.value = url; inp.dispatchEvent(new Event("input", { bubbles: true })); }
+}
+
+/* Markdown 工具 */
+function mdInsert(ta, kind) {
+  if (!ta) return;
+  const s = ta.selectionStart, e2 = ta.selectionEnd;
+  const sel = ta.value.slice(s, e2);
+  const wrap = { bold: ["**", "**", "粗体"], italic: ["*", "*", "斜体"], code: ["```\n", "\n```", "代码"] };
+  let out;
+  if (kind === "image") { return pickImage((url) => { insert(`![图片](${url})`); toast("图片已插入"); }); }
+  if (kind === "link") out = `[${sel || "链接文字"}](https://)`;
+  else if (kind === "h2") out = `\n## ${sel || "小标题"}\n`;
+  else if (kind === "quote") out = `\n> ${sel || "引用"}\n`;
+  else if (kind === "ul") out = `\n- ${sel || "列表项"}\n- \n`;
+  else if (kind === "hr") out = `\n---\n`;
+  else { const w = wrap[kind] || ["", "", ""]; out = `${w[0]}${sel || w[2]}${w[1]}`; }
+  insert(out);
+  function insert(text) {
+    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e2);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = s + text.length;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
   }
 }
 
-
-// ========== 发布小说（独立面板）==========
-async function publishNovel(){
-  const title=$('pub-novel-title').value.trim();
-  if(!title) return showResult('pub-novel-result',false,'小说名不能为空');
-  const data={
-    title,
-    description:$('pub-novel-desc').value.trim(),
-    author:$('pub-novel-author').value.trim(),
-    publishedDate:$('pub-novel-date').value.trim(),
-    platform:$('pub-novel-platform').value.trim(),
-    intro:$('pub-novel-intro').value.trim().replace(/\n/g,'\\n'),
-    chapters:[],
-    cover:$('pub-novel-cover').value.trim(),
-  };
-  const r=await api('/api/novels/add',data);
-  showResult('pub-novel-result',r.ok, r.ok?'小说已创建，请到「管理小说」添加章节':r.error);
-  if(r.ok){
-    $('pub-novel-title').value='';
-    $('pub-novel-author').value='';
-    $('pub-novel-desc').value='';
-    $('pub-novel-intro').value='';
-    $('pub-novel-date').value='';
-    $('pub-novel-platform').value='';
-    $('pub-novel-cover').value='';
+/* 极简 Markdown 预览 */
+function mdToHtml(src) {
+  const escd = esc(src);
+  const inline = (s) => s
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  const lines = escd.split(/\r?\n/);
+  const out = [];
+  let inCode = false, inUl = false, inOl = false;
+  for (const line of lines) {
+    if (/^```/.test(line)) { out.push(inCode ? "</code></pre>" : "<pre><code>"); inCode = !inCode; continue; }
+    if (inCode) { out.push(line); continue; }
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) { if (inUl) { out.push("</ul>"); inUl = false; } if (inOl) { out.push("</ol>"); inOl = false; }
+      out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); continue; }
+    if (/^\s*[-*]\s+/.test(line)) { if (!inUl) { out.push("<ul>"); inUl = true; }
+      out.push(`<li>${inline(line.replace(/^\s*[-*]\s+/, ""))}</li>`); continue; }
+    if (inUl) { out.push("</ul>"); inUl = false; }
+    if (/^\s*\d+\.\s+/.test(line)) { if (!inOl) { out.push("<ol>"); inOl = true; }
+      out.push(`<li>${inline(line.replace(/^\s*\d+\.\s+/, ""))}</li>`); continue; }
+    if (inOl) { out.push("</ol>"); inOl = false; }
+    if (/^\s*>\s?/.test(line)) { out.push(`<blockquote>${inline(line.replace(/^\s*>\s?/, ""))}</blockquote>`); continue; }
+    if (/^\s*(---|\*\*\*)\s*$/.test(line)) { out.push("<hr>"); continue; }
+    if (!line.trim()) { out.push(""); continue; }
+    out.push(`<p>${inline(line)}</p>`);
   }
+  if (inUl) out.push("</ul>");
+  if (inOl) out.push("</ol>");
+  if (inCode) out.push("</code></pre>");
+  return out.join("\n");
 }
 
-
-// ========== 作品 ==========
-function addDlRow(){
-  const div=document.createElement('div');div.className='dl-row';
-  div.innerHTML=`<select class="dl-icon"><option value="">无图标</option><option value="fa6-brands:github">GitHub</option><option value="fa6-brands:steam">Steam</option><option value="fa6-brands:google-drive">网盘</option></select>
-    <input class="dl-label" placeholder="按钮文字"><input class="dl-url" placeholder="链接地址">
-    <button class="btn btn-danger" onclick="this.closest('.dl-row').remove()">✕</button>`;
-  $('dl-list').appendChild(div);
-}
-
-async function createProject(){
-  const id=$('proj-id').value.trim();
-  const title=$('proj-title').value.trim();
-  const type=$('proj-type').value;
-  if(!id||!title) return showResult('project-result',false,'请填写 ID 和名称');
-  const dlRows=document.querySelectorAll('#dl-list .dl-row');
-  const downloadLinks=[];
-  dlRows.forEach(r=>{
-    const label=r.querySelector('.dl-label').value.trim();
-    const url=r.querySelector('.dl-url').value.trim();
-    const icon=r.querySelector('.dl-icon').value;
-    if(label&&url) downloadLinks.push({label,url,icon:icon||undefined});
-  });
-  const coverUrl=$('proj-cover').value.trim();
-  const r=await api('/api/create-project',{
-    id,title,
-    description:$('proj-desc').value.trim(),
-    longDescription:$('proj-long').value.trim(),
-    type,platform:$('proj-platform').value.trim(),
-    status:$('proj-status').value,
-    tags:$('proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    downloadLinks,featured:$('proj-featured').checked,cover:coverUrl
-  });
-  showResult('project-result',r.ok, r.ok?`作品已创建: ${r.id}`:r.error);
-}
-
-// ========== 视频 ==========
-async function createVideo(){
-  const id=$('vid-id').value.trim();
-  const title=$('vid-title').value.trim();
-  const bvid=$('vid-bvid').value.trim();
-  if(!id||!title||!bvid) return showResult('video-result',false,'请填写所有带 * 的必填项');
-  const coverUrl=$('vid-cover').value.trim();
-  const r=await api('/api/create-video',{
-    id,title,bvid,
-    description:$('vid-desc').value.trim(),
-    featured:$('vid-featured').checked,cover:coverUrl
-  });
-  showResult('video-result',r.ok, r.ok?`视频已创建: ${r.id}`:r.error);
-}
-
-// ========== 推送 ==========
-async function doPush(){
-  $('push-result').className='result success';
-  $('push-result').innerHTML='<pre>⏳ 正在推送，请稍候...</pre>';
-  const r=await api('/api/push',{message:$('push-msg').value.trim()||'通过管理工具更新内容'});
-  showResult('push-result',r.ok, r.ok?`推送成功!\n${r.log}`:r.error);
-}
-
-// ========== 管理博客 ==========
-async function loadPostsList(){
-  const el=$('posts-list');
-  try{const posts=await api('/api/posts/list');
-    if(posts.length===0){el.innerHTML='<p style="color:#888">暂无文章</p>';return;}
-    el.innerHTML=`<table><thead><tr><th>标题</th><th>分类</th><th>日期</th><th style="width:120px">操作</th></tr></thead><tbody>`+
-      posts.map(p=>`<tr><td>${esc(p.title)}</td><td style="color:#6b7280">${esc(p.displayCategory || p.category)}</td><td style="color:#9ca3af;font-size:12px">${esc(p.published||'')}</td><td><button class="btn btn-primary" style="padding:4px 12px;font-size:12px;margin-right:4px" onclick="editPost('${esc(p.category)}','${esc(p.slug)}')">编辑</button><button class="btn btn-danger" onclick="deletePost('${esc(p.category)}','${esc(p.slug)}')">删除</button></td></tr>`).join('')+
-      '</tbody></table>';
-  }catch(e){el.innerHTML='<p style="color:#dc2626">加载失败</p>';}}
-async function editPost(cat,slug){
-  const r=await api(`/api/posts/detail?category=${encodeURIComponent(cat)}&slug=${encodeURIComponent(slug)}`);
-  $('edit-post-cat').value=cat;$('edit-post-slug').value=slug;
-  $('edit-post-title').value=r.title||'';
-  $('edit-post-desc').value=r.description||'';
-  $('edit-post-tags').value=(r.tags||[]).join(', ');
-  $('edit-post-content').value=r.content||'';
-  $('edit-post-display-cat').value=r.category||cat;
-  $('edit-post-published').value=r.published||'';
-  $('edit-post-draft').checked=r.draft===true||r.draft==='true';
-  $('edit-post-current-cover').textContent=r.image||'(无)';
-  $('edit-post-cover').value=r.image||'';
-  $('posts-list').style.display='none';$('posts-editor').style.display='block';
-}
-
-function cancelPostEdit(){$('posts-list').style.display='block';$('posts-editor').style.display='none';}
-async function savePostEdit(){
-  const coverUrl=$('edit-post-cover').value.trim();
-  const tagsRaw=$('edit-post-tags').value.trim();
-  const tagsArr=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
-
-  const data={
-    category:$('edit-post-cat').value,
-    slug:$('edit-post-slug').value,
-    title:$('edit-post-title').value,
-    description:$('edit-post-desc').value,
-    displayCategory:$('edit-post-display-cat').value,
-    tags:tagsArr,
-    content:$('edit-post-content').value,
-    draft:$('edit-post-draft').checked,
-    published:$('edit-post-published').value,
-    image:coverUrl
-  };
-  const r=await api('/api/posts/update',data,'PUT');
-  showResult('edit-post-result',r.ok,r.ok?'已保存':r.error);
-  if(r.ok){cancelPostEdit();loadPostsList();}
-}
-
-async function deletePost(cat,slug){
-  if(!confirm(`确认删除文章 "${slug}" 吗？此操作不可撤销！`)) return;
-  const r=await api(`/api/posts/delete?category=${encodeURIComponent(cat)}&slug=${encodeURIComponent(slug)}`,null,'DELETE');
-  if(r.ok) loadPostsList(); else alert('删除失败: '+r.error);
-}
-
-// ========== 管理作品 ==========
-async function loadProjectsList(){
-  const el=$('projects-admin-list');
-  try{const projs=await api('/api/projects/list');
-    if(projs.length===0){el.innerHTML='<p style="color:#888">暂无作品</p>';return;}
-    el.innerHTML=`<table><thead><tr><th>名称</th><th>类型</th><th>状态</th><th style="width:120px">操作</th></tr></thead><tbody>`+
-      projs.map(p=>`<tr><td>${esc(p.title)}</td><td style="color:#6b7280">${p.type==='game'?'🎮 游戏':'💻 软件'}</td><td style="color:#9ca3af;font-size:12px">${esc(p.status||'')}</td><td><button class="btn btn-primary" style="padding:4px 12px;font-size:12px;margin-right:4px" onclick="editProject('${esc(p.id)}')">编辑</button><button class="btn btn-danger" onclick="deleteProject('${esc(p.id)}')">删除</button></td></tr>`).join('')+
-      '</tbody></table>';
-  }catch(e){el.innerHTML='<p style="color:#dc2626">加载失败</p>';}}
-async function editProject(id){
-  const projs=await api('/api/projects/list');
-  const p=projs.find(x=>x.id===id);
-  if(!p) return alert('找不到项目');
-  $('admin-proj-id').value=p.id;
-  $('admin-proj-title').value=p.title||'';
-  $('admin-proj-type').value=p.type||'software';
-  $('admin-proj-desc').value=p.description||'';
-  $('admin-proj-long').value=(p.longDescription||'').replace(/\\n/g,'\n');
-  $('admin-proj-platform').value=p.platform||'';
-  $('admin-proj-status').value=p.status||'开发中';
-  $('admin-proj-tags').value=(p.tags||[]).join(', ');
-  $('admin-proj-dl').value=(p.downloadLinks||[]).map(d=>`${d.label}|${d.url}|${d.icon||''}`).join('\n');
-  $('admin-proj-featured').checked=p.featured===true;
-  $('admin-proj-cover').value=p.cover||'';
-  $('projects-admin-list').style.display='none';$('projects-admin-editor').style.display='block';
-}
-function cancelProjectEdit(){$('projects-admin-list').style.display='block';$('projects-admin-editor').style.display='none';}
-async function saveProjectEdit(){
-  const dlRaw=$('admin-proj-dl').value.trim();
-  const downloadLinks=dlRaw?dlRaw.split('\n').map(line=>{const parts=line.split('|');return{label:parts[0]?.trim(),url:parts[1]?.trim(),icon:parts[2]?.trim()||undefined};}).filter(l=>l.label&&l.url):[];
-  const coverUrl=$('admin-proj-cover').value.trim();
-  const data={
-    id:$('admin-proj-id').value,title:$('admin-proj-title').value,
-    type:$('admin-proj-type').value,description:$('admin-proj-desc').value,
-    longDescription:$('admin-proj-long').value.replace(/\n/g,'\\n'),
-    platform:$('admin-proj-platform').value,status:$('admin-proj-status').value,
-    tags:$('admin-proj-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    downloadLinks,featured:$('admin-proj-featured').checked,cover:coverUrl
-  };
-  const r=await api('/api/projects/update',data,'PUT');
-  showResult('edit-project-result',r.ok,r.ok?'已保存':r.error);
-  if(r.ok){cancelProjectEdit();loadProjectsList();}
-}
-async function deleteProject(id){
-  if(!confirm(`确认删除作品 "${id}" 吗？此操作不可撤销！`)) return;
-  const r=await api(`/api/projects/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
-  if(r.ok) loadProjectsList(); else alert('删除失败: '+r.error);
-}
-
-
-// ========== 管理视频 ==========
-async function loadVideosList(){
-  const el=$('videos-admin-list');
-  try{const vids=await api('/api/videos/list');
-    if(vids.length===0){el.innerHTML='<p style="color:#888">暂无视频</p>';return;}
-    el.innerHTML=`<table><thead><tr><th>标题</th><th>BV号</th><th style="width:120px">操作</th></tr></thead><tbody>`+
-      vids.map(v=>`<tr><td>${esc(v.title)}</td><td style="color:#6b7280;font-size:12px">${esc(v.bvid)}</td><td><button class="btn btn-primary" style="padding:4px 12px;font-size:12px;margin-right:4px" onclick="editVideo('${esc(v.id)}')">编辑</button><button class="btn btn-danger" onclick="deleteVideo('${esc(v.id)}')">删除</button></td></tr>`).join('')+
-      '</tbody></table>';
-  }catch(e){el.innerHTML='<p style="color:#dc2626">加载失败</p>';}}
-async function editVideo(id){
-  const vids=await api('/api/videos/list');
-  const v=vids.find(x=>x.id===id);
-  if(!v) return alert('找不到视频');
-  $('admin-vid-id').value=v.id;
-  $('admin-vid-title').value=v.title||'';
-  $('admin-vid-bvid').value=v.bvid||'';
-  $('admin-vid-desc').value=v.description||'';
-  $('admin-vid-featured').checked=v.featured===true;
-  $('admin-vid-cover').value=v.cover||'';
-  $('videos-admin-list').style.display='none';$('videos-admin-editor').style.display='block';
-}
-function cancelVideoEdit(){$('videos-admin-list').style.display='block';$('videos-admin-editor').style.display='none';}
-async function saveVideoEdit(){
-  const coverUrl=$('admin-vid-cover').value.trim();
-  const data={
-    id:$('admin-vid-id').value,title:$('admin-vid-title').value,
-    bvid:$('admin-vid-bvid').value,description:$('admin-vid-desc').value,
-    featured:$('admin-vid-featured').checked,cover:coverUrl
-  };
-  const r=await api('/api/videos/update',data,'PUT');
-  showResult('edit-video-result',r.ok,r.ok?'已保存':r.error);
-  if(r.ok){cancelVideoEdit();loadVideosList();}
-}
-async function deleteVideo(id){
-  if(!confirm(`确认删除视频 "${id}" 吗？此操作不可撤销！`)) return;
-  const r=await api(`/api/videos/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
-  if(r.ok) loadVideosList(); else alert('删除失败: '+r.error);
-}
-
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-
-// ========== 管理资源 ==========
-async function loadResourcesList(){
-  const el=$('resources-admin-list');
-  try{const items=await api('/api/resources/list');
-    if(items.length===0){el.innerHTML='<p style="color:#888">暂无资源</p>';return;}
-    el.innerHTML=`<table><thead><tr><th>名称</th><th>分类</th><th>描述</th><th style="width:120px">操作</th></tr></thead><tbody>`+
-      items.map(r=>`<tr><td>${esc(r.name)}</td><td style="color:#7c3aed;font-size:12px">${esc(r.category||'—')}</td><td style="color:#6b7280;font-size:12px">${esc(r.description||'')}</td><td><button class="btn btn-primary" style="padding:4px 12px;font-size:12px;margin-right:4px" onclick="editResource('${esc(r.id)}')">编辑</button><button class="btn btn-danger" onclick="deleteResource('${esc(r.id)}')">删除</button></td></tr>`).join('')+
-      '</tbody></table>';
-  }catch(e){el.innerHTML='<p style="color:#dc2626">加载失败</p>';}}
-async function editResource(id){
-  const items=await api('/api/resources/list');
-  const r=items.find(x=>x.id===id);
-  if(!r) return alert('找不到资源');
-  $('admin-res-id').value=r.id;$('admin-res-name').value=r.name||'';
-  $('admin-res-url').value=r.url||'';$('admin-res-desc').value=r.description||'';
-  $('admin-res-category').value=r.category||'';
-  $('admin-res-cover').value=r.cover||'';
-  $('resources-admin-list').style.display='none';$('resources-admin-editor').style.display='block';
-}
-function cancelResourceEdit(){$('resources-admin-list').style.display='block';$('resources-admin-editor').style.display='none';}
-async function saveResourceEdit(){
-  const data={
-    id:$('admin-res-id').value,
-    name:$('admin-res-name').value,
-    url:$('admin-res-url').value,
-    description:$('admin-res-desc').value,
-    category:$('admin-res-category').value,
-    cover:$('admin-res-cover').value.trim(),
-  };
-  const r=await api('/api/resources/update',data,'PUT');
-  showResult('edit-resource-result',r.ok,r.ok?'已保存':r.error);
-  if(r.ok){cancelResourceEdit();loadResourcesList();}
-}
-async function deleteResource(id){
-  if(!confirm('确认删除此资源吗？')) return;
-  const r=await api(`/api/resources/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
-  if(r.ok) loadResourcesList(); else alert('删除失败: '+r.error);
-}
-
-
-// ========== 管理小说 ==========
-let novelChapters=[];
-async function loadNovelsList(){
-  const el=$('novels-admin-list');
-  try{const items=await api('/api/novels/list');
-    if(items.length===0){el.innerHTML='<p style="color:#888">暂无小说</p>';return;}
-    el.innerHTML=`<table><thead><tr><th>名称</th><th>作者</th><th>章节数</th><th style="width:160px">操作</th></tr></thead><tbody>`+
-      items.map(n=>`<tr><td>${esc(n.title)}</td><td style="color:#6b7280;font-size:12px">${esc(n.author||'')}</td><td style="color:#9ca3af;font-size:12px">${(n.chapters||[]).length} 章</td><td><button class="btn btn-primary" style="padding:4px 12px;font-size:12px;margin-right:4px" onclick="editNovel('${esc(n.id)}')">📝 编辑</button><button class="btn btn-danger" onclick="deleteNovelConfirm('${esc(n.id)}')">🗑</button></td></tr>`).join('')+
-      '</tbody></table>';
-  }catch(e){el.innerHTML='<p style="color:#dc2626">加载失败: '+esc(e.message)+'</p>';}}
-function showNovelForm(){
-  $('admin-novel-id').value='';$('admin-novel-title').value='';$('admin-novel-author').value='';
-  $('admin-novel-desc').value='';$('admin-novel-intro').value='';$('admin-novel-date').value='';
-  $('admin-novel-platform').value='';$('admin-novel-cover').value='';
-  $('novel-editor-title').textContent='新建小说';$('delete-novel-btn').style.display='none';
-  $('chapters-card').style.display='none';novelChapters=[];
-  $('novels-admin-list').style.display='none';$('novel-editor').style.display='block';
-}
-async function editNovel(id){
-  const items=await api('/api/novels/list');
-  const n=items.find(x=>x.id===id);
-  if(!n) return alert('找不到小说');
-  $('admin-novel-id').value=n.id;$('admin-novel-title').value=n.title||'';
-  $('admin-novel-author').value=n.author||'';$('admin-novel-desc').value=n.description||'';
-  $('admin-novel-intro').value=(n.intro||'').replace(/\\n/g,'\n');
-  $('admin-novel-date').value=n.publishedDate||'';$('admin-novel-platform').value=n.platform||'';
-  $('admin-novel-cover').value=n.cover||'';novelChapters=[...(n.chapters||[])];
-  $('novel-editor-title').textContent='编辑: '+n.title;$('delete-novel-btn').style.display='inline-block';
-  $('chapters-card').style.display='block';renderChaptersList();
-  $('novels-admin-list').style.display='none';$('novel-editor').style.display='block';
-}
-function cancelNovelEdit(){$('novels-admin-list').style.display='block';$('novel-editor').style.display='none';}
-
-async function saveNovelSilent(){
-  const id=$('admin-novel-id').value;
-  if(!id) return;
-  const coverUrl=$('admin-novel-cover').value.trim();
-  const data={id,title:$('admin-novel-title').value,description:$('admin-novel-desc').value,
-    author:$('admin-novel-author').value,publishedDate:$('admin-novel-date').value,
-    platform:$('admin-novel-platform').value,intro:$('admin-novel-intro').value.replace(/\n/g,'\\n'),
-    chapters:novelChapters,cover:coverUrl};
-  await api('/api/novels/update',data,'PUT');
-}
-
-
-async function saveNovel(){
-  const id=$('admin-novel-id').value;
-  const coverUrl=$('admin-novel-cover').value.trim();
-  const data={title:$('admin-novel-title').value,description:$('admin-novel-desc').value,
-    author:$('admin-novel-author').value,publishedDate:$('admin-novel-date').value,
-    platform:$('admin-novel-platform').value,intro:$('admin-novel-intro').value.replace(/\n/g,'\\n'),
-    chapters:novelChapters,cover:coverUrl};
-  if(!data.title) return showResult('edit-novel-result',false,'小说名不能为空');
-  if(id){
-    data.id=id;const r=await api('/api/novels/update',data,'PUT');
-    showResult('edit-novel-result',r.ok,r.ok?'已保存':r.error);
-  }else{
-    const r=await api('/api/novels/add',data);
-    showResult('edit-novel-result',r.ok,r.ok?'小说已创建':r.error);
-    if(r.ok){$('admin-novel-id').value=r.id;$('chapters-card').style.display='block';$('delete-novel-btn').style.display='inline-block';}
-  }
-}
-
-async function deleteNovelConfirm(id){
-  if(!id) id=$('admin-novel-id').value;
-  if(!confirm('确认删除这部小说及其所有章节吗？此操作不可撤销！')) return;
-  const r=await api(`/api/novels/delete?id=${encodeURIComponent(id)}`,null,'DELETE');
-  if(r.ok){cancelNovelEdit();loadNovelsList();} else alert('删除失败: '+r.error);
-}
-function renderChaptersList(){
-  const el=$('chapters-list');
-  if(novelChapters.length===0){el.innerHTML='<p style="color:#888;font-size:13px">暂无章节</p>';return;}
-  el.innerHTML=novelChapters.map((ch,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-    <span style="font-size:13px"><span style="color:#9ca3af">#${i+1}</span> ${esc(ch.title)} <span style="color:#9ca3af;font-size:11px">(${esc(ch.slug)})</span>${ch.date?` <span style="color:#7c3aed;font-size:10px">${esc(ch.date)}</span>`:''}</span>
-    <span><button class="btn btn-primary" style="padding:2px 10px;font-size:11px;margin-right:4px" onclick="editChapter(${i})">编辑</button><button class="btn btn-danger" style="padding:2px 8px;font-size:11px" onclick="deleteChapter(${i})">✕</button></span></div>`).join('');
-}
-function showChapterForm(){
-  $('edit-chapter-slug-old').value='';$('edit-chapter-slug').value='';
-  $('edit-chapter-title').value='';$('edit-chapter-date').value='';$('edit-chapter-content').value='';
-  $('chapter-editor').style.display='block';
-}
-function editChapter(idx){
-  const ch=novelChapters[idx];$('edit-chapter-slug-old').value=String(idx);
-  $('edit-chapter-slug').value=ch.slug;$('edit-chapter-title').value=ch.title;
-  $('edit-chapter-content').value=(ch.content||'').replace(/\\n/g,'\n');
-  $('chapter-editor').style.display='block';
-  $('edit-chapter-title').value=ch.title;$('edit-chapter-date').value=ch.date||'';
-}
-function saveChapter(){
-  const slug=$('edit-chapter-slug').value.trim(),title=$('edit-chapter-title').value.trim(),date=$('edit-chapter-date').value.trim();
-  const content=$('edit-chapter-content').value;
-  if(!slug||!title) return showResult('edit-chapter-result',false,'slug和标题不能为空');
-  const oldIdx=parseInt($('edit-chapter-slug-old').value);
-  const chData={slug,title,content};
-  if(date) chData.date=date;
-  if(!isNaN(oldIdx)&&$('edit-chapter-slug-old').value!==''){
-    novelChapters[oldIdx]=chData;
-  }else{
-    novelChapters.push(chData);
-  }
-  renderChaptersList();$('chapter-editor').style.display='none';
-  showResult('edit-chapter-result',true,'章节已保存');
-
-  const id=$('admin-novel-id').value;
-  if(id) saveNovelSilent();
-}
-
-function deleteChapter(idx){
-  if(!confirm('删除这一章？')) return;
-  novelChapters.splice(idx,1);renderChaptersList();
-}
-
-
+/* 启动 */
+renderNav();
+go("dash");
 </script>
 </body>
 </html>
