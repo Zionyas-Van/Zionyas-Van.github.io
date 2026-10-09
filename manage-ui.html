@@ -147,6 +147,12 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .item .t{font-weight:600;font-size:14px;overflow-wrap:anywhere}
 .item .m{font-size:12px;color:var(--txt-3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .item .acts{display:flex;gap:4px;flex:none}
+/* 章节内联编辑器（就地展开，不再开第二个弹窗） */
+.chapter-edit{background:var(--surf-2);border:1px solid var(--out);border-radius:var(--r-lg);padding:16px;margin:4px 0 12px}
+.chapter-edit .f{margin-bottom:12px}
+.chapter-edit .f:last-of-type{margin-bottom:0}
+.chapter-edit textarea{width:100%;min-height:240px;resize:vertical;font-family:inherit;line-height:1.7}
+.che-act{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .badge{display:inline-flex;align-items:center;gap:4px;background:var(--surf-3);color:var(--txt-2);border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600}
 .badge.pri{background:var(--pri-c);color:var(--on-pri-c)}
 .badge.ok{background:var(--ok-c);color:var(--ok)}
@@ -835,11 +841,67 @@ async function openEditor(key, item) {
   $("#modal-root").dataset.editCtx = JSON.stringify(editorKey || {});
 }
 
-/* 小说章节管理 */
+/* 小说章节管理（内联编辑）
+   以前是再开一个弹窗编辑章节，但 openDialog 会覆盖 #modal-root，
+   小说编辑表单（含 #chapter-mgr）会被销毁 → 保存章节时报
+   "Cannot read properties of null (reading 'dataset')"。
+   改成在列表里就地展开编辑器：表单不会被顶掉，也不需要叠层弹窗。 */
+let CH_CTX = { item: null, openIdx: null }; // openIdx: null=收起，-1=新增，>=0=编辑第 n 章
+
+function chVal(root, k) {
+  const el = root.querySelector(`[data-ck="${k}"]`);
+  return el ? el.value : "";
+}
+
+/* 把展开中的编辑器内容写回章节数组；标题为空则不提交（返回 false） */
+function chCommit() {
+  const ed = $("[data-ch-editor]");
+  if (!ed || !CH_CTX.item) return true;
+  const title = chVal(ed, "title").trim();
+  if (!title) {
+    toast("章节标题不能为空", "err");
+    return false;
+  }
+  const idx = CH_CTX.openIdx;
+  const list = (CH_CTX.item.chapters = CH_CTX.item.chapters || []);
+  const slug =
+    chVal(ed, "slug").trim() ||
+    `chapter-${String((idx >= 0 ? idx : list.length) + 1).padStart(2, "0")}`;
+  const ch = {
+    slug,
+    title,
+    date: chVal(ed, "date").trim(),
+    content: chVal(ed, "content"),
+  };
+  if (idx >= 0) list[idx] = ch;
+  else list.push(ch);
+  CH_CTX.openIdx = null;
+  return true;
+}
+
+function chEditorHtml(ch, idx) {
+  return `<div class="chapter-edit" data-ch-editor>
+    <div class="row">
+      <div class="f"><label>章节标题 <span class="req">*</span></label><input type="text" data-ck="title" value="${esc(ch.title || "")}"></div>
+      <div class="f"><label>标识 slug</label><input type="text" data-ck="slug" placeholder="留空自动用 chapter-01 形式" value="${esc(ch.slug || "")}"></div>
+      <div class="f"><label>日期</label><input type="text" data-ck="date" value="${esc(ch.date || "")}"></div>
+    </div>
+    <div class="f"><label>正文</label>
+      <textarea data-ck="content" rows="12" placeholder="章节正文（Markdown）">${esc(ch.content || "")}</textarea>
+    </div>
+    <div class="che-act">
+      <button type="button" class="btn outline" data-act="ch-cancel">取消</button>
+      <button type="button" class="btn" data-act="ch-save" data-i="${idx}">${ic("save")}确定</button>
+    </div>
+  </div>`;
+}
+
 function renderChapterMgr(item) {
+  if (item) CH_CTX.item = item;
   const box = $("#chapter-mgr");
-  if (!box) return;
-  const chs = item.chapters || [];
+  const cur = CH_CTX.item;
+  if (!box || !cur) return;
+  const chs = cur.chapters || [];
   box.innerHTML = `
     <div class="note info">${ic("info")}<span>章节保存在小说数据里。改完记得点右下角「保存修改」。</span></div>
     <div class="list">${chs.map((c, i) => `<div class="item">
@@ -847,37 +909,13 @@ function renderChapterMgr(item) {
         <div class="body"><div class="t">${esc(c.title)}</div>
           <div class="m"><span>${esc(c.slug)}</span>${c.date ? `<span>${esc(c.date)}</span>` : ""}<span>${(c.content || "").length} 字</span></div></div>
         <div class="acts">
-          <button class="btn icon" data-act="ch-edit" data-i="${i}" title="编辑">${ic("edit")}</button>
-          <button class="btn icon" data-act="ch-del" data-i="${i}" title="删除">${ic("delete")}</button>
-        </div></div>`).join("") || `<div class="empty">还没有章节</div>`}
+          <button type="button" class="btn icon" data-act="ch-edit" data-i="${i}" title="编辑">${ic("edit")}</button>
+          <button type="button" class="btn icon" data-act="ch-del" data-i="${i}" title="删除">${ic("delete")}</button>
+        </div></div>
+        ${CH_CTX.openIdx === i ? chEditorHtml(c, i) : ""}`).join("") || `<div class="empty">还没有章节</div>`}
     </div>
-    <button class="btn tonal sm" data-act="ch-add" style="margin-top:12px">${ic("add")}添加章节</button>`;
-  box.dataset.item = JSON.stringify(item);
-}
-function chapterDialog(idx) {
-  const box = $("#chapter-mgr");
-  const item = JSON.parse(box.dataset.item || "{}");
-  const ch = idx >= 0 ? (item.chapters || [])[idx] : { slug: "", title: "", date: "", content: "" };
-  openDialog({
-    title: idx >= 0 ? "编辑章节" : "添加章节",
-    body: `<form id="ch-form">
-      <div class="row">
-        <div class="f"><label>章节标题 <span class="req">*</span></label><input type="text" data-k="title" value="${esc(ch.title)}"></div>
-        <div class="f"><label>标识 slug</label><input type="text" data-k="slug" placeholder="留空自动用 chapter-01 形式" value="${esc(ch.slug)}"></div>
-        <div class="f"><label>日期</label><input type="text" data-k="date" value="${esc(ch.date || "")}"></div>
-      </div>
-      <div class="f"><label>正文</label>
-        <div class="editor" data-editor="content">
-          <textarea data-k="content" placeholder="章节正文（Markdown）">${esc(ch.content || "")}</textarea>
-          <div class="editor-meta"><span data-count="content"></span></div>
-        </div>
-      </div>
-    </form>`,
-    footer: `<button class="btn outline" data-act="close-modal">取消</button>
-             <button class="btn" data-act="ch-save" data-i="${idx}">${ic("save")}确定</button>`,
-  });
-  wireDynamic($("#modal-root"));
-  updateCounts($("#modal-root"));
+    ${CH_CTX.openIdx === -1 ? chEditorHtml({ slug: "", title: "", date: "", content: "" }, -1) : `<button type="button" class="btn tonal sm" data-act="ch-add" style="margin-top:12px">${ic("add")}添加章节</button>`}`;
+  box.dataset.item = JSON.stringify(cur);
 }
 
 /* ============================================================
@@ -1054,10 +1092,15 @@ document.addEventListener("click", async (e) => {
     if (act === "save-edit") {
       const key = t.dataset.key, ent = ENTITIES[key];
       const ctx = JSON.parse($("#modal-root").dataset.editCtx || "{}");
+      // 章节编辑器还开着的话先收内容，否则正在编辑的那一章会被丢掉
+      if (key === "novel" && !chCommit()) return;
       const data = { ...readForm($("#edit-form")) };
       if (key === "post") { data.category = ctx.category; data.slug = ctx.slug; }
-      if (key === "novel") { data.id = ($("#edit-form [data-k=id]") || {}).value || $("#modal-root").dataset.novelId; }
-      if (key === "novel") data.id = JSON.parse($("#chapter-mgr").dataset.item).id;
+      if (key === "novel" && CH_CTX.item) {
+        // 章节必须一起写回：服务端是合并保存，不传 chapters 就会一直沿用旧章节
+        data.id = CH_CTX.item.id;
+        data.chapters = CH_CTX.item.chapters || [];
+      }
       if (!data.slug) delete data.slug;
       await put(ent.update, data);
       closeDialog();
@@ -1065,27 +1108,30 @@ document.addEventListener("click", async (e) => {
       return go(STATE.panel);
     }
 
-    /* ---- 章节 ---- */
-    if (act === "ch-add") return chapterDialog(-1);
-    if (act === "ch-edit") return chapterDialog(Number(t.dataset.i));
-    if (act === "ch-del") {
-      const item = JSON.parse($("#chapter-mgr").dataset.item);
-      if (!confirm("删除这一章？")) return;
-      item.chapters.splice(Number(t.dataset.i), 1);
-      renderChapterMgr(item);
+    /* ---- 章节（内联编辑）---- */
+    if (act === "ch-add") {
+      if (chCommit()) { CH_CTX.openIdx = -1; renderChapterMgr(); }
       return;
     }
+    if (act === "ch-edit") {
+      if (chCommit()) { CH_CTX.openIdx = Number(t.dataset.i); renderChapterMgr(); }
+      return;
+    }
+    if (act === "ch-cancel") {
+      CH_CTX.openIdx = null;
+      return renderChapterMgr();
+    }
+    if (act === "ch-del") {
+      const i = Number(t.dataset.i);
+      if (!confirm("删除这一章？")) return;
+      if (!CH_CTX.item) return;
+      (CH_CTX.item.chapters = CH_CTX.item.chapters || []).splice(i, 1);
+      if (CH_CTX.openIdx === i) CH_CTX.openIdx = null;
+      return renderChapterMgr();
+    }
     if (act === "ch-save") {
-      const item = JSON.parse($("#chapter-mgr").dataset.item);
-      const d = readForm($("#ch-form"));
-      if (!d.title) return toast("章节标题不能为空", "err");
-      const idx = Number(t.dataset.i);
-      const slug = d.slug || `chapter-${String((idx >= 0 ? idx : (item.chapters || []).length) + 1).padStart(2, "0")}`;
-      const ch = { slug, title: d.title, date: d.date || "", content: d.content || "" };
-      item.chapters = item.chapters || [];
-      if (idx >= 0) item.chapters[idx] = ch; else item.chapters.push(ch);
-      closeDialog();
-      renderChapterMgr(item);
+      if (!chCommit()) return;
+      renderChapterMgr();
       return toast("章节已更新，别忘了点「保存修改」写回文件");
     }
 

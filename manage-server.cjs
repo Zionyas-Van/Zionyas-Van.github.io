@@ -136,32 +136,25 @@ function formatProject(p) {
 	const dl = (p.downloadLinks || [])
 		.map((d) => {
 			const parts = [];
-			if (d.icon) parts.push(`icon: "${d.icon}"`);
-			parts.push(`label: "${d.label}"`);
-			parts.push(`url: "${d.url}"`);
+			if (d.icon) parts.push(`icon: "${ds(d.icon)}"`);
+			parts.push(`label: "${ds(d.label)}"`);
+			parts.push(`url: "${ds(d.url)}"`);
 			return `      { ${parts.join(", ")} }`;
 		})
 		.join(",\n");
-	const tags = (p.tags || []).map((t) => `"${t}"`).join(", ");
-	const screenshots = (p.screenshots || []).map((s) => `"${s}"`).join(", ");
-	const desc = (p.description || "")
-		.replace(/\\/g, "\\\\")
-		.replace(/"/g, '\\"');
-	const long = (p.longDescription || "")
-		.replace(/\\/g, "\\\\")
-		.replace(/"/g, '\\"')
-		.replace(/\n/g, "\\n");
+	const tags = (p.tags || []).map((t) => `"${ds(t)}"`).join(", ");
+	const screenshots = (p.screenshots || []).map((s) => `"${ds(s)}"`).join(", ");
 	return `  {
     id: "${p.id}",
-    title: "${p.title}",
-    description: "${desc}",
-    longDescription: "${long}",
+    title: "${ds(p.title)}",
+    description: "${ds(p.description)}",
+    longDescription: "${ds(p.longDescription)}",
     cover: "${p.cover || "/projects/placeholder-cover.jpg"}",
     screenshots: [${screenshots}],
     type: "${p.type}",
     tags: [${tags}],
-    platform: "${p.platform || ""}",
-    status: "${p.status || "开发中"}",
+    platform: "${ds(p.platform)}",
+    status: "${ds(p.status || "开发中")}",
     downloadLinks: [
 ${dl}
     ],
@@ -1245,20 +1238,12 @@ ${content}
 
 	// ========== 小说管理 API ==========
 	function formatNovel(n) {
-		const intro = (n.intro || "")
-			.replace(/\\/g, "\\\\")
-			.replace(/"/g, '\\"')
-			.replace(/\r/g, "")
-			.replace(/\n/g, "\\n");
-		const desc = (n.description || "")
-			.replace(/\\/g, "\\\\")
-			.replace(/"/g, '\\"');
+		// 一律用 ds() 转义一次就够；不要再套一层，否则每保存一次就多一层反斜杠
+		const intro = ds(n.intro);
+		const desc = ds(n.description);
 		const chapters = (n.chapters || [])
 			.map((ch) => {
-				const chContent = (ch.content || "")
-					.replace(/\\/g, "\\\\")
-					.replace(/"/g, '\\"')
-					.replace(/\n/g, "\\n");
+				const chContent = ds(ch.content);
 				const chTitle = ds(ch.title);
 				const chDate = ds(ch.date);
 				return `    {
@@ -1272,7 +1257,7 @@ ${content}
     id: "${n.id}",
     title: "${ds(n.title)}",
     cover: "${n.cover || "/novels/cover-placeholder.jpg"}",
-    description: "${ds(desc)}",
+    description: "${desc}",
     author: "${ds(n.author)}",
     publishedDate: "${ds(n.publishedDate)}",
     platform: "${ds(n.platform)}",
