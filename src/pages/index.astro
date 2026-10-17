@@ -192,83 +192,76 @@ const formatNewsDate = (d: unknown) => {
         </div>
       </div>
 
-      <!-- ================= 手机端：紧凑竖排列表（保持不变） ================= -->
-      <div class="flex flex-col gap-3 md:hidden">
-        {featuredItems.map((item) => {
-          if (item.kind === "project") {
-            return (
-              <a
-                href={`/projects/${item.id}/`}
-                class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                       hover:scale-[1.02] active:scale-100 transition-transform duration-200
-                       flex-shrink-0 w-[75vw] max-md:w-full max-md:flex max-md:flex-row md:w-auto"
-              >
-                <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5 max-md:w-[112px] max-md:flex-shrink-0">
+      <!-- ================= 手机端：可左右滑动 + 自动播放的 Play 风格轮播 ================= -->
+      <div
+        class="md:hidden flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1"
+        data-mcarousel
+        data-interval="5000"
+        style="scrollbar-width: none;"
+      >
+        {featuredItems.map((item, i) => {
+          const isProj = item.kind === "project";
+          const href = isProj ? `/projects/${item.id}/` : `https://www.bilibili.com/video/${item.bvid}`;
+          return (
+            <a
+              href={href}
+              target={isProj ? undefined : "_blank"}
+              rel={isProj ? undefined : "noopener noreferrer"}
+              class="snap-center shrink-0 w-[85%] card-base rounded-[22px] overflow-hidden"
+              data-mcard={i}
+            >
+              <!-- 大图 + 叠在上面的文案（Play 的海报式标题） -->
+              <div class="relative aspect-[16/10] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+                {item.cover ? (
                   <img
                     src={item.cover}
                     alt={item.title}
-                    class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-                    loading="lazy"
+                    class="w-full h-full object-cover"
+                    loading={i === 0 ? "eager" : "lazy"}
                   />
-                </div>
-                <div class="p-3 md:p-5 max-md:flex-1 max-md:min-w-0">
-                  <span class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2 max-md:mb-1 max-md:px-2 max-md:py-0.5 max-md:text-[10px] bg-[var(--primary)]/10 text-[var(--primary)]">
-                    {item.type === "game" ? "🎮 游戏" : "💻 软件"}
-                  </span>
-                  <h3 class="font-bold text-lg max-md:text-[15px] max-md:leading-snug max-md:break-words text-90 group-hover:text-[var(--primary)] transition-colors">
-                    {item.title}
-                  </h3>
-                  <p class="text-sm max-md:text-xs text-75 mt-1.5 max-md:mt-1 leading-relaxed line-clamp-2 max-md:[overflow-wrap:anywhere]">
-                    {item.description}
-                  </p>
-                </div>
-              </a>
-            );
-          } else {
-            return (
-              <a
-                href={`https://www.bilibili.com/video/${item.bvid}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="card-base group rounded-[var(--radius-large)] overflow-hidden
-                       hover:scale-[1.02] active:scale-100 transition-transform duration-200
-                       flex-shrink-0 w-[75vw] max-md:w-full max-md:flex max-md:flex-row md:w-auto"
-              >
-                <div class="aspect-video w-full overflow-hidden relative bg-black/10 dark:bg-white/5 max-md:w-[112px] max-md:flex-shrink-0">
-                  {item.cover ? (
-                    <img
-                      src={item.cover}
-                      alt={item.title}
-                      class="w-full h-full object-cover transition group-hover:scale-105 duration-300"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-pink-900/40">
-                      <Icon name="material-symbols:smart-display-outline-rounded" class="text-white/40 text-5xl" />
-                    </div>
-                  )}
-                  <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
-                    <div class="w-14 h-14 max-md:w-8 max-md:h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:bg-white group-hover:scale-110 transition-all shadow-lg">
-                      <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-3xl max-md:text-lg ml-0.5" />
+                ) : (
+                  <div class="w-full h-full bg-gradient-to-br from-blue-900/40 to-pink-900/40"></div>
+                )}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none"></div>
+                {!isProj && (
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <Icon name="material-symbols:play-arrow-rounded" class="text-gray-900 text-2xl ml-0.5" />
                     </div>
                   </div>
+                )}
+                <div class="absolute inset-x-0 bottom-0 p-3.5">
+                  <p class="text-white font-bold text-[17px] leading-snug line-clamp-2">{item.description}</p>
                 </div>
-                <div class="p-3 md:p-5 max-md:flex-1 max-md:min-w-0">
-                  <span class="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2 max-md:mb-1 max-md:px-2 max-md:py-0.5 max-md:text-[10px] bg-red-500/10 text-red-500 dark:text-red-400">
-                    🎬 视频
-                  </span>
-                  <h3 class="font-bold text-lg max-md:text-[15px] max-md:leading-snug max-md:break-words text-90 group-hover:text-[var(--primary)] transition-colors">
-                    {item.title}
-                  </h3>
-                  <p class="text-sm max-md:text-xs text-75 mt-1.5 max-md:mt-1 leading-relaxed line-clamp-2 max-md:[overflow-wrap:anywhere]">
-                    {item.description}
-                  </p>
+              </div>
+              <!-- 下方信息行：图标 + 名称 + 类型 + 查看 -->
+              <div class="p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/5">
+                  {item.cover && (
+                    <img src={item.cover} alt="" class="w-full h-full object-cover" loading="lazy" />
+                  )}
                 </div>
-              </a>
-            );
-          }
+                <div class="min-w-0 flex-1">
+                  <div class="font-semibold text-[14px] text-90 truncate">{item.title}</div>
+                  <div class="text-[11.5px] text-75 mt-0.5 truncate">
+                    {isProj ? (item.type === "game" ? "游戏" : "软件") : "视频"} · 精选
+                  </div>
+                </div>
+                <span class="flex-none px-3.5 py-1.5 rounded-full bg-[var(--primary)] text-white text-[12px] font-semibold">
+                  查看
+                </span>
+              </div>
+            </a>
+          );
         })}
       </div>
+      {featuredItems.length > 1 && (
+        <div class="md:hidden flex items-center justify-center gap-1.5 pt-3">
+          {featuredItems.map((_, i) => (
+            <span class="mcar-dot" data-mcar-dot={i} data-active={i === 0 ? "1" : "0"}></span>
+          ))}
+        </div>
+      )}
     </div>
   )}
 
@@ -295,15 +288,15 @@ const formatNewsDate = (d: unknown) => {
               <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
             </a>
           </div>
-          <div class="flex gap-3 overflow-x-auto pb-2 max-md:grid max-md:grid-cols-2 max-md:gap-3 max-md:overflow-visible max-md:pb-0 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0" style="scrollbar-width: thin;">
+          <div class="flex gap-3 overflow-x-auto pb-2 max-md:grid max-md:grid-cols-1 max-md:gap-2.5 max-md:overflow-visible max-md:pb-0 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0" style="scrollbar-width: thin;">
             {novels.slice(0, 4).map((n) => (
               <a
                 href={`/novels/${n.id}/`}
                 class="card-base group rounded-[var(--radius-large)] overflow-hidden
                        hover:scale-[1.02] active:scale-100 transition-transform duration-200
-                       flex-shrink-0 w-[140px] max-md:w-auto max-md:flex-shrink lg:w-auto"
+                       flex-shrink-0 w-[140px] max-md:w-auto max-md:flex-shrink max-md:flex max-md:flex-row max-md:items-center max-md:gap-3 max-md:p-2.5 max-md:hover:scale-100 lg:w-auto"
               >
-                <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5">
+                <div class="aspect-[3/4] w-full overflow-hidden bg-black/10 dark:bg-white/5 max-md:w-[54px] max-md:flex-none max-md:rounded-[10px]">
                   <img
                     src={n.cover}
                     alt={n.title}
@@ -311,7 +304,7 @@ const formatNewsDate = (d: unknown) => {
                     loading="lazy"
                   />
                 </div>
-                <div class="p-3">
+                <div class="p-3 max-md:p-0 max-md:min-w-0 max-md:flex-1">
                   <h3 class="font-bold text-sm text-90 group-hover:text-[var(--primary)] transition-colors truncate">
                     {n.title}
                   </h3>
@@ -587,5 +580,18 @@ const formatNewsDate = (d: unknown) => {
     font-style: normal;
     font-size: 11px;
     color: var(--content-meta, #8a8a8a);
+  }
+
+  /* ===== 手机端轮播的圆点指示 ===== */
+  .mcar-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--primary) 22%, transparent);
+    transition: all 0.25s ease;
+  }
+  .mcar-dot[data-active="1"] {
+    width: 18px;
+    background: var(--primary);
   }
 </style>

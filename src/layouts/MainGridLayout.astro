@@ -2,6 +2,7 @@
 import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
 import MobileBottomNav from "@components/MobileBottomNav.astro";
+import MobileNavChips from "@components/MobileNavChips.astro";
 import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
 import type { MarkdownHeading } from "astro";
@@ -84,6 +85,8 @@ const mainPanelTop = siteConfig.banner.enable
             <SideBar class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation" headings={headings}></SideBar>
 
             <main id="swup-container" class="transition-swup-fade col-span-2 lg:col-span-1 overflow-hidden">
+                <!-- 手机端：Google Play 式的大圆角分类筛选栏（桌面端隐藏） -->
+                <MobileNavChips />
                 <div id="content-wrapper" class="onload-animation">
                     <!-- the overflow-hidden here prevent long text break the layout-->
                     <!-- make id different from windows.swup global property -->
@@ -647,6 +650,23 @@ const mainPanelTop = siteConfig.banner.enable
 
   // ---------- ⑤ 移动端底部导航：同步当前页面的高亮 ----------
   function initMobileNav() {
+    // 分类栏里的「搜索」药丸 → 打开站内搜索面板（手机端顶栏不再放搜索按钮）
+    // 用委托 + 一次性绑定：swup 换页会重建这些药丸，但监听器只绑一次
+    if (document.body.dataset.chipSearch !== "1") {
+      document.body.dataset.chipSearch = "1";
+      document.addEventListener("click", (e) => {
+        const chip = e.target.closest && e.target.closest("[data-search-chip]");
+        if (!chip) return;
+        e.preventDefault();
+        // 延后一拍再点：否则同一个点击事件会被搜索面板的"点击外部关闭"逻辑接住，
+        // 刚打开就又被关掉（实测过）
+        setTimeout(() => {
+          const btn = document.getElementById("search-switch");
+          if (btn) btn.click();
+        }, 0);
+      });
+    }
+
     const nav = document.getElementById("mobile-bottom-nav");
     if (!nav) return;
     const path = location.pathname;
@@ -734,6 +754,93 @@ const mainPanelTop = siteConfig.banner.enable
     start();
   }
 
+  // ---------- ⑦ 手机端首页轮播（左右滑动 + 自动播放）----------
+  function initMobileCarousel() {
+    const box = document.querySelector("[data-mcarousel]");
+    if (!box) return;
+    if (box.dataset.wired === "1") return;
+    box.dataset.wired = "1";
+
+    const cards = Array.from(box.querySelectorAll("[data-mcard]"));
+    const dots = Array.from(document.querySelectorAll("[data-mcar-dot]"));
+    if (cards.length < 2) return;
+
+    const interval = Math.max(3000, Number(box.dataset.interval) || 5000);
+    let idx = 0;
+    let timer = null;
+    let pausedUntil = 0;
+
+    // 把第 i 张卡片滚到"视口正中"（Play 的轮播就是这种居中对齐 + 左右露边）
+    const centerCard = (i, smooth) => {
+      const card = cards[i];
+      if (!card) return;
+      const br = box.getBoundingClientRect();
+      const cr = card.getBoundingClientRect();
+      const delta = cr.left - br.left - (br.width - cr.width) / 2;
+      box.scrollTo({ left: box.scrollLeft + delta, behavior: smooth ? "smooth" : "auto" });
+    };
+    const paintDots = (i) => {
+      idx = i;
+      dots.forEach((d, k) => (d.dataset.active = k === idx ? "1" : "0"));
+    };
+
+    // 用户手动滑动后，根据"最接近中心的卡片"更新圆点
+    const syncFromScroll = () => {
+      const br = box.getBoundingClientRect();
+      const center = br.left + br.width / 2;
+      let best = 0;
+      let bestD = Infinity;
+      cards.forEach((c, k) => {
+        const cr = c.getBoundingClientRect();
+        const d = Math.abs(cr.left + cr.width / 2 - center);
+        if (d < bestD) {
+          bestD = d;
+          best = k;
+        }
+      });
+      paintDots(best);
+    };
+    let scrollTimer = null;
+    box.addEventListener(
+      "scroll",
+      () => {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(syncFromScroll, 120);
+      },
+      { passive: true },
+    );
+
+    const stop = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    const start = () => {
+      stop();
+      timer = setInterval(() => {
+        if (document.hidden) return;
+        if (!document.body.contains(box)) return stop();
+        // 用户刚滑过：先让他看一会儿
+        if (Date.now() < pausedUntil) return;
+        centerCard((idx + 1) % cards.length, true);
+      }, interval);
+    };
+
+    // 用户一碰就暂停 8 秒，避免"刚滑到想看的那张就被自动带走"
+    const onUserTouch = () => {
+      pausedUntil = Date.now() + 8000;
+    };
+    ["touchstart", "pointerdown", "wheel"].forEach((ev) =>
+      box.addEventListener(ev, onUserTouch, { passive: true }),
+    );
+    window.addEventListener("resize", () => centerCard(idx, false));
+
+    centerCard(0, false);
+    paintDots(0);
+    start();
+  }
+
   // ---------- 统一入口 ----------
   function initAll() {
     initReaderMode();
@@ -742,6 +849,7 @@ const mainPanelTop = siteConfig.banner.enable
     initReaderToolbar();
     initMobileNav();
     initFeatured();
+    initMobileCarousel();
   }
 
   // 首次执行 + 每次 swup 切页执行

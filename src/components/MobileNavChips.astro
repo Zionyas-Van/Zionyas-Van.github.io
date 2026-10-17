@@ -1,0 +1,93 @@
+---
+import { Icon } from "astro-icon/components";
+
+// ============================================================
+// 手机端的大圆角分类筛选栏（参照 Google Play 首页顶部那排 chips）
+// 它替代了原来塞在顶栏里的横向导航链接。
+// 放在 <main> 里：会随内容滚走（和 Play 一样），激活态由服务端渲染，
+// 切页时随 swup 重新生成，不需要额外 JS。桌面端 md:hidden 完全隐藏。
+// ============================================================
+const items = [
+	{ name: "文章", href: "/posts/", icon: "material-symbols:article-outline-rounded", match: ["/posts"] },
+	{ name: "应用", href: "/appstore/", icon: "material-symbols:package-outline-rounded", match: ["/appstore", "/projects"] },
+	{ name: "阅读", href: "/novels/", icon: "material-symbols:auto-stories-rounded", match: ["/novels"] },
+	{ name: "视频", href: "/videos/", icon: "material-symbols:smart-display-outline-rounded", match: ["/videos"] },
+	{ name: "归档", href: "/archive/", icon: "material-symbols:inventory-2-outline-rounded", match: ["/archive"] },
+	{ name: "关于", href: "/about/", icon: "material-symbols:person-outline-rounded", match: ["/about"] },
+];
+
+const path = Astro.url.pathname;
+const hit = (m: string[]) =>
+	m.some((x) => (x === "/" ? path === "/" : path === x || path.startsWith(`${x}/`)));
+---
+
+<nav id="mobile-nav-chips" class="md:hidden" aria-label="站内导航">
+	{items.map((it) => (
+		<a
+			href={it.href}
+			class="mchip"
+			aria-current={hit(it.match) ? "page" : undefined}
+			data-active={hit(it.match) ? "true" : "false"}
+		>
+			<Icon name={it.icon} class="mchip-ic" />
+			<span>{it.name}</span>
+		</a>
+	))}
+	<!-- 搜索：手机端顶栏不放搜索按钮了，入口收在这里（点击打开站内搜索面板） -->
+	<button type="button" class="mchip" data-search-chip>
+		<Icon name="material-symbols:search-rounded" class="mchip-ic" />
+		<span>搜索</span>
+	</button>
+</nav>
+
+<style>
+	#mobile-nav-chips {
+		display: flex;
+		gap: 8px;
+		overflow-x: auto;
+		/* 视觉上贴到顶栏下面，滚动时整排跟着内容走 */
+		padding: 2px 0 12px;
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+	}
+	#mobile-nav-chips::-webkit-scrollbar {
+		display: none;
+	}
+	.mchip {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 44px;
+		padding: 0 16px;
+		border-radius: 999px;
+		background: var(--card-bg);
+		border: 1px solid rgba(128, 128, 128, 0.16);
+		color: var(--content-meta, #6b7280);
+		font-size: 14px;
+		font-weight: 500;
+		text-decoration: none;
+		transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.mchip-ic {
+		font-size: 1.15rem;
+	}
+	.mchip:active {
+		transform: scale(0.97);
+	}
+	/* 当前所在分区：填充 + 主色 */
+	.mchip[data-active="true"] {
+		background: color-mix(in oklab, var(--primary) 14%, transparent);
+		border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+		color: var(--primary);
+		font-weight: 650;
+	}
+	/* 关键：这里是 ID 选择器（权重 100），会盖掉 Tailwind 的 md:hidden（权重 10），
+	   所以必须用同等权重的媒体查询显式隐藏，否则桌面端也会冒出来 */
+	@media (min-width: 768px) {
+		#mobile-nav-chips {
+			display: none !important;
+		}
+	}
+</style>
