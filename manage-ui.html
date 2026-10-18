@@ -275,6 +275,21 @@ const esc = (s) =>
   String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const nl2br = (s) => esc(s).replace(/\\n/g, "<br>");
 
+/* 兴趣系统的小工具 */
+const INTEREST_TYPE_LABEL = { game: "游戏", music: "音乐", film: "影视", book: "书籍", other: "其它" };
+const typeLabel = (t) => INTEREST_TYPE_LABEL[t] || "其它";
+const fmtMin = (m) => {
+  const v = Math.max(0, Math.round(Number(m) || 0));
+  if (!v) return "0 分钟";
+  const h = Math.floor(v / 60);
+  const r = v % 60;
+  return h ? (r ? `${h} 小时 ${r} 分` : `${h} 小时`) : `${r} 分钟`;
+};
+const sectionName = (id) => {
+  const s = (STATE.refs.interestSections || []).find((x) => x.id === id);
+  return s ? s.name : id || "未分区";
+};
+
 async function api(path, opts = {}) {
   const res = await fetch(path, {
     headers: { "Content-Type": "application/json" },
@@ -391,6 +406,19 @@ const FIELD = {
       <button type="button" class="btn outline sm" data-act="gen-slug" style="margin-bottom:2px">${ic("sync")}按标题生成</button>
     </div>
     <div class="hint">${ic("info")}<span>留空就行 —— 保存时会按标题自动生成（中文标题会用日期兜底）。上面的按钮可以手动预览/改。</span></div>`,
+  /* 时长：小时 + 分钟两个框，提交时合并成分钟数（存 minutes） */
+  duration: (f, v) => {
+    const total = Math.max(0, Math.round(Number(v) || 0));
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return `<div data-duration="${f.k}" style="display:flex;gap:8px;align-items:center">
+      <input type="number" min="0" step="1" data-dk="h" value="${total ? h : ""}" placeholder="小时" style="flex:1 1 0">
+      <span style="opacity:.5">小时</span>
+      <input type="number" min="0" max="59" step="1" data-dk="m" value="${total ? m : ""}" placeholder="分钟" style="flex:1 1 0">
+      <span style="opacity:.5">分钟</span>
+    </div>
+    ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}`;
+  },
 };
 
 const chipHtml = (t) =>
@@ -448,6 +476,12 @@ function readForm(root) {
     out[box.dataset.links] = $$(".imgrow", box)
       .map((r) => ({ label: $(".lk-label", r).value.trim(), url: $(".lk-url", r).value.trim(), icon: $(".lk-icon", r).value.trim() }))
       .filter((l) => l.label && l.url);
+  });
+  // 时长：小时 + 分钟 → 分钟
+  $$("[data-duration]", root).forEach((box) => {
+    const h = Number(($('[data-dk="h"]', box) || {}).value || 0);
+    const m = Number(($('[data-dk="m"]', box) || {}).value || 0);
+    out[box.dataset.duration] = Math.max(0, h) * 60 + Math.min(59, Math.max(0, m));
   });
   return out;
 }
@@ -552,6 +586,41 @@ const ENTITIES = {
       { k: "cover", label: "配图", type: "image" },
     ],
   },
+  /* ---- 兴趣分区：一部作品（一个游戏/一张专辑/一部影视/一本书） ---- */
+  interestSection: {
+    name: "兴趣分区", icon: "library-books", list: "/api/interests/sections/list",
+    create: "/api/interests/sections/add", update: "/api/interests/sections/update",
+    remove: (it) => `/api/interests/sections/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.name,
+    sub: (it) => `${typeLabel(it.type)} · ${it.id}${it.description ? " · " + it.description : ""}`,
+    thumb: (it) => it.cover, searchKeys: ["id", "name", "description", "type"],
+    fields: [
+      { k: "name", label: "分区名称", type: "text", required: true, ph: "例如 反恐精英2" },
+      { k: "id", label: "网址标识（进阶）", type: "text", hint: "留空自动从名称生成；会成为 /interests/<标识>/" },
+      { k: "type", label: "类型", type: "select", def: "game", hint: "类型决定帖子要填「时长」还是「评分」",
+        options: [["game", "游戏"], ["music", "音乐"], ["film", "影视"], ["book", "书籍"], ["other", "其它"]] },
+      { k: "cover", label: "封面图链接", type: "image", hint: "直接用图床链接即可" },
+      { k: "description", label: "一句话介绍", type: "text" },
+    ],
+  },
+  /* ---- 兴趣帖子：分区下的一条记录 ---- */
+  interestPost: {
+    name: "兴趣帖子", icon: "article", list: "/api/interests/posts/list",
+    create: "/api/interests/posts/add", update: "/api/interests/posts/update",
+    remove: (it) => `/api/interests/posts/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title,
+    sub: (it) => `${sectionName(it.sectionId)} · ${it.date || "无日期"}${it.minutes ? " · " + fmtMin(it.minutes) : ""}${it.rating ? " · " + it.rating + " 分" : ""}`,
+    thumb: () => null, searchKeys: ["title", "content", "sectionId"],
+    fields: [
+      { k: "sectionId", label: "所属分区", type: "select", required: true, options: [] },
+      { k: "title", label: "标题", type: "text", required: true, ph: "例如 第一次上分" },
+      { k: "date", label: "日期", type: "text", ph: "2026-10-17，留空用今天" },
+      { k: "minutes", label: "已游玩 / 已听时长", type: "duration", hint: "填「到目前为止」的总时长快照（不是这一次玩了多久）。统计时每个分区取最大值。" },
+      { k: "rating", label: "我的评分（10 分制）", type: "text", ph: "0-10，可填 8.5；影视/书籍用" },
+      { k: "screenshots", label: "截图链接（可多张）", type: "imagelist", hint: "图床链接，详情页会以九宫格展示" },
+      { k: "content", label: "正文", type: "area", rows: 8 },
+    ],
+  },
 };
 
 /* ============================================================
@@ -565,6 +634,8 @@ const NAV = [
     { id: "pub-video", label: "视频", icon: "play-circle" },
     { id: "pub-novel", label: "小说", icon: "auto-stories" },
     { id: "pub-resource", label: "资源", icon: "package-2" },
+    { id: "pub-interestSection", label: "兴趣分区", icon: "library-books" },
+    { id: "pub-interestPost", label: "兴趣帖子", icon: "article" },
   ]},
   { title: "管理内容", items: [
     { id: "adm-post", label: "博客文章", icon: "article" },
@@ -572,6 +643,8 @@ const NAV = [
     { id: "adm-video", label: "视频", icon: "movie" },
     { id: "adm-novel", label: "小说", icon: "book-2" },
     { id: "adm-resource", label: "资源", icon: "link" },
+    { id: "adm-interestSection", label: "兴趣分区", icon: "library-books" },
+    { id: "adm-interestPost", label: "兴趣帖子", icon: "article" },
   ]},
   { title: "系统", items: [{ id: "deploy", label: "推送与部署", icon: "rocket-launch" }] },
 ];
@@ -587,6 +660,10 @@ const PANEL_META = {
   "adm-video": ["管理视频", "搜索、编辑、删除"],
   "adm-novel": ["管理小说", "编辑信息与章节"],
   "adm-resource": ["管理资源", "搜索、编辑、删除"],
+  "pub-interestSection": ["新建兴趣分区", "一个分区 = 一部作品（游戏/专辑/影视/书）"],
+  "pub-interestPost": ["发布兴趣帖子", "选分区后按类型填时长或评分"],
+  "adm-interestSection": ["管理兴趣分区", "搜索、编辑、删除"],
+  "adm-interestPost": ["管理兴趣帖子", "搜索、编辑、删除"],
   deploy: ["推送与部署", "推送到 GitHub 并实时查看构建进度"],
 };
 
@@ -613,6 +690,15 @@ async function loadRefs() {
   STATE.refs.resCats = (meta && meta.categories) || [];
   const dl = $("#dl-cats");
   if (dl) dl.innerHTML = STATE.refs.categories.map((c) => `<option value="${esc(c)}">`).join("");
+  // 兴趣分区的下拉选项（发帖子时用）
+  const secs = await api("/api/interests/sections/list").catch(() => []);
+  STATE.refs.interestSections = secs || [];
+  const secField = ENTITIES.interestPost.fields.find((x) => x.k === "sectionId");
+  if (secField) {
+    secField.options = (secs || []).length
+      ? (secs || []).map((s) => [s.id, `${s.name}（${typeLabel(s.type)}）`])
+      : [["", "还没有分区，先去「新建兴趣分区」"]];
+  }
   const sel = $('[data-k="category"][data-res="1"]');
   if (sel) sel.innerHTML = STATE.refs.resCats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
 }

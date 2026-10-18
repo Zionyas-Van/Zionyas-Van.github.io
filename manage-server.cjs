@@ -18,6 +18,7 @@ const COVERS_DIR = path.join(ROOT, "public", "projects");
 const COVERS_POST_DIR = path.join(ROOT, "public", "covers");
 const RESOURCES_FILE = path.join(ROOT, "src", "data", "resources.ts");
 const NOVELS_FILE = path.join(ROOT, "src", "data", "novels.ts");
+const INTERESTS_FILE = path.join(ROOT, "src", "data", "interests.ts");
 
 // ========== 解析 TypeScript 数据文件 ==========
 // 从内容里取出 `export const xxx = [...]` 的数组字面量。
@@ -91,12 +92,38 @@ function rebuildArraySection(content, arrayName, items, itemFormatter) {
 	const bracketStart =
 		eqIdx !== -1 ? content.indexOf("[", eqIdx) : content.indexOf("[", startIdx);
 	if (bracketStart === -1) return content;
+	// 找配对的 ] 时必须跳过字符串和注释，否则正文里出现 [ ] { } 就会算错
+	// （和 extractArrayLiteral 用的是同一套规则）
 	let depth = 0;
+	let quote = null;
 	let i = bracketStart;
 	for (; i < content.length; i++) {
-		if (content[i] === "[" || content[i] === "{") depth++;
-		if (content[i] === "]" || content[i] === "}") depth--;
-		if (depth === 0 && content[i] === "]") break;
+		const ch = content[i];
+		const next = content[i + 1];
+		const prev = content[i - 1];
+		if (quote) {
+			if (ch === quote && prev !== "\\") quote = null;
+			continue;
+		}
+		if (ch === '"' || ch === "'" || ch === "`") {
+			quote = ch;
+			continue;
+		}
+		if (ch === "/" && next === "/") {
+			while (i < content.length && content[i] !== "\n") i++;
+			continue;
+		}
+		if (ch === "/" && next === "*") {
+			const end = content.indexOf("*/", i);
+			if (end === -1) return content;
+			i = end + 1;
+			continue;
+		}
+		if (ch === "[" || ch === "{") depth++;
+		else if (ch === "]" || ch === "}") {
+			depth--;
+			if (depth === 0 && ch === "]") break;
+		}
 	}
 	if (i >= content.length) return content;
 	const before = content.slice(0, bracketStart + 1);
@@ -171,6 +198,35 @@ function formatVideo(v) {
     cover: "${v.cover || ""}",
     description: "${desc}",
     featured: ${v.featured === true},
+  }`;
+}
+
+// ========== 兴趣分区 / 兴趣帖子 ==========
+// 注意：字符串一律只走 ds() 转义一次（历史教训：双重转义会让数据每保存一次就多一层反斜杠）
+function formatInterestSection(s) {
+	const descLine = s.description ? `\n    description: "${ds(s.description)}",` : "";
+	return `  {
+    id: "${ds(s.id)}",
+    name: "${ds(s.name)}",
+    type: "${s.type || "other"}",
+    cover: "${ds(s.cover)}",${descLine}
+  }`;
+}
+
+function formatInterestPost(p) {
+	const shots =
+		Array.isArray(p.screenshots) && p.screenshots.length
+			? `\n    screenshots: [${p.screenshots.map((x) => `"${ds(x)}"`).join(", ")}],`
+			: "";
+	const minutes = Number(p.minutes) > 0 ? `\n    minutes: ${Math.round(Number(p.minutes))},` : "";
+	const rating =
+		Number(p.rating) > 0 ? `\n    rating: ${Math.round(Number(p.rating) * 10) / 10},` : "";
+	return `  {
+    id: "${ds(p.id)}",
+    sectionId: "${ds(p.sectionId)}",
+    title: "${ds(p.title)}",
+    date: "${ds(p.date)}",${minutes}${rating}${shots}
+    content: "${ds(p.content)}",
   }`;
 }
 
@@ -1358,6 +1414,167 @@ ${chapters}
 				formatNovel,
 			);
 			saveArrayFile(NOVELS_FILE, "novels", newContent);
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	// ==================== 兴趣分区 ====================
+	if (req.method === "GET" && req.url === "/api/interests/sections/list") {
+		return sendJSON(res, parseTsArray(INTERESTS_FILE, "interestSections"));
+	}
+
+	if (req.method === "POST" && req.url === "/api/interests/sections/add") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			if (!body.name) return sendJSON(res, { error: "分区名称不能为空" }, 400);
+			const items = parseTsArray(INTERESTS_FILE, "interestSections");
+			if (items.some((s) => s.name === body.name))
+				return sendJSON(res, { error: `已经有一个叫「${body.name}」的分区了` }, 400);
+			let id = body.id || slugify(body.name, new Set(items.map((x) => x.id)));
+			// 中文名会退化成 post-日期-随机 形式的兜底标识，分区用 sec- 前缀更清楚
+			if (!body.id && id.startsWith("post-")) id = id.replace(/^post-/, "sec-");
+			if (items.some((x) => x.id === id))
+				return sendJSON(res, { error: `标识「${id}」已被占用，换一个` }, 400);
+			const item = {
+				id,
+				name: body.name,
+				type: body.type || "other",
+				cover: body.cover || "",
+			};
+			if (body.description) item.description = body.description;
+			items.push(item);
+			const content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			saveArrayFile(
+				INTERESTS_FILE,
+				"interestSections",
+				rebuildArraySection(content, "interestSections", items, formatInterestSection),
+			);
+			return sendJSON(res, { ok: true, id });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	if (req.method === "PUT" && req.url === "/api/interests/sections/update") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const items = parseTsArray(INTERESTS_FILE, "interestSections");
+			const idx = items.findIndex((s) => s.id === body.id);
+			if (idx === -1) return sendJSON(res, { error: "分区不存在" }, 404);
+			items[idx] = { ...items[idx], ...body };
+			const content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			saveArrayFile(
+				INTERESTS_FILE,
+				"interestSections",
+				rebuildArraySection(content, "interestSections", items, formatInterestSection),
+			);
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	if (req.method === "DELETE" && req.url.startsWith("/api/interests/sections/delete")) {
+		try {
+			const u = new URL(req.url, `http://localhost:${PORT}`);
+			const id = u.searchParams.get("id");
+			const items = parseTsArray(INTERESTS_FILE, "interestSections");
+			const filtered = items.filter((s) => s.id !== id);
+			if (filtered.length === items.length)
+				return sendJSON(res, { error: "分区不存在" }, 404);
+			// 连这个分区下的帖子一起删，避免留下孤儿数据
+			const posts = parseTsArray(INTERESTS_FILE, "interestPosts");
+			const keptPosts = posts.filter((p) => p.sectionId !== id);
+			let content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			content = rebuildArraySection(content, "interestSections", filtered, formatInterestSection);
+			if (keptPosts.length !== posts.length) {
+				content = rebuildArraySection(content, "interestPosts", keptPosts, formatInterestPost);
+			}
+			saveArrayFile(INTERESTS_FILE, "interestSections", content);
+			return sendJSON(res, { ok: true, removedPosts: posts.length - keptPosts.length });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	// ==================== 兴趣帖子 ====================
+	if (req.method === "GET" && req.url === "/api/interests/posts/list") {
+		return sendJSON(res, parseTsArray(INTERESTS_FILE, "interestPosts"));
+	}
+
+	if (req.method === "POST" && req.url === "/api/interests/posts/add") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			if (!body.sectionId) return sendJSON(res, { error: "请先选择分区" }, 400);
+			if (!body.title) return sendJSON(res, { error: "标题不能为空" }, 400);
+			const items = parseTsArray(INTERESTS_FILE, "interestPosts");
+			const item = {
+				id: `ip-${Date.now()}`,
+				sectionId: body.sectionId,
+				title: body.title,
+				content: body.content || "",
+				date: body.date || new Date().toISOString().slice(0, 10),
+			};
+			if (Number(body.minutes) > 0) item.minutes = Math.round(Number(body.minutes));
+			if (Number(body.rating) > 0) item.rating = Math.round(Number(body.rating) * 10) / 10;
+			const shots = (body.screenshots || []).filter(Boolean);
+			if (shots.length) item.screenshots = shots;
+			items.push(item);
+			const content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			saveArrayFile(
+				INTERESTS_FILE,
+				"interestPosts",
+				rebuildArraySection(content, "interestPosts", items, formatInterestPost),
+			);
+			return sendJSON(res, { ok: true, id: item.id });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	if (req.method === "PUT" && req.url === "/api/interests/posts/update") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const items = parseTsArray(INTERESTS_FILE, "interestPosts");
+			const idx = items.findIndex((p) => p.id === body.id);
+			if (idx === -1) return sendJSON(res, { error: "帖子不存在" }, 404);
+			const next = { ...items[idx], ...body };
+			// 时长/评分要能被清空（把 0 或空字符串当作删除）
+			if (!(Number(next.minutes) > 0)) delete next.minutes;
+			if (!(Number(next.rating) > 0)) delete next.rating;
+			if (Array.isArray(next.screenshots)) {
+				next.screenshots = next.screenshots.filter(Boolean);
+				if (!next.screenshots.length) delete next.screenshots;
+			}
+			items[idx] = next;
+			const content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			saveArrayFile(
+				INTERESTS_FILE,
+				"interestPosts",
+				rebuildArraySection(content, "interestPosts", items, formatInterestPost),
+			);
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
+		}
+	}
+
+	if (req.method === "DELETE" && req.url.startsWith("/api/interests/posts/delete")) {
+		try {
+			const u = new URL(req.url, `http://localhost:${PORT}`);
+			const id = u.searchParams.get("id");
+			const items = parseTsArray(INTERESTS_FILE, "interestPosts");
+			const filtered = items.filter((p) => p.id !== id);
+			if (filtered.length === items.length)
+				return sendJSON(res, { error: "帖子不存在" }, 404);
+			const content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			saveArrayFile(
+				INTERESTS_FILE,
+				"interestPosts",
+				rebuildArraySection(content, "interestPosts", filtered, formatInterestPost),
+			);
 			return sendJSON(res, { ok: true });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
