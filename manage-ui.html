@@ -298,7 +298,7 @@ async function api(path, opts = {}) {
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 300) || "返回内容无法解析" }; }
-  if (res.status === 404)
+  if (res.status === 404 && /Not Found/i.test(text))
     throw new Error(`接口不存在（${path}）—— 管理工具的服务器还是旧版本，请把这个窗口关掉，重新双击「管理工具.bat」再试。`);
   if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
   return data;
@@ -908,6 +908,8 @@ function renderList(key, q) {
 
 /* 编辑弹窗 */
 async function openEditor(key, item) {
+  // 记住"正在编辑哪条记录"：没有 id 字段的实体保存时要靠它
+  STATE.editItem = { key, item };
   const ent = ENTITIES[key];
   let values = { ...item };
   let editorKey = null;
@@ -1184,6 +1186,9 @@ document.addEventListener("click", async (e) => {
       if (key === "novel" && !chCommit()) return;
       const data = { ...readForm($("#edit-form")) };
       if (key === "post") { data.category = ctx.category; data.slug = ctx.slug; }
+      // 没有 id 字段的实体（资源、兴趣帖子等）必须把原记录 id 带上，
+      // 否则服务端找不到记录 → 404「记录不存在」（以前会被误显示成"服务器旧版本"）
+      if (!data.id && STATE.editItem && STATE.editItem.key === key) data.id = STATE.editItem.item.id;
       if (key === "novel" && CH_CTX.item) {
         // 章节必须一起写回：服务端是合并保存，不传 chapters 就会一直沿用旧章节
         data.id = CH_CTX.item.id;
