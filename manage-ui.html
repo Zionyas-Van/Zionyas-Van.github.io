@@ -298,6 +298,8 @@ async function api(path, opts = {}) {
   const text = await res.text();
   let data;
   try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 300) || "返回内容无法解析" }; }
+  if (res.status === 404)
+    throw new Error(`接口不存在（${path}）—— 管理工具的服务器还是旧版本，请把这个窗口关掉，重新双击「管理工具.bat」再试。`);
   if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
   return data;
 }
