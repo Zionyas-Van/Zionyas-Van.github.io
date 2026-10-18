@@ -95,5 +95,13 @@ export const interestPosts: InterestPost[] = [
     rating: 10,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sp5oaexkpneazDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sp5ob49kpoqleDIYPAIDyAqayAGxzDdU0Dqe=.png"],
     content: "小时候被表哥带着玩GTA3，从此一发不可收拾，彻底迷上GTA系列。\n期盼了10年的GTA5终于在今天拿下，也算是圆了儿时的梦了😊",
+  },
+  {
+    id: "ip-1792293530128",
+    sectionId: "gta-v",
+    title: "通关了",
+    date: "2026-7-13",
+    minutes: 2756,
+    content: "解锁成就：大干一票\n5天时间通关 GTA5 故事模式。",
   }
 ];
