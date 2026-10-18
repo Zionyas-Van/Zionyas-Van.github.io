@@ -185,6 +185,14 @@ function sanitizeSectionId(raw) {
 	return slugifyAscii(v);
 }
 
+// 日期统一补零成 yyyy-mm-dd，避免"2026-9-30"和"2026-10-1"排序错乱
+function normalizeDate(v) {
+	const s = String(v || "").trim();
+	const m = s.match(/^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+	if (!m) return s || new Date().toISOString().slice(0, 10);
+	return `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
+}
+
 function formatProject(p) {
 	const dl = (p.downloadLinks || [])
 		.map((d) => {
@@ -1547,7 +1555,7 @@ ${chapters}
 				sectionId: body.sectionId,
 				title: body.title,
 				content: body.content || "",
-				date: body.date || new Date().toISOString().slice(0, 10),
+				date: normalizeDate(body.date),
 			};
 			if (Number(body.minutes) > 0) item.minutes = Math.round(Number(body.minutes));
 			if (Number(body.rating) > 0) item.rating = Math.round(Number(body.rating) * 10) / 10;

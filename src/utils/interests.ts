@@ -25,10 +25,17 @@ export function fmtRating(v: number | undefined): string {
 	return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+// 日期补零后再比较：用户可能填 2026-9-30，字符串排序会把 2026-10-1 排到它前面
+const padDate = (d: unknown) =>
+	String(d || "")
+		.split(/[-/.]/)
+		.map((x, i) => (i ? x.padStart(2, "0") : x))
+		.join("-");
+
 const byDateDesc = (a: InterestPost, b: InterestPost) =>
-	String(b.date || "").localeCompare(String(a.date || ""));
+	padDate(b.date).localeCompare(padDate(a.date));
 const byDateAsc = (a: InterestPost, b: InterestPost) =>
-	String(a.date || "").localeCompare(String(b.date || ""));
+	padDate(a.date).localeCompare(padDate(b.date));
 
 export function postsOfSection(sectionId: string): InterestPost[] {
 	return interestPosts.filter((p) => p.sectionId === sectionId).sort(byDateDesc);

@@ -104,6 +104,9 @@ const mainPanelTop = siteConfig.banner.enable
             </div>
         </div>
 
+        <!-- 图片放大预览（点带 data-zoom 的图片打开，点任意处关闭） -->
+        <div id="img-lightbox" aria-hidden="true"><img id="img-lightbox-img" alt="" /></div>
+
         <!-- 移动端底部导航栏（全站，放在 main 之外，切页不丢、刷新也在） -->
         <MobileBottomNav />
 
@@ -955,6 +958,61 @@ const mainPanelTop = siteConfig.banner.enable
     initMobileCarousel();
     initInterests();
     initInterestSection();
+    initLightbox();
+    initElapsed();
+  }
+
+  // ---------- ⑩ 图片放大预览 ----------
+  function initLightbox() {
+    const box = document.getElementById("img-lightbox");
+    const big = document.getElementById("img-lightbox-img");
+    if (!box || !big) return;
+    if (box.dataset.wired === "1") return;
+    box.dataset.wired = "1";
+    document.addEventListener("click", (e) => {
+      const t = e.target;
+      // 点带 data-zoom 的图片 → 打开
+      if (t && t.tagName === "IMG" && t.hasAttribute("data-zoom") && !box.contains(t)) {
+        big.src = t.currentSrc || t.src;
+        box.classList.add("on");
+        box.setAttribute("aria-hidden", "false");
+        return;
+      }
+      // 点任何地方（包括大图本身）→ 关闭
+      if (box.classList.contains("on")) {
+        box.classList.remove("on");
+        box.setAttribute("aria-hidden", "true");
+        big.removeAttribute("src");
+      }
+    });
+  }
+
+  // ---------- ⑪ 兴趣帖子「已过去 X」实时计算 ----------
+  function initElapsed() {
+    const els = document.querySelectorAll("[data-elapsed]");
+    if (!els.length) return;
+    const now = Date.now();
+    els.forEach((el) => {
+      const host = el.closest("[data-time]");
+      const raw = (host && host.dataset.time) || el.dataset.time || "";
+      if (!raw) return;
+      // Safari 对 2026-9-30 这种写法解析不稳，统一换成斜杠
+      const t = new Date(String(raw).replace(/-/g, "/")).getTime();
+      if (!t || Number.isNaN(t)) return;
+      const diff = now - t;
+      if (diff < 0) { el.textContent = "还没到"; return; }
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(mins / 60);
+      const days = Math.floor(hours / 24);
+      let txt;
+      if (mins < 1) txt = "刚刚";
+      else if (mins < 60) txt = `${mins} 分钟`;
+      else if (hours < 24) txt = `${hours} 小时`;
+      else if (days < 31) txt = `${days} 天`;
+      else if (days < 365) txt = `${Math.floor(days / 30)} 个月`;
+      else txt = `${(days / 365).toFixed(1).replace(/\.0$/, "")} 年`;
+      el.textContent = `已过去 ${txt}`;
+    });
   }
 
   // 首次执行 + 每次 swup 切页执行
@@ -963,4 +1021,30 @@ const mainPanelTop = siteConfig.banner.enable
     document.addEventListener(evt, initAll);
   });
 </script>
+
+<style is:global>
+  /* 图片放大预览 */
+  #img-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.86);
+    backdrop-filter: blur(4px);
+    cursor: zoom-out;
+  }
+  #img-lightbox.on {
+    display: flex;
+  }
+  #img-lightbox img {
+    max-width: 94vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+</style>
 </Layout>

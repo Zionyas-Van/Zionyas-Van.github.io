@@ -695,6 +695,7 @@ async function loadRefs() {
   // 兴趣分区的下拉选项（发帖子时用）
   const secs = await api("/api/interests/sections/list").catch(() => []);
   STATE.refs.interestSections = secs || [];
+  STATE.refs.interestPosts = await api("/api/interests/posts/list").catch(() => []);
   const secField = ENTITIES.interestPost.fields.find((x) => x.k === "sectionId");
   if (secField) {
     secField.options = (secs || []).length
@@ -809,9 +810,61 @@ async function buildDash() {
 /* ============================================================
    发布面板
    ============================================================ */
+/* 发布兴趣帖子 · 第一步：分区卡片墙（按最近更新排序 + 搜索）
+   分区多了以后靠一个下拉框找太费劲，所以先选分区、再进发布表单。 */
+const padDate = (d) => String(d || "").split(/[-/.]/).map((x, i) => (i ? String(x).padStart(2, "0") : x)).join("-");
+
+function buildSectionPicker() {
+  const secs = STATE.refs.interestSections || [];
+  const posts = STATE.refs.interestPosts || [];
+  if (!secs.length) {
+    return `<div class="card"><h2>${ic("article")}发布兴趣帖子</h2>
+      <div class="note warn">${ic("warning")}<span>还没有任何分区。请先去「新建兴趣分区」建一个，然后再回来发帖。</span></div></div>`;
+  }
+  const typeLabelOf = (t) => ({ game: "游戏", music: "音乐", film: "影视", book: "书籍", other: "其它" }[t] || "其它");
+  const lastOf = (id) => {
+    const list = posts.filter((p) => p.sectionId === id).map((p) => padDate(p.date)).sort();
+    return list.length ? list[list.length - 1] : "";
+  };
+  const cards = secs
+    .map((s) => ({ ...s, last: lastOf(s.id), count: posts.filter((p) => p.sectionId === s.id).length }))
+    .sort((a, b) => String(b.last || "").localeCompare(String(a.last || "")));
+  return `<div class="card">
+    <h2>${ic("article")}发布兴趣帖子</h2>
+    <p class="sub">先选一个分区 —— 按最近更新排序，点卡片进入发布页</p>
+    <div style="margin:14px 0"><input id="pick-search" type="text" placeholder="搜索分区名称…" style="width:100%"></div>
+    <div id="pick-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+      ${cards
+        .map(
+          (s) => `<button type="button" data-act="pick-section" data-id="${esc(s.id)}"
+        data-name="${esc(`${s.name} ${s.description || ""}`.toLowerCase())}"
+        class="pick-card"
+        style="display:flex;align-items:center;gap:10px;text-align:left;padding:10px;border-radius:14px;
+               border:1px solid var(--out);background:var(--surf-2);cursor:pointer">
+        <span style="width:40px;height:40px;flex:none;border-radius:10px;overflow:hidden;background:var(--surf-3);
+                     display:flex;align-items:center;justify-content:center">
+          ${s.cover ? `<img src="${esc(s.cover)}" alt="" style="width:100%;height:100%;object-fit:cover">` : ic("library-books")}
+        </span>
+        <span style="min-width:0;flex:1">
+          <b style="display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</b>
+          <em style="display:block;font-style:normal;font-size:11.5px;color:var(--txt-3);margin-top:2px">
+            ${typeLabelOf(s.type)} · ${s.count} 条${s.last ? " · 最近 " + s.last : " · 还没发过"}
+          </em>
+        </span>
+        ${ic("chevron-right")}
+      </button>`,
+        )
+        .join("")}
+    </div>
+    <p id="pick-empty" class="hidden muted" style="margin-top:12px">没有匹配的分区</p>
+  </div>`;
+}
+
 async function buildPublish(key) {
   await loadRefs();
   const ent = ENTITIES[key];
+  // 兴趣帖子：没选分区就先出卡片墙；选了才出表单
+  if (key === "interestPost" && !STATE.pickSection) return buildSectionPicker();
   let values = {};
   if (key === "post") values = { lang: "zh_CN" };
   if (key === "resource") values = { category: "" };
@@ -821,10 +874,21 @@ async function buildPublish(key) {
     const opts = STATE.refs.resCats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
     fields = fields.map((f) => (f.k === "category" ? { ...f, type: "rescat", opts } : f));
   }
+  // 兴趣帖子：分区已经在第一步选好了，表单里不再出现下拉
+  let head = "";
+  if (key === "interestPost") {
+    const sec = (STATE.refs.interestSections || []).find((s) => s.id === STATE.pickSection);
+    fields = fields.filter((f) => f.k !== "sectionId");
+    values = { date: new Date().toISOString().slice(0, 10) };
+    head = `<div class="note info" style="margin-bottom:12px">${ic("info")}
+      <span>发布到：<b>${esc(sec ? sec.name : STATE.pickSection)}</b>
+      <button type="button" class="btn outline sm" data-act="pick-back" style="margin-left:10px">${ic("sync")}换一个分区</button></span></div>`;
+  }
   return `
     <div class="card">
       <h2>${ic(ent.icon)}新建${ent.name}</h2>
       <p class="sub">带 <span style="color:var(--err)">*</span> 的是必填项，其余留空即可</p>
+      ${head}
       <form id="pub-form" autocomplete="off">${formHtml(fields, values)}</form>
       <div id="pub-result"></div>
       <div class="actions">
@@ -1080,6 +1144,9 @@ document.addEventListener("click", async (e) => {
   try {
     if (act === "close-modal") return closeDialog();
     if (act === "reload") { toast("已刷新"); return go(STATE.panel); }
+    /* ---- 兴趣帖子：分区卡片墙 ---- */
+    if (act === "pick-section") { STATE.pickSection = t.dataset.id; return go("pub-interestPost"); }
+    if (act === "pick-back") { STATE.pickSection = null; return go("pub-interestPost"); }
 
     /* ---- 发布：保存 / 重置 ---- */
     if (act === "pub-save") {
@@ -1091,6 +1158,8 @@ document.addEventListener("click", async (e) => {
         data.category = sel && sel.value === "__new__" ? (nw ? nw.value.trim() : "") : (sel ? sel.value : "");
       }
       if (key === "video" && !String(data.id || "").trim()) data.id = String(data.bvid || "").trim();
+      // 兴趣帖子：分区是在上一步卡片墙里选的，这里补上
+      if (key === "interestPost" && STATE.pickSection) data.sectionId = STATE.pickSection;
       if (!data.slug) delete data.slug; // 交给服务器自动生成
       t.disabled = true;
       const r = await post(ent.create, data);
