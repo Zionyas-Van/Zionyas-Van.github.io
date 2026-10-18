@@ -1,0 +1,120 @@
+---
+import { Icon } from "astro-icon/components";
+import { fmtMinutes, fmtRating, getInterestSummary, sectionUrl, typeLabel } from "../utils/interests";
+
+const s = getInterestSummary();
+const empty = s.sectionCount === 0;
+
+// 四个"最爱"：并列时把候选都渲染出来，由前端随机挑一个（每次打开都可能不同）
+const favorites = [
+	{ key: "game", title: "最喜欢的游戏", icon: "material-symbols:sports-esports-outline-rounded", cards: s.topGame, metric: (c: any) => fmtMinutes(c.maxMinutes) },
+	{ key: "music", title: "最喜欢的音乐", icon: "material-symbols:music-note-rounded", cards: s.topMusic, metric: (c: any) => fmtMinutes(c.maxMinutes) },
+	{ key: "film", title: "最喜欢的影视", icon: "material-symbols:movie-outline-rounded", cards: s.topFilm, metric: (c: any) => `${fmtRating(c.maxRating)} 分` },
+	{ key: "book", title: "最喜欢的书籍", icon: "material-symbols:menu-book-rounded", cards: s.topBook, metric: (c: any) => `${fmtRating(c.maxRating)} 分` },
+].filter((f) => f.cards.length > 0);
+
+const stats = [
+	{ label: "总游戏时长", value: fmtMinutes(s.totalGameMinutes), icon: "material-symbols:timer-outline-rounded", small: s.totalGameMinutes >= 6000 },
+	{ label: "已听歌曲", value: String(s.musicCount), icon: "material-symbols:music-note-rounded", unit: "个分区" },
+	{ label: "已观影视", value: String(s.filmCount), icon: "material-symbols:movie-outline-rounded", unit: "个分区" },
+	{ label: "已看书籍", value: String(s.bookCount), icon: "material-symbols:menu-book-rounded", unit: "个分区" },
+];
+---
+
+<section class="interest-summary onload-animation">
+	<div class="flex items-start justify-between gap-3 mb-4">
+		<div>
+			<h2 class="text-lg md:text-xl font-bold text-90 flex items-center gap-2">
+				<Icon name="material-symbols:favorite-outline-rounded" class="text-[var(--primary)] text-[1.3rem]" />
+				我的兴趣
+			</h2>
+			<p class="text-[12.5px] text-75 mt-1">
+				{s.sectionCount} 个分区 · {s.postCount} 条记录
+			</p>
+		</div>
+		<a
+			href="/interests/"
+			class="flex-none inline-flex items-center gap-1 px-3.5 py-2 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[13px] font-semibold hover:bg-[var(--primary)]/15 transition-colors"
+		>
+			查看全部
+			<Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+		</a>
+	</div>
+
+	{
+		empty ? (
+			<div class="rounded-[var(--radius-medium)] border border-dashed border-black/10 dark:border-white/15 px-4 py-8 text-center text-75">
+				<Icon name="material-symbols:add-reaction-outline-rounded" class="text-4xl mb-2 opacity-30 mx-auto" />
+				<p class="text-sm">还没有记录任何兴趣</p>
+				<p class="text-[12px] text-75/60 mt-1">在管理工具里新建一个分区，就能开始记录了</p>
+			</div>
+		) : (
+			<>
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-3">
+					{stats.map((st) => (
+						<div class="rounded-[var(--radius-medium)] bg-[var(--primary)]/6 px-3.5 py-3 md:px-4 md:py-3.5">
+							<div class="flex items-center gap-1.5 text-[11.5px] text-75 mb-1">
+								<Icon name={st.icon} class="text-[var(--primary)] text-[1rem]" />
+								{st.label}
+							</div>
+							<div class="flex items-baseline gap-1 min-w-0">
+								<span class:list={["font-bold text-[var(--primary)] truncate", st.small ? "text-[15px] md:text-base" : "text-xl md:text-2xl"]}>
+									{st.value}
+								</span>
+								{"unit" in st && st.unit && <span class="text-[11px] text-75/70 flex-none">{st.unit}</span>}
+							</div>
+						</div>
+					))}
+				</div>
+
+				{
+					favorites.length > 0 && (
+						<div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-3 mt-2.5 md:mt-3">
+							{favorites.map((f) => (
+								<div class="rounded-[var(--radius-medium)] bg-[var(--card-bg)] border border-black/5 dark:border-white/10 p-2.5" data-fav={f.key}>
+									<div class="flex items-center gap-1.5 text-[11.5px] text-75 mb-2">
+										<Icon name={f.icon} class="text-[var(--primary)] text-[1rem]" />
+										{f.title}
+									</div>
+									{f.cards.map((c: any) => (
+										<a
+											href={sectionUrl(c.section.id)}
+											class="flex items-center gap-2 group"
+											data-fav-item
+											hidden={f.cards.length > 1}
+										>
+											<div class="w-8 h-8 rounded-[9px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">
+												{c.section.cover && (
+													<img src={c.section.cover} alt="" class="w-full h-full object-cover" loading="lazy" />
+												)}
+											</div>
+											<div class="min-w-0 flex-1">
+												<div class="text-[12.5px] font-semibold text-90 truncate group-hover:text-[var(--primary)] transition-colors">
+													{c.section.name}
+												</div>
+												<div class="text-[11px] text-75/70 truncate">{f.metric(c)}</div>
+											</div>
+										</a>
+									))}
+								</div>
+							))}
+						</div>
+					)
+				}
+			</>
+		)
+	}
+</section>
+
+<style>
+	.interest-summary {
+		background: var(--card-bg);
+		border-radius: var(--radius-large);
+		padding: 1rem 1rem 1.15rem;
+	}
+	@media (min-width: 768px) {
+		.interest-summary {
+			padding: 1.4rem 1.5rem 1.5rem;
+		}
+	}
+</style>

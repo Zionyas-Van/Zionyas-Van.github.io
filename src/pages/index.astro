@@ -5,6 +5,7 @@
 
 import { Icon } from "astro-icon/components";
 import PostCard from "../components/PostCard.astro";
+import { INTEREST_TYPE_META, interestSections } from "../data/interests";
 import { novels } from "../data/novels";
 import { projects } from "../data/projects";
 import { resources } from "../data/resources";
@@ -311,6 +312,51 @@ const formatNewsDate = (d: unknown) => {
                   <p class="text-xs text-75 mt-1 line-clamp-2 leading-relaxed">
                     {n.description}
                   </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- 我的兴趣（分区墙，链接到 /interests/） -->
+      {interestSections.length > 0 && (
+        <div>
+          <div class="flex items-center justify-between mb-5 max-md:mb-3">
+            <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+              <Icon name="material-symbols:favorite-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+              我的兴趣
+            </h2>
+            <a href="/interests/" class="text-sm font-medium text-[var(--primary)] hover:underline flex items-center gap-1">
+              查看全部
+              <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
+            </a>
+          </div>
+          <div class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width: thin;">
+            {interestSections.slice(0, 8).map((sec) => (
+              <a
+                href={`/interests/${sec.id}/`}
+                class="card-base group rounded-[var(--radius-large)] overflow-hidden
+                       hover:scale-[1.02] active:scale-100 transition-transform duration-200
+                       flex-shrink-0 w-[150px]"
+              >
+                <div class="aspect-[16/10] w-full overflow-hidden bg-black/10 dark:bg-white/10">
+                  {sec.cover ? (
+                    <img src={sec.cover} alt={sec.name} class="w-full h-full object-cover transition group-hover:scale-105 duration-300" loading="lazy" />
+                  ) : (
+                    <div class="w-full h-full flex items-center justify-center text-[var(--primary)]/40">
+                      <Icon name={INTEREST_TYPE_META[sec.type].icon} class="text-3xl" />
+                    </div>
+                  )}
+                </div>
+                <div class="p-2.5">
+                  <div class="flex items-center gap-1 text-[10.5px] text-[var(--primary)] mb-0.5">
+                    <Icon name={INTEREST_TYPE_META[sec.type].icon} class="text-[0.9rem]" />
+                    {INTEREST_TYPE_META[sec.type].label}
+                  </div>
+                  <h3 class="font-semibold text-[13px] text-90 truncate group-hover:text-[var(--primary)] transition-colors">
+                    {sec.name}
+                  </h3>
                 </div>
               </a>
             ))}

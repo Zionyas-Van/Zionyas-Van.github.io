@@ -841,6 +841,109 @@ const mainPanelTop = siteConfig.banner.enable
     start();
   }
 
+  // ---------- ⑧ 兴趣页 / 关于页：最爱随机、换一批、类型筛选、搜索 ----------
+  function initInterests() {
+    // 「最喜欢的 X」并列时随机挑一个（每次打开都可能不同）
+    document.querySelectorAll("[data-fav]").forEach((box) => {
+      const items = Array.from(box.querySelectorAll("[data-fav-item]"));
+      if (items.length <= 1) return;
+      const pick = items[Math.floor(Math.random() * items.length)];
+      items.forEach((i) => (i === pick ? i.removeAttribute("hidden") : (i.hidden = true)));
+    });
+
+    const box = document.getElementById("interest-masonry");
+    const filterBar = document.querySelector("[data-interest-filterbar]");
+    if (box && filterBar) {
+      const cards = Array.from(box.querySelectorAll(".interest-card"));
+      const chips = Array.from(filterBar.querySelectorAll("[data-interest-type]"));
+      const searchEl = document.getElementById("interest-search");
+      const countEl = document.getElementById("interest-count");
+      const emptyEl = document.getElementById("interest-empty");
+      const state = { type: "all", q: "" };
+      const apply = () => {
+        const q = state.q.trim().toLowerCase();
+        let shown = 0;
+        cards.forEach((c) => {
+          const ok = (state.type === "all" || c.dataset.type === state.type) && (!q || (c.dataset.name || "").includes(q));
+          c.style.display = ok ? "" : "none";
+          if (ok) shown++;
+        });
+        if (countEl) countEl.textContent = `${shown} 个`;
+        if (emptyEl) emptyEl.classList.toggle("hidden", shown > 0);
+      };
+      chips.forEach((chip) => {
+        if (chip.dataset.bound === "1") return;
+        chip.dataset.bound = "1";
+        chip.addEventListener("click", () => {
+          state.type = chip.dataset.interestType || "all";
+          chips.forEach((c) => (c.dataset.active = c === chip ? "true" : "false"));
+          apply();
+        });
+      });
+      if (searchEl && searchEl.dataset.bound !== "1") {
+        searchEl.dataset.bound = "1";
+        searchEl.addEventListener("input", () => { state.q = searchEl.value || ""; apply(); });
+      }
+    }
+
+    // 「换一批」：从内嵌 JSON 重新随机 5 条
+    const btn = document.getElementById("interest-shuffle");
+    const listEl = document.getElementById("interest-random");
+    const postsDataEl = document.getElementById("interest-posts");
+    const secDataEl = document.getElementById("interest-sections");
+    if (!btn || !listEl || !postsDataEl || !secDataEl || btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    const posts = JSON.parse(postsDataEl.textContent || "[]");
+    const secMap = new Map(JSON.parse(secDataEl.textContent || "[]").map((s) => [s.id, s]));
+    const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const fmtMin = (m) => {
+      const v = Math.max(0, Math.round(Number(m) || 0));
+      if (!v) return "0 分钟";
+      const h = Math.floor(v / 60), r = v % 60;
+      return h ? (r ? `${h} 小时 ${r} 分` : `${h} 小时`) : `${r} 分钟`;
+    };
+    const cardHtml = (p) => {
+      const s = secMap.get(p.sectionId);
+      return `<a href="/interests/${encodeURIComponent(p.sectionId)}/" class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
+        <div class="w-11 h-11 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">${s && s.cover ? `<img src="${esc(s.cover)}" alt="" class="w-full h-full object-cover" loading="lazy">` : ""}</div>
+        <div class="min-w-0 flex-1">
+          <div class="text-[11px] text-75 mb-0.5 truncate">${esc(s ? s.name : "未分区")}</div>
+          <h3 class="font-semibold text-[14px] text-90 truncate">${esc(p.title)}</h3>
+          <p class="text-[12px] text-75/75 mt-1 line-clamp-2 leading-relaxed">${esc(p.excerpt)}</p>
+          <div class="flex items-center gap-2 mt-1.5 text-[11px] text-75/60">
+            ${p.date ? `<span>${esc(p.date)}</span>` : ""}${p.minutes ? `<span>· ${fmtMin(p.minutes)}</span>` : ""}${p.rating ? `<span>· ${p.rating} 分</span>` : ""}
+          </div>
+        </div></a>`;
+    };
+    btn.addEventListener("click", () => {
+      const pool = [...posts];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      listEl.innerHTML = pool.slice(0, 5).map(cardHtml).join("");
+    });
+  }
+
+  // ---------- ⑨ 分区页：帖子搜索 ----------
+  function initInterestSection() {
+    const input = document.getElementById("section-post-search");
+    if (!input || input.dataset.bound === "1") return;
+    input.dataset.bound = "1";
+    const posts = Array.from(document.querySelectorAll("[data-post]"));
+    const emptyEl = document.getElementById("section-posts-empty");
+    input.addEventListener("input", () => {
+      const q = input.value.trim().toLowerCase();
+      let shown = 0;
+      posts.forEach((p) => {
+        const ok = !q || (p.dataset.text || "").includes(q);
+        p.style.display = ok ? "" : "none";
+        if (ok) shown++;
+      });
+      if (emptyEl) emptyEl.classList.toggle("hidden", shown > 0);
+    });
+  }
+
   // ---------- 统一入口 ----------
   function initAll() {
     initReaderMode();
@@ -850,6 +953,8 @@ const mainPanelTop = siteConfig.banner.enable
     initMobileNav();
     initFeatured();
     initMobileCarousel();
+    initInterests();
+    initInterestSection();
   }
 
   // 首次执行 + 每次 swup 切页执行

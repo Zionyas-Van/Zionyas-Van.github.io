@@ -1,0 +1,306 @@
+---
+import { Icon } from "astro-icon/components";
+import InterestSummary from "../../components/InterestSummary.astro";
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import {
+	fmtMinutes,
+	fmtRating,
+	getSectionCards,
+	getSectionCardsByType,
+	getInterestSummary,
+	randomPosts,
+	sectionUrl,
+	typeLabel,
+} from "../../utils/interests";
+import { interestPosts, interestSections, INTEREST_TYPE_META } from "../../data/interests";
+
+const cards = getSectionCards();
+const summary = getInterestSummary();
+
+// 初始展示的 5 条帖子（构建时随机；前端「换一批」会重新随机）
+const initialPosts = randomPosts(5);
+const sectionById = new Map(interestSections.map((s) => [s.id, s]));
+
+// 交给前端的帖子数据（用于「换一批」）
+const postsJson = JSON.stringify(
+	interestPosts.map((p) => ({
+		id: p.id,
+		sectionId: p.sectionId,
+		title: p.title,
+		date: p.date,
+		minutes: p.minutes || 0,
+		rating: p.rating || 0,
+		excerpt: String(p.content || "").replace(/\s+/g, " ").slice(0, 80),
+	})),
+).replace(/</g, "\\u003c");
+
+const types = [
+	{ key: "all", label: "全部", icon: "material-symbols:grid-view-outline-rounded" },
+	...Object.entries(INTEREST_TYPE_META).map(([k, v]) => ({ key: k, label: v.label, icon: v.icon })),
+];
+
+const postCard = (p: { id: string; sectionId: string; title: string; date: string; minutes?: number; rating?: number; content?: string }) => {
+	const s = sectionById.get(p.sectionId);
+	const meta = s ? INTEREST_TYPE_META[s.type] : INTEREST_TYPE_META.other;
+	return { ...p, section: s, meta, excerpt: String(p.content || "").replace(/\s+/g, " ").slice(0, 90) };
+};
+---
+
+<MainGridLayout title="兴趣" description="我的游戏、音乐、影视与书籍记录">
+  <!-- ============ 总结项（与关于页完全一致） ============ -->
+  <InterestSummary />
+
+  <!-- ============ 随便看看：随机 5 条 ============ -->
+  {
+    interestPosts.length > 0 && (
+      <section class="mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+            <Icon name="material-symbols:shuffle-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+            随便看看
+          </h2>
+          <button
+            type="button"
+            id="interest-shuffle"
+            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[13px] font-semibold active:scale-95 transition-transform"
+          >
+            <Icon name="material-symbols:refresh-rounded" class="text-[1rem]" />
+            换一批
+          </button>
+        </div>
+        <div id="interest-random" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {initialPosts.map((p) => {
+            const c = postCard(p);
+            return (
+              <a
+                href={c.section ? sectionUrl(c.section.id) : "/interests/"}
+                class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+              >
+                <div class="w-11 h-11 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">
+                  {c.section?.cover && <img src={c.section.cover} alt="" class="w-full h-full object-cover" loading="lazy" />}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 text-[11px] text-75 mb-0.5">
+                    <Icon name={c.meta.icon} class="text-[0.95rem] text-[var(--primary)]" />
+                    <span class="truncate">{c.section?.name || "未分区"}</span>
+                  </div>
+                  <h3 class="font-semibold text-[14px] text-90 truncate">{c.title}</h3>
+                  <p class="text-[12px] text-75/75 mt-1 line-clamp-2 leading-relaxed">{c.excerpt}</p>
+                  <div class="flex items-center gap-2 mt-1.5 text-[11px] text-75/60">
+                    <span>{c.date}</span>
+                    {!!c.minutes && <span>· {fmtMinutes(c.minutes)}</span>}
+                    {!!c.rating && <span>· {fmtRating(c.rating)} 分</span>}
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ============ 全部分区：搜索 + 分类 + 瀑布流 ============ -->
+  <section class="mt-8">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+        <Icon name="material-symbols:grid-view-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+        全部分区
+      </h2>
+      <span class="text-[12px] text-75/60" id="interest-count">{cards.length} 个</span>
+    </div>
+
+    <div class="card-base rounded-[var(--radius-large)] p-3 md:p-4 mb-4" data-interest-filterbar>
+      <div class="interest-frow">
+        <span class="interest-flabel">类型</span>
+        <div class="interest-chips">
+          {types.map((t) => (
+            <button
+              type="button"
+              class="interest-chip"
+              data-interest-type={t.key}
+              data-active={t.key === "all" ? "true" : "false"}
+            >
+              <Icon name={t.icon} class="text-[1rem]" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div class="interest-frow">
+        <span class="interest-flabel">查找</span>
+        <input id="interest-search" class="interest-search" type="text" placeholder="输入分区名称" autocomplete="off" />
+      </div>
+    </div>
+
+    {
+      cards.length === 0 ? (
+        <div class="card-base rounded-[var(--radius-large)] p-10 text-center text-75">
+          <Icon name="material-symbols:category-outline-rounded" class="text-5xl mb-3 opacity-25 mx-auto" />
+          <p class="text-sm">还没有任何分区，去管理工具里新建一个吧</p>
+        </div>
+      ) : (
+        <div id="interest-masonry" class="interest-masonry">
+          {cards.map((c) => (
+            <a
+              href={sectionUrl(c.section.id)}
+              class="interest-card card-base"
+              data-type={c.type}
+              data-name={`${c.section.name} ${c.section.description || ""}`.toLowerCase()}
+            >
+              <div class="aspect-[16/10] w-full overflow-hidden bg-black/10 dark:bg-white/10">
+                {c.section.cover ? (
+                  <img src={c.section.cover} alt={c.section.name} class="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div class="w-full h-full flex items-center justify-center text-[var(--primary)]/40">
+                    <Icon name={INTEREST_TYPE_META[c.type].icon} class="text-4xl" />
+                  </div>
+                )}
+              </div>
+              <div class="p-3">
+                <div class="flex items-center gap-1.5 text-[11px] text-[var(--primary)] mb-1">
+                  <Icon name={INTEREST_TYPE_META[c.type].icon} class="text-[0.95rem]" />
+                  {typeLabel(c.type)}
+                </div>
+                <h3 class="font-bold text-[14px] text-90 truncate">{c.section.name}</h3>
+                <p class="text-[12px] text-75/75 mt-1 line-clamp-2 leading-relaxed">
+                  {c.section.description || "—"}
+                </p>
+                <div class="flex items-center gap-2 mt-1.5 text-[11px] text-75/60 flex-wrap">
+                  <span>{c.postCount} 条记录</span>
+                  {c.type === "game" || c.type === "music" ? (
+                    c.maxMinutes > 0 && <span>· {fmtMinutes(c.maxMinutes)}</span>
+                  ) : c.maxRating > 0 ? (
+                    <span>· {fmtRating(c.maxRating)} 分</span>
+                  ) : null}
+                  {c.lastDate && <span>· {c.lastDate}</span>}
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )
+    }
+    <p id="interest-empty" class="hidden card-base rounded-[var(--radius-large)] p-8 text-center text-75 text-sm mt-3">
+      没有符合条件的分类，换个条件试试～
+    </p>
+  </section>
+
+  <script type="application/json" id="interest-posts" set:html={postsJson}></script>
+  <script type="application/json" id="interest-sections" set:html={JSON.stringify(
+    interestSections.map((s) => ({ id: s.id, name: s.name, cover: s.cover || "", type: s.type })),
+  ).replace(/</g, "\\u003c")}></script>
+</MainGridLayout>
+
+<style>
+  /* 筛选栏（与小说页保持同一套观感） */
+  .interest-frow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.15rem 0;
+  }
+  .interest-frow + .interest-frow {
+    margin-top: 0.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(128, 128, 128, 0.1);
+  }
+  .interest-flabel {
+    flex: none;
+    width: 2.5rem;
+    font-size: 12.5px;
+    line-height: 30px;
+    color: var(--content-meta, #8a8a8a);
+  }
+  .interest-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+  .interest-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 30px;
+    padding: 0 0.8rem;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--content-meta, #6b7280);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .interest-chip:hover {
+    background: color-mix(in oklab, var(--primary) 8%, transparent);
+    color: var(--primary);
+  }
+  .interest-chip[data-active="true"] {
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .interest-search {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0 0.9rem;
+    border-radius: 999px;
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    background: transparent;
+    font-size: 13.5px;
+    color: inherit;
+    outline: none;
+  }
+  .interest-search:focus {
+    border-color: var(--primary);
+  }
+
+  /* 瀑布流：用 CSS 多列实现，卡片不跨列断开 */
+  .interest-masonry {
+    columns: 1;
+    column-gap: 0.75rem;
+  }
+  .interest-masonry > * {
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+  @media (min-width: 640px) {
+    .interest-masonry {
+      columns: 2;
+    }
+  }
+  @media (min-width: 1024px) {
+    .interest-masonry {
+      columns: 3;
+    }
+  }
+  @media (max-width: 767px) {
+    .interest-frow {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .interest-flabel {
+      width: auto;
+      line-height: 1.3;
+    }
+    .interest-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      width: 100%;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .interest-chips::-webkit-scrollbar {
+      display: none;
+    }
+    .interest-chip {
+      flex: none;
+      height: 34px;
+    }
+  }
+</style>
