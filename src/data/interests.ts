@@ -97,6 +97,13 @@ export const interestSections: InterestSection[] = [
     type: "game",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0l000dlnm5pwbbs07pgkwgaDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
     description: "反恐精英，再度闪耀！",
+  },
+  {
+    id: "h3r3-gs",
+    name: "h3r3",
+    type: "music",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r611mpgphzmh2DIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+    description: "刘清云（h3R3），本名，中国男歌手、音乐制作人，出生于安徽，职业涵盖词曲创作、编曲、混音及母带制作等领域，曾与Felix Bennett合作演唱《他只是经过》。",
   }
 ];
 
@@ -136,5 +143,14 @@ export const interestPosts: InterestPost[] = [
     rating: 9,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rifugr7kpeh88DIYPAIDyAqayAGxzDdU0Dqe=.jpg", "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qq64v155315daDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy3ikjqphj2mdDIYPAIDyAqayAGxzDdU0Dqe=.png"],
     content: "目前为止在steam上单次最高花销，比gta5还贵。\n希望能回本。",
+  },
+  {
+    id: "ip-1792296408244",
+    sectionId: "h3r3-gs",
+    title: "还是会向你",
+    date: "2026-10-18",
+    minutes: 240,
+    rating: 9.5,
+    content: "“我知道我可以随时被代替”\n“却还是接受不了这种落差”\n",
   }
 ];
