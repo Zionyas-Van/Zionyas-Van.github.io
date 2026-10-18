@@ -159,6 +159,32 @@ function saveArrayFile(filepath, arrayName, newContent) {
 	return true;
 }
 
+// 分区的网址标识：只允许 a-z 0-9 和连字符。
+// 有人会把整条网址贴进这个字段（比如 https://www.rockstargames.com/zh/gta-v/），
+// 那会让分区页变成 /interests/https:/… 这种畸形路径、直接把构建搞挂，
+// 所以这里自动提取路径最后一段（gta-v）。
+function slugifyAscii(s) {
+	return String(s || "")
+		.toLowerCase()
+		.replace(/['"’”]/g, "")
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.slice(0, 40);
+}
+function sanitizeSectionId(raw) {
+	const v = String(raw || "").trim();
+	if (!v) return "";
+	if (/^https?:\/\//i.test(v) || v.includes("/")) {
+		const seg = v.split(/[?#]/)[0].split("/").filter(Boolean).filter((x) => !/^https?:$/i.test(x));
+		const last = seg[seg.length - 1] || "";
+		const host = seg[0] || "";
+		// 最后一段通常才是想表达的标识；是域名的话退回用域名
+		const candidate = last && !/^(www\.)?[a-z0-9-]+\.[a-z]{2,}$/i.test(last) ? last : host;
+		return slugifyAscii(candidate);
+	}
+	return slugifyAscii(v);
+}
+
 function formatProject(p) {
 	const dl = (p.downloadLinks || [])
 		.map((d) => {
@@ -1432,9 +1458,8 @@ ${chapters}
 			const items = parseTsArray(INTERESTS_FILE, "interestSections");
 			if (items.some((s) => s.name === body.name))
 				return sendJSON(res, { error: `已经有一个叫「${body.name}」的分区了` }, 400);
-			let id = body.id || slugify(body.name, new Set(items.map((x) => x.id)));
-			// 中文名会退化成 post-日期-随机 形式的兜底标识，分区用 sec- 前缀更清楚
-			if (!body.id && id.startsWith("post-")) id = id.replace(/^post-/, "sec-");
+			let id = sanitizeSectionId(body.id) || slugify(body.name, new Set(items.map((x) => x.id)));
+			if (!sanitizeSectionId(body.id) && id.startsWith("post-")) id = id.replace(/^post-/, "sec-");
 			if (items.some((x) => x.id === id))
 				return sendJSON(res, { error: `标识「${id}」已被占用，换一个` }, 400);
 			const item = {
@@ -1463,14 +1488,21 @@ ${chapters}
 			const items = parseTsArray(INTERESTS_FILE, "interestSections");
 			const idx = items.findIndex((s) => s.id === body.id);
 			if (idx === -1) return sendJSON(res, { error: "分区不存在" }, 404);
-			items[idx] = { ...items[idx], ...body };
-			const content = fs.readFileSync(INTERESTS_FILE, "utf-8");
-			saveArrayFile(
-				INTERESTS_FILE,
-				"interestSections",
-				rebuildArraySection(content, "interestSections", items, formatInterestSection),
-			);
-			return sendJSON(res, { ok: true });
+			const oldId = items[idx].id;
+			const nextId = body.id !== undefined ? sanitizeSectionId(body.id) || oldId : oldId;
+			items[idx] = { ...items[idx], ...body, id: nextId };
+			// 改了标识，就把这个分区下的帖子一起指过去，避免帖子变成孤儿
+			let posts = null;
+			if (nextId !== oldId) {
+				posts = parseTsArray(INTERESTS_FILE, "interestPosts").map((p) =>
+					p.sectionId === oldId ? { ...p, sectionId: nextId } : p,
+				);
+			}
+			let content = fs.readFileSync(INTERESTS_FILE, "utf-8");
+			content = rebuildArraySection(content, "interestSections", items, formatInterestSection);
+			if (posts) content = rebuildArraySection(content, "interestPosts", posts, formatInterestPost);
+			saveArrayFile(INTERESTS_FILE, "interestSections", content);
+			return sendJSON(res, { ok: true, id: nextId });
 		} catch (e) {
 			return sendJSON(res, { error: e.message }, 500);
 		}

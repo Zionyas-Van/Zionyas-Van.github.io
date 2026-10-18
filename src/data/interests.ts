@@ -76,6 +76,14 @@ export const INTEREST_TYPE_FIELDS: Record<InterestType, { minutes: boolean; rati
 	other: { minutes: false, rating: false },
 };
 
-export const interestSections: InterestSection[] = [];
+export const interestSections: InterestSection[] = [
+	{
+		id: "gta-v",
+		name: "GTA5",
+		type: "game",
+		cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r610ifepgfr4lDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+		description: "他们谁也不能相信，尤其是身边的同伙。",
+	},
+];
 
 export const interestPosts: InterestPost[] = [];
