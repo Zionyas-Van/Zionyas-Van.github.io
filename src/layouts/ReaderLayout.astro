@@ -6,6 +6,13 @@
 // 因为 swup 只替换 <main>，两套布局混用会导致组件残留 / 导航被隐藏。
 // ============================================================
 import { Icon } from "astro-icon/components";
+// 阅读页跳过 MainGridLayout，而全站主题变量（--card-bg / --page-bg / --primary）、
+// .custom-md 正文样式和滚动条样式都挂在那边带进来的全局样式里。
+// 不在这里补上，阅读页拿不到这些变量 → 工具栏/目录抽屉的 background 变成无效值 → 透明透字。
+import "../styles/variables.styl";
+import "../styles/main.css";
+import "../styles/markdown.css";
+import "../styles/scrollbar.css";
 import Layout from "./Layout.astro";
 
 interface Props {
