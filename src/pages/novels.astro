@@ -224,16 +224,21 @@ const metricOf = (n: (typeof all)[number], key: string) =>
         </div>
       </section>
 
-      <!-- ==================== 排行榜（七猫那种多列编号榜） ==================== -->
+      <!-- ==================== 排行榜（七猫那种多列编号榜；手机端是 Google Play 图书的排行行） ==================== -->
       <section class="mb-8 onload-animation">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           {rankings.map((r) => (
             <div class="card-base rounded-[var(--radius-large)] p-4">
-              <h3 class="flex items-center gap-2 text-sm font-bold text-90 mb-3">
-                <Icon name={r.icon} class="text-[var(--primary)] text-[1.15rem]" />
-                {r.title}
-              </h3>
-              <ol class="flex flex-col gap-2.5">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="flex items-center gap-2 text-sm font-bold text-90">
+                  <Icon name={r.icon} class="text-[var(--primary)] text-[1.15rem]" />
+                  {r.title}
+                </h3>
+                <span class="gp-arrow" aria-hidden="true">
+                  <Icon name="material-symbols:chevron-right-rounded" />
+                </span>
+              </div>
+              <ol class="flex flex-col gap-2.5 max-md:gap-3">
                 {r.items.map((n, i) => (
                   <li>
                     <a href={`/novels/${n.id}/`} class="flex items-center gap-2.5 group">
@@ -249,6 +254,11 @@ const metricOf = (n: (typeof all)[number], key: string) =>
                       >
                         {i + 1}
                       </span>
+                      <span class="rank-thumb">
+                        {n.cover && (
+                          <img src={n.cover} alt={n.title} class="w-full h-full object-cover" loading="lazy" />
+                        )}
+                      </span>
                       <span class="min-w-0 flex-1 text-[13px] text-90 group-hover:text-[var(--primary)] transition-colors truncate">
                         {n.title}
                       </span>
@@ -262,23 +272,28 @@ const metricOf = (n: (typeof all)[number], key: string) =>
         </div>
       </section>
 
-      <!-- ==================== 全部小说（番茄那种列表行） ==================== -->
+      <!-- ==================== 全部小说（电脑端列表行；手机端 Google Play 图书式封面两列） ==================== -->
       <section class="onload-animation">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-90 flex items-center gap-2">
             <Icon name="material-symbols:library-books-rounded" class="text-[var(--primary)] text-[1.25rem]" />
             全部小说
           </h2>
-          <span class="text-xs text-75/60" id="novel-list-count">共 {all.length} 部</span>
+          <span class="flex items-center gap-2">
+            <span class="text-xs text-75/60" id="novel-list-count">共 {all.length} 部</span>
+            <span class="gp-arrow" aria-hidden="true">
+              <Icon name="material-symbols:chevron-right-rounded" />
+            </span>
+          </span>
         </div>
 
-        <div id="novel-list" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div id="novel-list" class="grid max-md:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-3 max-md:gap-2.5">
           {initialList.map((n) => (
             <a
               href={`/novels/${n.id}/`}
-              class="card-base group rounded-[18px] p-3 flex gap-3.5 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+              class="card-base group rounded-[18px] p-3 flex flex-col md:flex-row gap-3.5 max-md:gap-2 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
             >
-              <div class="w-[76px] sm:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
+              <div class="w-full md:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
                 {n.cover && (
                   <img
                     src={n.cover}
@@ -289,24 +304,24 @@ const metricOf = (n: (typeof all)[number], key: string) =>
                 )}
               </div>
               <div class="min-w-0 flex-1 flex flex-col">
-                <h3 class="font-bold text-[15px] text-90 group-hover:text-[var(--primary)] transition-colors truncate">
+                <h3 class="font-bold text-[15px] max-md:text-[13px] max-md:leading-snug text-90 group-hover:text-[var(--primary)] transition-colors line-clamp-2 md:line-clamp-1">
                   {n.title}
                 </h3>
-                <div class="flex items-center gap-2 flex-wrap mt-1.5 text-[11.5px] text-75">
-                  <span>{n.author || "佚名"}</span>
+                <div class="flex items-center gap-2 flex-wrap mt-1.5 max-md:mt-1 text-[11.5px] max-md:text-[11px] text-75">
+                  <span class="truncate">{n.author || "佚名"}</span>
                   {n.platform && (
-                    <span class="px-1.5 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)]">
+                    <span class="px-1.5 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)] max-md:hidden">
                       {n.platform}
                     </span>
                   )}
                   <span class="text-75/60">
-                    共 {n.chapterCount} 章 · {fmtWords(n.words)}
+                    共 {n.chapterCount} 章<span class="max-md:hidden"> · {fmtWords(n.words)}</span>
                   </span>
                 </div>
-                <p class="text-[12.5px] text-75/80 mt-1.5 line-clamp-2 leading-relaxed">
+                <p class="text-[12.5px] text-75/80 mt-1.5 line-clamp-2 leading-relaxed max-md:hidden">
                   {n.description}
                 </p>
-                <div class="mt-auto pt-1.5 text-[11px] text-75/55">最近更新：{n.latest || "—"}</div>
+                <div class="mt-auto pt-1.5 text-[11px] text-75/55 max-md:hidden">最近更新：{n.latest || "—"}</div>
               </div>
             </a>
           ))}
@@ -405,8 +420,43 @@ const metricOf = (n: (typeof all)[number], key: string) =>
     border-color: var(--primary);
   }
 
+  /* ===== 手机端：Google Play 图书式——区块标题右侧圆形箭头、排行榜带小封面 ===== */
+  /* 只在手机端出现，电脑端 DOM 不变（用 display 收起，不新增结构差异） */
+  .gp-arrow {
+    display: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in oklab, var(--primary) 12%, transparent);
+    color: var(--primary);
+    font-size: 1.15rem;
+    flex: none;
+  }
+  .rank-thumb {
+    display: none;
+    width: 1.85rem;
+    aspect-ratio: 3 / 4;
+    flex: none;
+    border-radius: 5px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.08);
+  }
+  .rank-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   /* ===== 手机端：标签行改成单行横滑（和番茄手机端一样）===== */
   @media (max-width: 767px) {
+    .gp-arrow {
+      display: flex;
+    }
+    .rank-thumb {
+      display: block;
+    }
     .novel-frow {
       flex-direction: column;
       gap: 0.25rem;

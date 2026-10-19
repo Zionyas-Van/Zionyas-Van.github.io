@@ -212,21 +212,22 @@ const mainPanelTop = siteConfig.banner.enable
     };
 
     // 注意：这段结构必须和 novels.astro 里服务端渲染的列表行保持一致
+    // （手机端是 Google Play 图书式封面两列，电脑端仍是原来的横向列表行）
     const rowHtml = (n) => `
       <a href="/novels/${esc(n.id)}/"
-         class="card-base group rounded-[18px] p-3 flex gap-3.5 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
-        <div class="w-[76px] sm:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
+         class="card-base group rounded-[18px] p-3 flex flex-col md:flex-row gap-3.5 max-md:gap-2 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
+        <div class="w-full md:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
           ${n.cover ? `<img src="${esc(n.cover)}" alt="${esc(n.title)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />` : ""}
         </div>
         <div class="min-w-0 flex-1 flex flex-col">
-          <h3 class="font-bold text-[15px] text-90 group-hover:text-[var(--primary)] transition-colors truncate">${esc(n.title)}</h3>
-          <div class="flex items-center gap-2 flex-wrap mt-1.5 text-[11.5px] text-75">
-            <span>${esc(n.author || "佚名")}</span>
-            ${n.platform ? `<span class="px-1.5 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)]">${esc(n.platform)}</span>` : ""}
-            <span class="text-75/60">共 ${n.chapterCount} 章 · ${fmtWords(n.words)}</span>
+          <h3 class="font-bold text-[15px] max-md:text-[13px] max-md:leading-snug text-90 group-hover:text-[var(--primary)] transition-colors line-clamp-2 md:line-clamp-1">${esc(n.title)}</h3>
+          <div class="flex items-center gap-2 flex-wrap mt-1.5 max-md:mt-1 text-[11.5px] max-md:text-[11px] text-75">
+            <span class="truncate">${esc(n.author || "佚名")}</span>
+            ${n.platform ? `<span class="px-1.5 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)] max-md:hidden">${esc(n.platform)}</span>` : ""}
+            <span class="text-75/60">共 ${n.chapterCount} 章<span class="max-md:hidden"> · ${fmtWords(n.words)}</span></span>
           </div>
-          <p class="text-[12.5px] text-75/80 mt-1.5 line-clamp-2 leading-relaxed">${esc(n.description)}</p>
-          <div class="mt-auto pt-1.5 text-[11px] text-75/55">最近更新：${esc(n.latest || "—")}</div>
+          <p class="text-[12.5px] text-75/80 mt-1.5 line-clamp-2 leading-relaxed max-md:hidden">${esc(n.description)}</p>
+          <div class="mt-auto pt-1.5 text-[11px] text-75/55 max-md:hidden">最近更新：${esc(n.latest || "—")}</div>
         </div>
       </a>`;
 
