@@ -37,7 +37,8 @@ const chapters = novel.chapters.map((c) => ({ slug: c.slug, title: c.title }));
 ---
 
 <ReaderLayout
-	title={`${ch.title} - ${novel.title}`}
+	chapterTitle={ch.title}
+	pageTitle={`${ch.title} - ${novel.title}`}
 	description={novel.description}
 	novelId={novel.id}
 	novelTitle={novel.title}

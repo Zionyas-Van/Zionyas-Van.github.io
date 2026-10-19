@@ -956,6 +956,16 @@ const mainPanelTop = siteConfig.banner.enable
     initMobileNav();
     initFeatured();
     initMobileCarousel();
+    /* 阅读页用的是另一套布局：swup 只替换 <main>，混用会残留阅读工具栏、
+       并把顶部导航/底部导航永久隐藏。这里做两件事：
+       1) 普通页启动时清掉可能残留的阅读页外壳
+       2) 给所有「章节」链接打上 data-no-swup，让进出阅读页走整页加载 */
+    document.querySelectorAll("#reader-root").forEach((el) => el.remove());
+    document.querySelectorAll('a[href^="/novels/"]').forEach((a) => {
+      const p = (a.getAttribute("href") || "").replace(/\/$/, "");
+      if (p.split("/").filter(Boolean).length >= 3) a.setAttribute("data-no-swup", "");
+    });
+
     initInterests();
     initInterestSection();
     initLightbox();

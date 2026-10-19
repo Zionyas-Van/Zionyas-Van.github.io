@@ -1,14 +1,16 @@
 ---
 // ============================================================
 // 沉浸式阅读布局（只给小说章节页用）
-// 刻意不使用 MainGridLayout：那里有顶栏、侧栏、分类筛选栏、移动端底栏，
-// 阅读时这些全是干扰。这里只保留一条可隐藏的工具栏。
+// 刻意不使用 MainGridLayout：那里有顶栏、侧栏、分类筛选栏、移动端底栏。
+// 注意：这里进出阅读页一律整页加载（链接带 data-no-swup），
+// 因为 swup 只替换 <main>，两套布局混用会导致组件残留 / 导航被隐藏。
 // ============================================================
 import { Icon } from "astro-icon/components";
 import Layout from "./Layout.astro";
 
 interface Props {
-	title?: string;
+	chapterTitle: string;
+	pageTitle: string;
 	description?: string;
 	novelId: string;
 	novelTitle: string;
@@ -19,7 +21,8 @@ interface Props {
 }
 
 const {
-	title,
+	chapterTitle,
+	pageTitle,
 	description,
 	novelId,
 	novelTitle,
@@ -32,15 +35,14 @@ const {
 const base = `/novels/${novelId}/`;
 ---
 
-<Layout title={title} description={description}>
+<Layout title={pageTitle} description={description}>
 	<div id="reader-root">
-		<!-- 供 swup 用的占位容器（本布局没有侧边目录） -->
 		<div id="toc" hidden></div>
 
 		<!-- ==================== 顶部工具栏 ==================== -->
 		<header id="reader-bar" class="reader-bar">
 			<div class="rb-group">
-				<a class="rb-btn" href={base} aria-label="返回小说详情" title="返回">
+				<a class="rb-btn" href={base} aria-label="返回小说详情" title="返回" data-no-swup>
 					<Icon name="material-symbols:arrow-back-rounded" />
 				</a>
 				<button type="button" class="rb-btn" id="rb-toc" aria-label="目录" title="目录">
@@ -52,7 +54,6 @@ const base = `/novels/${novelId}/`;
 			<div class="rb-title">{novelTitle}</div>
 
 			<div class="rb-group">
-				<!-- 字号：无极调节 -->
 				<div class="rb-font">
 					<button type="button" class="rb-step" data-font-step="-1" aria-label="缩小字号">A−</button>
 					<input
@@ -66,11 +67,6 @@ const base = `/novels/${novelId}/`;
 					/>
 					<button type="button" class="rb-step" data-font-step="1" aria-label="放大字号">A+</button>
 				</div>
-				<!-- 排版方式：只在手机端出现（电脑端固定上下滚动） -->
-				<button type="button" class="rb-btn rb-mode" id="rb-mode" aria-label="切换排版方式">
-					<Icon name="material-symbols:auto-stories-rounded" />
-					<span id="rb-mode-text">翻页</span>
-				</button>
 			</div>
 		</header>
 
@@ -86,6 +82,7 @@ const base = `/novels/${novelId}/`;
 					chapters.map((c, i) => (
 						<a
 							href={`${base}${c.slug}/`}
+							data-no-swup
 							class:list={["toc-item", { active: c.slug === currentSlug }]}
 						>
 							<span class="toc-num">{String(i + 1).padStart(2, "0")}</span>
@@ -94,18 +91,18 @@ const base = `/novels/${novelId}/`;
 					))
 				}
 			</nav>
-			<a class="toc-back" href={base}>小说详情 / 简介</a>
+			<a class="toc-back" href={base} data-no-swup>小说详情 / 简介</a>
 		</aside>
 
 		<!-- ==================== 正文 ==================== -->
 		<main id="reader-main">
 			<article class="reader-article custom-md">
-				<h1 id="reader-title">{title}</h1>
+				<h1 id="reader-title">{chapterTitle}</h1>
 				<slot />
 
 				<nav class="reader-pager">
-					{prev ? <a href={`${base}${prev.slug}/`}>← {prev.title}</a> : <span />}
-					{next ? <a href={`${base}${next.slug}/`}>{next.title} →</a> : <span />}
+					{prev ? <a href={`${base}${prev.slug}/`} data-no-swup>← {prev.title}</a> : <span />}
+					{next ? <a href={`${base}${next.slug}/`} data-no-swup>{next.title} →</a> : <span />}
 				</nav>
 			</article>
 		</main>
@@ -113,12 +110,11 @@ const base = `/novels/${novelId}/`;
 </Layout>
 
 <style is:global>
-	/* ==================== 基础 ==================== */
 	#reader-root {
 		--reader-font: 22px;
 		--bar-h: 3.5rem;
 		min-height: 100dvh;
-		background: var(--card-bg);
+		background: var(--page-bg, var(--card-bg));
 	}
 
 	/* ==================== 工具栏 ==================== */
@@ -131,9 +127,7 @@ const base = `/novels/${novelId}/`;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0 0.75rem;
-		background: color-mix(in oklab, var(--card-bg) 92%, transparent);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
+		background: var(--card-bg);
 		border-bottom: 1px solid rgba(128, 128, 128, 0.12);
 		transition: transform 0.25s ease, opacity 0.25s ease;
 	}
@@ -166,7 +160,7 @@ const base = `/novels/${novelId}/`;
 		background: color-mix(in oklab, var(--primary) 10%, transparent);
 		color: var(--primary);
 	}
-	.rb-btn :global(svg) {
+	.rb-btn svg {
 		font-size: 1.25rem;
 	}
 	.rb-title {
@@ -201,17 +195,13 @@ const base = `/novels/${novelId}/`;
 		accent-color: var(--primary);
 		cursor: pointer;
 	}
-	/* 排版方式按钮只在手机端出现（电脑端固定上下滚动） */
-	.rb-mode {
-		display: none !important;
-	}
 
-	/* ==================== 目录抽屉 ==================== */
+	/* ==================== 目录抽屉（背景必须完全不透） ==================== */
 	.toc-mask {
 		position: fixed;
 		inset: 0;
 		z-index: 45;
-		background: rgba(0, 0, 0, 0.42);
+		background: rgba(0, 0, 0, 0.45);
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity 0.2s ease;
@@ -229,8 +219,11 @@ const base = `/novels/${novelId}/`;
 		width: min(86vw, 20rem);
 		display: flex;
 		flex-direction: column;
+		/* 双重保险：先用主题卡片色，再叠一层纯色，避免任何半透明透出正文 */
 		background: var(--card-bg);
-		border-right: 1px solid rgba(128, 128, 128, 0.15);
+		background-color: var(--card-bg);
+		box-shadow: 12px 0 32px rgba(0, 0, 0, 0.18);
+		isolation: isolate;
 		transform: translateX(-102%);
 		transition: transform 0.24s ease;
 	}
@@ -299,7 +292,7 @@ const base = `/novels/${novelId}/`;
 		text-decoration: none;
 	}
 
-	/* ==================== 正文 ==================== */
+	/* ==================== 正文（只保留上下滚动） ==================== */
 	#reader-main {
 		padding-top: var(--bar-h);
 		min-height: 100dvh;
@@ -338,58 +331,27 @@ const base = `/novels/${novelId}/`;
 		text-decoration: underline;
 	}
 
-	/* ==================== 手机端：左右滑动翻页 ==================== */
 	@media (max-width: 767px) {
-		.rb-mode {
-			display: inline-flex !important;
-		}
 		.rb-title {
 			display: none;
 		}
 		.reader-article {
-			padding: 1.25rem 1.15rem 5rem;
+			padding: 1.1rem 1.05rem 5rem;
+			line-height: 1.95;
 		}
-
-		/* 翻页模式：CSS 多列 + 横向滚动吸附，一屏一页 */
-		#reader-main.paged {
-			overflow-x: auto;
-			overflow-y: hidden;
-			scroll-snap-type: x mandatory;
-			-webkit-overflow-scrolling: touch;
-			height: 100dvh;
-			padding-top: 0;
-		}
-		#reader-main.paged .reader-article {
-			column-width: 100vw;
-			column-gap: 0;
-			column-fill: auto;
-			height: 100dvh;
-			max-width: none;
-			padding: calc(var(--bar-h) + 1.5rem) 1.6rem 2.5rem;
-			scroll-snap-align: start;
-		}
-		#reader-main.paged .reader-article > * {
-			break-inside: avoid;
-		}
-		#reader-main.paged::-webkit-scrollbar {
-			display: none;
+		#rb-font {
+			width: 72px;
 		}
 	}
 </style>
 
 <script>
-	// ============================================================
-	// 阅读器交互：字号（无极）· 排版方式 · 工具栏点击显隐 · 目录抽屉
-	// 工具栏与目录在 <main> 之外，swup 切章时不会被替换，所以只绑一次
-	// ============================================================
+	// 阅读器交互：字号（无极）、工具栏点击显隐、目录抽屉
 	const FONT_KEY = "reader-font";
-	const MODE_KEY = "reader-mode";
 	const root = document.getElementById("reader-root");
 	const bar = document.getElementById("reader-bar");
 	const main = document.getElementById("reader-main");
 	const fontInput = document.getElementById("rb-font") as HTMLInputElement | null;
-	const modeBtn = document.getElementById("rb-mode");
-	const modeText = document.getElementById("rb-mode-text");
 	const tocPanel = document.getElementById("reader-toc");
 	const tocMask = document.getElementById("reader-toc-mask");
 
@@ -400,24 +362,7 @@ const base = `/novels/${novelId}/`;
 		try {
 			localStorage.setItem(FONT_KEY, String(v));
 		} catch {
-			/* 隐私模式下可能写不了，忽略 */
-		}
-	}
-
-	function isPaged() {
-		return !!main?.classList.contains("paged");
-	}
-
-	function applyMode(paged: boolean, remember = true) {
-		if (!main) return;
-		main.classList.toggle("paged", paged);
-		if (modeText) modeText.textContent = paged ? "滚动" : "翻页";
-		if (remember) {
-			try {
-				localStorage.setItem(MODE_KEY, paged ? "paged" : "scroll");
-			} catch {
-				/* 忽略 */
-			}
+			/* 隐私模式可能写不了 */
 		}
 	}
 
@@ -427,71 +372,43 @@ const base = `/novels/${novelId}/`;
 		tocPanel?.setAttribute("aria-hidden", "true");
 	}
 
-	if (root && bar && main) {
-		// ---- 初始化 ----
-		if (!root.dataset.wired) {
-			root.dataset.wired = "1";
-			let savedFont = 22;
-			let savedMode = "scroll";
-			try {
-				savedFont = Number(localStorage.getItem(FONT_KEY)) || 22;
-				savedMode = localStorage.getItem(MODE_KEY) || "scroll";
-			} catch {
-				/* 忽略 */
-			}
-			applyFont(savedFont);
-			applyMode(savedMode === "paged", false);
-
-			// 字号：滑块无极调节 + A−/A+ 微调
-			fontInput?.addEventListener("input", () => applyFont(Number(fontInput.value)));
-			document.querySelectorAll("[data-font-step]").forEach((btn) => {
-				btn.addEventListener("click", () => {
-					const cur = Number(fontInput?.value || 22);
-					applyFont(cur + Number((btn as HTMLElement).dataset.fontStep || 1));
-				});
-			});
-
-			// 排版方式（仅手机端按钮可见）
-			modeBtn?.addEventListener("click", (e) => {
-				e.stopPropagation();
-				applyMode(!isPaged());
-				if (!isPaged()) main.scrollTo({ left: 0 });
-				else window.scrollTo({ top: 0 });
-			});
-
-			// 目录抽屉
-			document.getElementById("rb-toc")?.addEventListener("click", (e) => {
-				e.stopPropagation();
-				const open = !tocPanel?.classList.contains("on");
-				tocPanel?.classList.toggle("on", open);
-				tocMask?.classList.toggle("on", open);
-				tocPanel?.setAttribute("aria-hidden", open ? "false" : "true");
-			});
-			tocMask?.addEventListener("click", closeToc);
-
-			// 单击空白处：显隐工具栏（点链接/按钮/图片/选中文字时不触发）
-			main.addEventListener("click", (e) => {
-				const t = e.target as HTMLElement | null;
-				if (!t) return;
-				if (t.closest("a, button, input, img, .toast, .reader-pager")) return;
-				if (window.getSelection && String(window.getSelection()).trim().length > 0) return;
-				bar.classList.toggle("hidden-bar");
-			});
-
-			// 键盘：← → 翻页（翻页模式）+ Esc 关目录
-			document.addEventListener("keydown", (e) => {
-				if (e.key === "Escape") return closeToc();
-				if (!isPaged()) return;
-				const w = window.innerWidth;
-				if (e.key === "ArrowRight") main.scrollBy({ left: w, behavior: "smooth" });
-				if (e.key === "ArrowLeft") main.scrollBy({ left: -w, behavior: "smooth" });
-			});
+	if (root && bar && main && !root.dataset.wired) {
+		root.dataset.wired = "1";
+		let savedFont = 22;
+		try {
+			savedFont = Number(localStorage.getItem(FONT_KEY)) || 22;
+		} catch {
+			/* 忽略 */
 		}
+		applyFont(savedFont);
 
-		// 每次切章后：关目录、回到顶部/第一页、恢复工具栏
-		bar.classList.remove("hidden-bar");
-		closeToc();
-		if (isPaged()) main.scrollTo({ left: 0 });
-		else window.scrollTo({ top: 0 });
+		fontInput?.addEventListener("input", () => applyFont(Number(fontInput.value)));
+		document.querySelectorAll("[data-font-step]").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				applyFont(Number(fontInput?.value || 22) + Number((btn as HTMLElement).dataset.fontStep || 1));
+			});
+		});
+
+		document.getElementById("rb-toc")?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const open = !tocPanel?.classList.contains("on");
+			tocPanel?.classList.toggle("on", open);
+			tocMask?.classList.toggle("on", open);
+			tocPanel?.setAttribute("aria-hidden", open ? "false" : "true");
+		});
+		tocMask?.addEventListener("click", closeToc);
+
+		// 单击空白处显隐工具栏（点链接/按钮/图片、选中文字时不触发）
+		main.addEventListener("click", (e) => {
+			const t = e.target as HTMLElement | null;
+			if (!t) return;
+			if (t.closest("a, button, input, img, .reader-pager")) return;
+			if (window.getSelection && String(window.getSelection()).trim().length > 0) return;
+			bar.classList.toggle("hidden-bar");
+		});
+
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") closeToc();
+		});
 	}
 </script>
