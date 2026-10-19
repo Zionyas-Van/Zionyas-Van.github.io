@@ -1005,6 +1005,29 @@ ${content}
 	}
 
 	// API: 推送
+	// 提交已经落在本地了，所以"再推一次"永远是安全的：
+	// 偶发的 DNS 抖动（ssh: Could not resolve hostname github.com）重试几次基本都能过去。
+	function isNetworkGlitch(s) {
+		return /could not resolve|name or service not known|name resolution|network is unreachable|connection timed out|operation timed out|connection reset|early eof|broken pipe|failed to connect/i.test(
+			String(s || ""),
+		);
+	}
+	function sleepMs(ms) {
+		Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+	}
+	function gitPushWithRetry(log) {
+		for (let i = 1; ; i++) {
+			try {
+				return execSync("git push", { cwd: ROOT, encoding: "utf-8" }).trim();
+			} catch (e) {
+				const msg = String(e.stderr || e.message || "");
+				if (i >= 3 || !isNetworkGlitch(msg)) throw e;
+				if (log) log.push(`第 ${i} 次推送碰上网络抖动，2 秒后自动重试…`);
+				sleepMs(2000 * i);
+			}
+		}
+	}
+
 	if (req.method === "POST" && req.url === "/api/push") {
 		try {
 			const body = JSON.parse(await readBody(req));
@@ -1018,30 +1041,30 @@ ${content}
 					encoding: "utf-8",
 				}).trim(),
 			);
-			log.push(execSync("git push", { cwd: ROOT, encoding: "utf-8" }).trim());
+			log.push(gitPushWithRetry(log));
 
 			return sendJSON(res, { ok: true, log: log.filter(Boolean).join("\n") });
 		} catch (e) {
 			const stderr = e.stderr || e.message || "";
 			if (stderr.includes("nothing to commit")) {
 				try {
-					const pushLog = execSync("git push", {
-						cwd: ROOT,
-						encoding: "utf-8",
-					}).trim();
+					const pushLog = gitPushWithRetry();
 					return sendJSON(res, {
 						ok: true,
 						log: `没有新内容需要提交\n${pushLog}`,
 					});
 				} catch (e2) {
-					return sendJSON(
-						res,
-						{ error: `推送失败: ${e2.stderr || e2.message}` },
-						500,
-					);
+					const m2 = String(e2.stderr || e2.message || "");
+					const hint2 = isNetworkGlitch(m2)
+						? "（网络/域名解析暂时不可用，不是权限问题。等半分钟再点一次「开始推送」即可。）"
+						: "";
+					return sendJSON(res, { error: `推送失败${hint2}: ${m2}` }, 500);
 				}
 			}
-			return sendJSON(res, { error: `Git 操作失败: ${stderr}` }, 500);
+			const hint = isNetworkGlitch(stderr)
+				? "（这是网络/域名解析暂时不可用，不是权限或仓库问题；改动已经安全提交到本地，等半分钟再点一次「开始推送」就行。）"
+				: "";
+			return sendJSON(res, { error: `Git 操作失败${hint}: ${stderr}` }, 500);
 		}
 	}
 
