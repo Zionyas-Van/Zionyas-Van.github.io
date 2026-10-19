@@ -42,7 +42,7 @@ const chapterTitleOf = (slug?: string) =>
 
     {/* ===== 左侧：创作日志（没有日志时整块不渲染） ===== */}
     {logs.length > 0 && (
-      <aside id="novel-logs" class="onload-animation xl:order-first">
+      <aside id="novel-logs" class="onload-animation order-last xl:order-first">
         <div class="card-base rounded-[var(--radius-large)] p-4 md:p-5">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-bold text-90 flex items-center gap-2">

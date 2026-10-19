@@ -1444,13 +1444,22 @@ document.addEventListener("click", async (e) => {
     if (act === "log-del") {
       const i = Number(t.dataset.i);
       if (!confirm("删除这条日志？")) return;
+      const snapshot = LOG_CTX.logs.map((g) => ({ ...g }));
       LOG_CTX.logs.splice(i, 1);
-      await logWrite();
+      try {
+        await logWrite();
+      } catch (err) {
+        // 写盘失败就把内存恢复，别让界面显示"删掉了"其实文件没变
+        LOG_CTX.logs = snapshot;
+        renderLogs();
+        return showError(err);
+      }
       LOG_CTX.openIdx = null;
       renderLogs();
       return toast("日志已删除");
     }
     if (act === "log-commit") {
+      const snapshot = LOG_CTX.logs.map((g) => ({ ...g }));
       if (!logCommit()) return;
       t.disabled = true;
       try {
@@ -1458,6 +1467,10 @@ document.addEventListener("click", async (e) => {
         LOG_CTX.openIdx = null;
         renderLogs();
         toast("日志已保存");
+      } catch (err) {
+        LOG_CTX.logs = snapshot;
+        renderLogs();
+        showError(err);
       } finally { t.disabled = false; }
       return;
     }
