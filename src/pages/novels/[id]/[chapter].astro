@@ -1,10 +1,8 @@
----
+﻿---
 import type { GetStaticPaths } from "astro";
-import { Icon } from "astro-icon/components";
 import MarkdownIt from "markdown-it";
 import { novels } from "../../../data/novels";
-import MainGridLayout from "../../../layouts/MainGridLayout.astro";
-import Comments from "@components/Comments.astro";
+import ReaderLayout from "../../../layouts/ReaderLayout.astro";
 
 export const getStaticPaths = (() => {
 	const paths: { params: { id: string; chapter: string } }[] = [];
@@ -26,198 +24,33 @@ if (!ch) return Astro.redirect(`/novels/${novel.id}/`);
 const chapterIndex = novel.chapters.indexOf(ch);
 const prevChapter = chapterIndex > 0 ? novel.chapters[chapterIndex - 1] : null;
 const nextChapter =
-	chapterIndex < novel.chapters.length - 1
-		? novel.chapters[chapterIndex + 1]
-		: null;
+	chapterIndex < novel.chapters.length - 1 ? novel.chapters[chapterIndex + 1] : null;
 
 const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
-const unescaped = ch.content
+const unescaped = String(ch.content || "")
 	.replace(/\\n/g, "\n")
 	.replace(/\\"/g, '"')
 	.replace(/\\\\/g, "\\");
 const renderedContent = md.render(unescaped);
 
-const currentNum = chapterIndex + 1;
-const totalNum = novel.chapters.length;
+const chapters = novel.chapters.map((c) => ({ slug: c.slug, title: c.title }));
 ---
 
-<MainGridLayout title={`${ch.title} - ${novel.title}`} description={novel.description}>
-
-  <!-- 阅读模式标记：MainGridLayout 的脚本读它并隐藏侧边栏 -->
-  <div id="reader-mode-marker" style="display:none" aria-hidden="true"></div>
-
-  <!-- ===== 阅读工具栏（会被 JS 搬到 body 下 · fixed 定位） ===== -->
-  <div id="reader-toolbar"
-       class="reader-toolbar
-              bg-[var(--card-bg)]/95 backdrop-blur-lg
-              border-b border-black/5 dark:border-white/10
-              shadow-sm">
-    <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-      <!-- 左：返回目录 -->
-      <a href={`/novels/${novel.id}/`}
-         class="flex items-center gap-1.5 text-sm text-75 hover:text-[var(--primary)] transition-colors flex-shrink-0 px-2 py-3 max-md:min-h-[44px] md:py-1">
-        <Icon name="material-symbols:list-alt-outline-rounded" class="text-[1.15rem]" />
-        <span class="hidden sm:inline">目录</span>
-      </a>
-
-      <!-- 中：章节进度 -->
-      <div class="text-xs text-75/70 truncate text-center flex-1 min-w-0">
-        <span class="hidden md:inline">{novel.title} · </span>
-        <span>{currentNum} / {totalNum}</span>
-      </div>
-
-      <!-- 右：字号切换 -->
-      <div class="flex items-center gap-0.5 flex-shrink-0" id="font-size-group">
-        <button type="button" data-size="sm" title="小字号"
-          class="font-size-btn w-[44px] h-[44px] md:w-8 md:h-8 rounded-md text-xs font-semibold transition-colors">A</button>
-        <button type="button" data-size="md" title="中字号"
-          class="font-size-btn w-[44px] h-[44px] md:w-8 md:h-8 rounded-md text-sm font-semibold transition-colors">A</button>
-        <button type="button" data-size="lg" title="大字号"
-          class="font-size-btn w-[44px] h-[44px] md:w-8 md:h-8 rounded-md text-base font-semibold transition-colors">A</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 占位（给 fixed 工具栏留出空间，防止首屏内容被它盖住） -->
-  <div class="h-[68px] md:h-14" aria-hidden="true"></div>
-
-  <!-- ===== 阅读主体（居中窄栏 + 移动端留内边距） ===== -->
-  <article class="mx-auto max-w-3xl px-3 sm:px-4 md:px-0 onload-animation">
-
-    <!-- 章节标题 -->
-    <header class="mb-10 text-center pt-4">
-      <div class="text-xs text-75/50 mb-2 tracking-widest">第 {currentNum} 章</div>
-      <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3 leading-snug">{ch.title}</h1>
-      {ch.date && <p class="text-xs text-75/40">发布于 {ch.date}</p>}
-    </header>
-
-    <!-- 正文 -->
-    <div id="chapter-content"
-         class="novel-content text-90 max-md:[overflow-wrap:anywhere]
-                [&>p]:mb-5
-                [&>p>img]:max-w-full [&>p>img]:rounded-lg [&>p>img]:mx-auto [&>p>img]:my-6
-                [&>h2]:text-xl [&>h2]:md:text-2xl [&>h2]:font-bold [&>h2]:mt-10 [&>h2]:mb-4
-                [&>h3]:text-lg [&>h3]:md:text-xl [&>h3]:font-semibold [&>h3]:mt-8 [&>h3]:mb-3
-                [&>blockquote]:border-l-4 [&>blockquote]:border-[var(--primary)]/40 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-75 [&>blockquote]:my-6
-                [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5
-                [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-5
-                [&>li]:mb-2
-                [&>hr]:my-8 [&>hr]:border-black/10 dark:[&>hr]:border-white/10"
-         style="word-spacing: 0.05em;"
-         set:html={renderedContent}>
-    </div>
-
-    <!-- 章末装饰 -->
-    <div class="flex items-center justify-center gap-4 my-12 text-75/30">
-      <div class="h-px w-16 bg-current"></div>
-      <span class="text-sm tracking-widest">· · ·</span>
-      <div class="h-px w-16 bg-current"></div>
-    </div>
-
-    <p class="text-center text-xs text-75/40 mb-10 tracking-widest">— 本章完 —</p>
-
-    <!-- 上/下章导航 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-      {prevChapter ? (
-        <a href={`/novels/${novel.id}/${prevChapter.slug}/`}
-           class="card-base rounded-[var(--radius-large)] px-5 py-4
-                  hover:bg-[var(--primary)]/5 transition-colors group
-                  flex items-center gap-3 min-w-0">
-          <Icon name="material-symbols:chevron-left-rounded" class="text-[var(--primary)] text-[1.5rem] flex-shrink-0" />
-          <div class="min-w-0 flex-1">
-            <div class="text-xs text-75/40 mb-0.5">上一章</div>
-            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-              {prevChapter.title}
-            </div>
-          </div>
-        </a>
-      ) : (
-        <div class="card-base rounded-[var(--radius-large)] px-5 py-4
-                    flex items-center gap-3 opacity-40">
-          <div class="text-sm text-75">已是第一章</div>
-        </div>
-      )}
-
-      {nextChapter ? (
-        <a href={`/novels/${novel.id}/${nextChapter.slug}/`}
-           class="card-base rounded-[var(--radius-large)] px-5 py-4
-                  hover:bg-[var(--primary)]/5 transition-colors group
-                  flex items-center gap-3 min-w-0 md:flex-row-reverse md:text-right">
-          <Icon name="material-symbols:chevron-right-rounded" class="text-[var(--primary)] text-[1.5rem] flex-shrink-0" />
-          <div class="min-w-0 flex-1">
-            <div class="text-xs text-75/40 mb-0.5">下一章</div>
-            <div class="text-sm font-medium text-90 group-hover:text-[var(--primary)] transition-colors truncate">
-              {nextChapter.title}
-            </div>
-          </div>
-        </a>
-      ) : (
-        <div class="card-base rounded-[var(--radius-large)] px-5 py-4
-                    flex items-center gap-3 opacity-40">
-          <div class="text-sm text-75">已读完最后一章</div>
-        </div>
-      )}
-    </div>
-
-    <!-- 返回目录大按钮 -->
-    <div class="text-center mb-8">
-      <a href={`/novels/${novel.id}/`}
-         class="inline-flex items-center gap-2 px-6 py-3 rounded-full
-                bg-[var(--primary)] text-white text-sm font-semibold
-                hover:opacity-90 active:scale-95 transition-all
-                shadow-lg shadow-[var(--primary)]/20">
-        <Icon name="material-symbols:auto-stories-rounded" class="text-[1.15rem]" />
-        返回目录
-      </a>
-    </div>
-
-  </article>
-
-  <!-- ==================== 评论（开关在 src/config.ts 的 commentsConfig） ==================== -->
-  <Comments />
-
-
-</MainGridLayout>
-
-<!-- 全局样式（非 scoped，让 fixed 定位不被作用域干扰） -->
-<style is:global>
-  .reader-toolbar {
-    position: fixed;
-    top: 0; /* 会被 JS 覆盖成 Fuwari 顶栏的高度 */
-    left: 0;
-    right: 0;
-    z-index: 40;
-  }
-
-  /* 字号通过 class 切换 */
-  #chapter-content {
-    font-size: 1.125rem;
-    line-height: 2;
-    letter-spacing: 0.01em;
-  }
-  #chapter-content.size-sm { font-size: 1rem;     line-height: 1.9;  }
-  #chapter-content.size-md { font-size: 1.125rem; line-height: 2;    }
-  #chapter-content.size-lg { font-size: 1.25rem;  line-height: 2.15; }
-
-  @media (max-width: 767px) {
-    #chapter-content         { font-size: 1rem;      line-height: 1.9;  }
-    #chapter-content.size-sm { font-size: 0.9375rem; line-height: 1.85; }
-    #chapter-content.size-md { font-size: 1.0625rem; line-height: 1.9;  }
-    #chapter-content.size-lg { font-size: 1.25rem;   line-height: 2;    }
-  }
-
-  .font-size-btn {
-    color: var(--content-meta, #9ca3af);
-    background: transparent;
-    cursor: pointer;
-  }
-  .font-size-btn:hover {
-    color: var(--primary);
-    background: rgba(124, 58, 237, 0.08);
-  }
-  .font-size-btn[data-active="true"] {
-    color: var(--primary) !important;
-    background: rgba(124, 58, 237, 0.08) !important;
-  }
-</style>
-
+<ReaderLayout
+	title={`${ch.title} - ${novel.title}`}
+	description={novel.description}
+	novelId={novel.id}
+	novelTitle={novel.title}
+	chapters={chapters}
+	currentSlug={ch.slug}
+	prev={prevChapter ? { slug: prevChapter.slug, title: prevChapter.title } : null}
+	next={nextChapter ? { slug: nextChapter.slug, title: nextChapter.title } : null}
+>
+	{
+		renderedContent.trim() ? (
+			<Fragment set:html={renderedContent} />
+		) : (
+			<p>这一章还没有内容。</p>
+		)
+	}
+</ReaderLayout>
