@@ -1343,6 +1343,25 @@ ${content}
     }`;
 			})
 			.join(",\n");
+		// 创作日志：没有就整段不写（旧数据不会被塞进 logs: []）
+		const logs = (n.logs || [])
+			.map((g) => {
+				const imgs = (g.images || [])
+					.filter(Boolean)
+					.map((x) => `"${ds(x)}"`)
+					.join(", ");
+				const imgsLine = imgs ? `\n        images: [${imgs}],` : "";
+				const chLine = g.chapterSlug
+					? `\n        chapterSlug: "${ds(g.chapterSlug)}",`
+					: "";
+				return `      {
+        title: "${ds(g.title)}",
+        date: "${ds(g.date)}",${imgsLine}${chLine}
+        content: "${ds(g.content)}",
+      }`;
+			})
+			.join(",\n");
+		const logsLine = logs ? `\n    logs: [\n${logs}\n    ],` : "";
 		return `  {
     id: "${n.id}",
     title: "${ds(n.title)}",
@@ -1354,7 +1373,7 @@ ${content}
     intro: "${intro}",
     chapters: [
 ${chapters}
-    ],
+    ],${logsLine}
   }`;
 	}
 

@@ -644,6 +644,7 @@ const NAV = [
     { id: "adm-project", label: "作品", icon: "library-books" },
     { id: "adm-video", label: "视频", icon: "movie" },
     { id: "adm-novel", label: "小说", icon: "book-2" },
+    { id: "novel-logs", label: "小说日志", icon: "history" },
     { id: "adm-resource", label: "资源", icon: "link" },
     { id: "adm-interestSection", label: "兴趣分区", icon: "library-books" },
     { id: "adm-interestPost", label: "兴趣帖子", icon: "article" },
@@ -661,6 +662,7 @@ const PANEL_META = {
   "adm-project": ["管理作品", "搜索、编辑、删除"],
   "adm-video": ["管理视频", "搜索、编辑、删除"],
   "adm-novel": ["管理小说", "编辑信息与章节"],
+  "novel-logs": ["小说日志", "先选小说，再写/改/删它的创作日志"],
   "adm-resource": ["管理资源", "搜索、编辑、删除"],
   "pub-interestSection": ["新建兴趣分区", "一个分区 = 一部作品（游戏/专辑/影视/书）"],
   "pub-interestPost": ["发布兴趣帖子", "选分区后按类型填时长或评分"],
@@ -731,6 +733,7 @@ async function go(panel) {
 async function buildPanel(panel) {
   if (panel === "dash") return buildDash();
   if (panel === "deploy") return buildDeploy();
+  if (panel === "novel-logs") return buildNovelLogs();
   if (panel.startsWith("pub-")) return buildPublish(panel.slice(4));
   if (panel.startsWith("adm-")) return buildManage(panel.slice(4));
   return `<div class="card">未知页面</div>`;
@@ -748,6 +751,7 @@ async function afterRender(panel) {
   }
   if (panel === "dash") loadDeployInto("#dash-deploy");
   if (panel === "deploy") loadDeployInto("#deploy-box");
+  if (panel === "novel-logs") renderLogs();
 }
 /* 部署状态异步填充：绝不阻塞页面渲染 */
 async function loadDeployInto(sel) {
@@ -1073,6 +1077,140 @@ function renderChapterMgr(item) {
 }
 
 /* ============================================================
+   小说日志（选小说 → 列表 → 内联增删改，点「确定」立刻写回 novels.ts）
+   日志存在 novels.ts 每本小说的 logs 字段里，详情页按日期倒序展示。
+   ============================================================ */
+const LOG_CTX = { novelId: null, openIdx: null, logs: [], novel: null };
+
+const todayYmd = () => {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+async function buildNovelLogs() {
+  const list = (await api("/api/novels/list")) || [];
+  const cur = list.find((n) => n.id === LOG_CTX.novelId);
+  if (!cur) {
+    LOG_CTX.novelId = null;
+    return `
+      <div class="card">
+        <h2>${ic("history")}选一本小说</h2>
+        <p class="sub">日志会显示在这本小说详情页的「创作日志」栏，按日期倒序</p>
+        <div class="list">
+          ${list.map((n) => `<div class="item" data-act="log-pick" data-id="${esc(n.id)}" style="cursor:pointer">
+            <div class="thumb">${
+              /^(https?:|\/)/.test(n.cover || "")
+                ? `<img src="${esc(n.cover)}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy">`
+                : ic("auto-stories")
+            }</div>
+            <div class="body">
+              <div class="t">${esc(n.title)}</div>
+              <div class="m"><span>${(n.logs || []).length} 条日志</span><span>${(n.chapters || []).length} 章</span></div>
+            </div>
+            <div class="acts">${ic("chevron-right")}</div>
+          </div>`).join("") || `<div class="empty">还没有小说，先去「发布小说」建一本</div>`}
+        </div>
+      </div>`;
+  }
+  LOG_CTX.novel = cur;
+  LOG_CTX.logs = (cur.logs || []).map((g) => ({ ...g, images: g.images || [] }));
+  LOG_CTX.openIdx = null;
+  return `
+    <div class="card">
+      <h2>${ic("history")}《${esc(cur.title)}》的创作日志</h2>
+      <p class="sub">点「确定」会立刻写进 novels.ts，不用再去别处保存</p>
+      <div class="actions" style="margin-bottom:14px">
+        <button class="btn outline sm" data-act="log-back">${ic("sync")}换一本小说</button>
+        <button class="btn tonal sm" data-act="log-add">${ic("add")}写一条日志</button>
+      </div>
+      <div id="log-mgr"></div>
+    </div>`;
+}
+
+function logEditorHtml(g, idx) {
+  const chs = (LOG_CTX.novel && LOG_CTX.novel.chapters) || [];
+  return `<div class="chapter-edit" data-log-editor>
+    <div class="row">
+      <div class="f"><label>标题 <span class="req">*</span></label>
+        <input type="text" data-lk="title" placeholder="例如：第四章写完了" value="${esc(g.title || "")}"></div>
+      <div class="f"><label>日期</label>
+        <input type="text" data-lk="date" placeholder="2026-10-19" value="${esc(g.date || todayYmd())}"></div>
+      <div class="f"><label>关联章节</label>
+        <select data-lk="chapterSlug">
+          <option value="">不关联</option>
+          ${chs.map((c) => `<option value="${esc(c.slug)}"${c.slug === g.chapterSlug ? " selected" : ""}>${esc(c.title)}</option>`).join("")}
+        </select></div>
+    </div>
+    <div class="f"><label>配图链接（一行一张，可留空）</label>
+      <textarea data-lk="images" rows="3" style="min-height:auto;height:84px" placeholder="https://图床/1.png&#10;https://图床/2.png">${esc((g.images || []).join("\n"))}</textarea>
+    </div>
+    <div class="f"><label>正文</label>
+      <textarea data-lk="content" rows="6" placeholder="这条日志想说什么…">${esc(g.content || "")}</textarea>
+    </div>
+    <div class="che-act">
+      <button type="button" class="btn outline" data-act="log-cancel">取消</button>
+      <button type="button" class="btn" data-act="log-commit" data-i="${idx}">${ic("save")}确定</button>
+    </div>
+  </div>`;
+}
+
+function renderLogs() {
+  const box = $("#log-mgr");
+  if (!box) return;
+  const logs = LOG_CTX.logs || [];
+  box.innerHTML = `
+    <div class="list">
+      ${logs.map((g, i) => `<div class="item">
+        <div class="thumb">${
+          (g.images || [])[0]
+            ? `<img src="${esc(g.images[0])}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy">`
+            : i + 1
+        }</div>
+        <div class="body">
+          <div class="t">${esc(g.title || "(无标题)")}</div>
+          <div class="m">
+            <span>${esc(padDate(g.date) || "无日期")}</span>
+            ${g.chapterSlug ? `<span>关联：${esc(g.chapterSlug)}</span>` : ""}
+            ${(g.images || []).length ? `<span>${g.images.length} 张图</span>` : ""}
+            <span>${(g.content || "").length} 字</span>
+          </div>
+        </div>
+        <div class="acts">
+          <button type="button" class="btn icon" data-act="log-edit" data-i="${i}" title="编辑">${ic("edit")}</button>
+          <button type="button" class="btn icon" data-act="log-del" data-i="${i}" title="删除">${ic("delete")}</button>
+        </div>
+      </div>
+      ${LOG_CTX.openIdx === i ? logEditorHtml(g, i) : ""}`).join("") || `<div class="empty">还没有日志，点上面「写一条日志」开始</div>`}
+    </div>
+    ${LOG_CTX.openIdx === -1 ? logEditorHtml({ title: "", date: todayYmd(), images: [], content: "", chapterSlug: "" }, -1) : ""}`;
+}
+
+/* 把展开中的编辑器内容收进内存；标题为空则不提交（返回 false） */
+function logCommit() {
+  const ed = $("[data-log-editor]");
+  if (!ed) return true;
+  const get = (k) => { const el = ed.querySelector(`[data-lk="${k}"]`); return el ? el.value : ""; };
+  const title = get("title").trim();
+  if (!title) { toast("日志标题不能为空", "err"); return false; }
+  const log = {
+    title,
+    date: padDate(get("date").trim()) || todayYmd(),
+    chapterSlug: get("chapterSlug").trim(),
+    images: get("images").split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+    content: get("content"),
+  };
+  const i = LOG_CTX.openIdx;
+  if (i >= 0) LOG_CTX.logs[i] = log;
+  else LOG_CTX.logs.push(log);
+  return true;
+}
+
+/* 立刻写回文件（服务端是合并保存，只传 id + logs，不动别的字段） */
+function logWrite() {
+  return put("/api/novels/update", { id: LOG_CTX.novelId, logs: LOG_CTX.logs });
+}
+
+/* ============================================================
    推送与部署
    ============================================================ */
 function deployHtml(d) {
@@ -1295,6 +1433,33 @@ document.addEventListener("click", async (e) => {
       if (!chCommit()) return;
       renderChapterMgr();
       return toast("章节已更新，别忘了点「保存修改」写回文件");
+    }
+
+    /* ---- 小说日志 ---- */
+    if (act === "log-pick") { LOG_CTX.novelId = t.dataset.id; return go("novel-logs"); }
+    if (act === "log-back") { LOG_CTX.novelId = null; return go("novel-logs"); }
+    if (act === "log-add") { LOG_CTX.openIdx = -1; return renderLogs(); }
+    if (act === "log-edit") { LOG_CTX.openIdx = Number(t.dataset.i); return renderLogs(); }
+    if (act === "log-cancel") { LOG_CTX.openIdx = null; return renderLogs(); }
+    if (act === "log-del") {
+      const i = Number(t.dataset.i);
+      if (!confirm("删除这条日志？")) return;
+      LOG_CTX.logs.splice(i, 1);
+      await logWrite();
+      LOG_CTX.openIdx = null;
+      renderLogs();
+      return toast("日志已删除");
+    }
+    if (act === "log-commit") {
+      if (!logCommit()) return;
+      t.disabled = true;
+      try {
+        await logWrite();
+        LOG_CTX.openIdx = null;
+        renderLogs();
+        toast("日志已保存");
+      } finally { t.disabled = false; }
+      return;
     }
 
     /* ---- 推送 / 部署 ---- */
