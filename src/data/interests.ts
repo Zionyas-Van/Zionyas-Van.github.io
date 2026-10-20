@@ -104,6 +104,20 @@ export const interestSections: InterestSection[] = [
     type: "music",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r611mpgphzmh2DIYPAIDyAqayAGxzDdU0Dqe=.jpg",
     description: "刘清云（h3R3），本名，中国男歌手、音乐制作人，出生于安徽，职业涵盖词曲创作、编曲、混音及母带制作等领域，曾与Felix Bennett合作演唱《他只是经过》。",
+  },
+  {
+    id: "watch-dog2",
+    name: "看门狗2",
+    type: "game",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0l000dlnm5pwc6mhqqomhkhDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+    description: "第三人称射击角色扮演游戏。",
+  },
+  {
+    id: "postal2",
+    name: "夺命邮差2",
+    type: "game",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy4c89qqq9dxfDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+    description: "《喋血街头2》（Postal 2）又译《夺命邮差2》是一款第一人称射击游戏游戏。由美国Running With Scissors公司开发发行，2003年4月13日上线。",
   }
 ];
 
@@ -168,5 +182,34 @@ export const interestPosts: InterestPost[] = [
     date: "2026-10-20",
     minutes: 3654,
     content: "GTA5的剧情真的神了，只不过通关后的可玩性太低了。\n今天听人说有一款地图比GTA5还大的，号称3A大作的手机游戏，问了AI，说是叫《祖国人模拟器》。我一搜——好家伙，这地图确实比GTA5大，只不过，这游戏能玩得下去也是神了，空旷的大马路和模板大楼，怪不得比GTA5大，让我去当开发我也能做得比GTA5大。\n3A更是吹牛逼，连2B都算不上。",
+  },
+  {
+    id: "ip-1792512801899",
+    sectionId: "watch-dog2",
+    title: "入手看门狗2",
+    date: "2026-07-01",
+    minutes: 1296,
+    rating: 8,
+    content: "小时候看炮芯大怪玩过这个游戏，一直想尝试一下，刚好遇上打折就买了。\n当成低配版GTA5来玩了。",
+  },
+  {
+    id: "ip-1792513060988",
+    sectionId: "postal2",
+    title: "神人收银员",
+    date: "2026-06-07",
+    minutes: 1316,
+    rating: 9,
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5spbcptklzinrxDIYPAIDyAqayAGxzDdU0Dqe=.PNG"],
+    content: "好消息：有中文配音了。\n坏消息：这tm还不如不配，太搞了。\n\n一共是——十——三——元。",
+  },
+  {
+    id: "ip-1792513129244",
+    sectionId: "postal2",
+    title: "通关了",
+    date: "2026-06-13",
+    minutes: 3714,
+    rating: 9.5,
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uikiwg5lz1vfnDIYPAIDyAqayAGxzDdU0Dqe=.PNG"],
+    content: "没想到还要打BOSS，不开作弊根本打不过。",
   }
 ];
