@@ -948,11 +948,20 @@ const mainPanelTop = siteConfig.banner.enable
     });
   }
 
+  // ---------- 小说详情页：目录在电脑端展开、手机端收起 ----------
+  // 必须放在这里而不是页面自己的 <script> 里：从 /novels/ 点进详情页走的是 swup
+  // （只替换 <main>，页面级脚本不会再执行一次），写在页面里会导致电脑端目录也是收起的。
+  function initNovelFold() {
+    const fold = document.getElementById("novel-chapters");
+    if (fold) fold.open = window.matchMedia("(min-width: 768px)").matches;
+  }
+
   // ---------- 统一入口 ----------
   function initAll() {
     initReaderMode();
     initNovelsPage();
     initAppstore();
+    initNovelFold();
     initReaderToolbar();
     initMobileNav();
     initFeatured();

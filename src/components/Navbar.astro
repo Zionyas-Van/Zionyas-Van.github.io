@@ -111,8 +111,18 @@ let links: NavBarLink[] = navBarConfig.links.map(
     /* 右侧图标（主题色 / 深浅 / 头像）排开、间距收紧 */
     #navbar-inner > div.flex {
       gap: 0.05rem;
+      /* 三个图标必须垂直居中：手机上根字号 14px，2.5rem 只有 35px，
+         而深浅切换按钮写死 h-11 w-11(2.75rem＝38.5px)，比旁边两个高出 3.5px，
+         不居中时它的图标就比主题色图标低 1.7px（看起来"不在一条线上"）。 */
+      align-items: center;
     }
     #navbar-inner > div.flex > * {
+      width: 2.5rem !important;
+      height: 2.5rem !important;
+    }
+    /* 深浅切换是 Svelte 渲染的按钮（没有 astro 的作用域属性，必须用 :global），
+       把它的尺寸也压到 2.5rem，三个按钮才等宽等高、间距均匀。 */
+    #navbar-inner > div.flex :global(#scheme-switch) {
       width: 2.5rem !important;
       height: 2.5rem !important;
     }

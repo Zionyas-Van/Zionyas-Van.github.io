@@ -37,12 +37,12 @@ const chapterTitleOf = (slug?: string) =>
     返回故事列表
   </a>
 
-  {/* 桌面（≥1280px）：日志在左一栏，信息+章节在右；手机：信息 → 章节 → 日志（靠 order 调） */}
-  <div class:list={["grid gap-6 items-start", logs.length > 0 && "xl:grid-cols-[19rem_minmax(0,1fr)] xl:gap-8"]}>
+  {/* 桌面（≥1280px）：小说信息在左、创作日志在右；手机：信息 → 章节 → 日志（靠 order-last 调） */}
+  <div class:list={["grid gap-6 items-start", logs.length > 0 && "xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-8"]}>
 
-    {/* ===== 左侧：创作日志（没有日志时整块不渲染） ===== */}
+    {/* ===== 创作日志（没有日志时整块不渲染） ===== */}
     {logs.length > 0 && (
-      <aside id="novel-logs" class="onload-animation order-last xl:order-first">
+      <aside id="novel-logs" class="onload-animation order-last">
         <div class="card-base rounded-[var(--radius-large)] p-4 md:p-5">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-bold text-90 flex items-center gap-2">
@@ -93,74 +93,69 @@ const chapterTitleOf = (slug?: string) =>
       </aside>
     )}
 
-    {/* ===== 右侧：封面 + 信息 + 章节目录 ===== */}
+    {/* ===== 封面 + 信息 + 章节目录 ===== */}
     <div class="min-w-0">
-      <!-- Hero 卡片：手机收窄内边距，避免双层内边距把内容挤窄（≥768px 恢复 p-8） -->
+      <!-- Hero 卡片：封面单独一行（居中），书名/作者/标签/简介都放到封面下方，
+           这样封面下面不会再留一大块空白（≥768px 用 p-8） -->
       <div class="card-base rounded-[var(--radius-large)] p-4 md:p-8 mb-8 onload-animation">
-        <div class="flex flex-col sm:flex-row gap-6 md:gap-8">
+        <div class="flex flex-col items-center">
 
           <!-- 封面 -->
-          <div class="w-40 md:w-52 flex-shrink-0 mx-auto sm:mx-0">
-            <div class="aspect-[3/4] rounded-[var(--radius-large)] overflow-hidden
-                        bg-black/10 dark:bg-white/5 shadow-xl">
-              <img src={novel.cover} alt={novel.title} class="w-full h-full object-cover" />
-            </div>
+          <div class="w-36 sm:w-44 md:w-48 aspect-[3/4] rounded-[var(--radius-large)] overflow-hidden
+                      bg-black/10 dark:bg-white/5 shadow-xl">
+            <img src={novel.cover} alt={novel.title} class="w-full h-full object-cover" />
           </div>
 
-          <!-- 信息 -->
-          <div class="flex-1 min-w-0 flex flex-col">
-            <h1 class="text-2xl md:text-3xl font-bold text-90 mb-3 leading-tight text-center sm:text-left">
-              {novel.title}
-            </h1>
+          <h1 class="mt-4 md:mt-5 text-2xl md:text-3xl font-bold text-90 leading-tight text-center">
+            {novel.title}
+          </h1>
 
-            <!-- 徽章（纯文字，不含图标） -->
-            <div class="flex flex-wrap items-center gap-2 mb-5 justify-center sm:justify-start">
-              {novel.author && (
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full
-                             bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
-                  {novel.author}
-                </span>
-              )}
-              {novel.publishedDate && (
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full
-                             bg-black/5 dark:bg-white/10 text-75 text-xs">
-                  {novel.publishedDate}
-                </span>
-              )}
-              {novel.platform && (
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full
-                             bg-black/5 dark:bg-white/10 text-75 text-xs">
-                  {novel.platform}
-                </span>
-              )}
+          <!-- 徽章（纯文字，不含图标） -->
+          <div class="flex flex-wrap items-center justify-center gap-2 mt-3">
+            {novel.author && (
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                           bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium">
+                {novel.author}
+              </span>
+            )}
+            {novel.publishedDate && (
               <span class="inline-flex items-center px-2.5 py-1 rounded-full
                            bg-black/5 dark:bg-white/10 text-75 text-xs">
-                共 {novel.chapters.length} 章
+                {novel.publishedDate}
               </span>
-            </div>
+            )}
+            {novel.platform && (
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                           bg-black/5 dark:bg-white/10 text-75 text-xs">
+                {novel.platform}
+              </span>
+            )}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                         bg-black/5 dark:bg-white/10 text-75 text-xs">
+              共 {novel.chapters.length} 章
+            </span>
+          </div>
 
-            <!-- 简介 -->
-            <div class="mb-6 flex-1">
-              <p class="text-sm md:text-base text-75 leading-relaxed whitespace-pre-line">
-                {novel.intro.replace(/\\n/g, "\n")}
-              </p>
-            </div>
+          <!-- 简介：容器居中但文字左对齐，长段落才不会居中排成奇怪的样子 -->
+          <p class="w-full max-w-[46rem] mt-4 md:mt-5 text-sm md:text-base text-75 leading-relaxed
+                    whitespace-pre-line text-left">
+            {novel.intro.replace(/\\n/g, "\n")}
+          </p>
 
-            <!-- 开始阅读 -->
+          <!-- 开始阅读 -->
+          <div class="mt-5">
             {firstChapter ? (
               <a href={`/novels/${novel.id}/${firstChapter.slug}/`}
                  class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full
                         bg-[var(--primary)] text-white text-sm font-semibold
                         hover:opacity-90 active:scale-95 transition-all
-                        shadow-lg shadow-[var(--primary)]/20
-                        self-center sm:self-start">
+                        shadow-lg shadow-[var(--primary)]/20">
                 <Icon name="material-symbols:auto-stories-rounded" class="text-[1.2rem]" />
                 开始阅读
               </a>
             ) : (
               <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full
-                          bg-black/5 dark:bg-white/10 text-75 text-sm
-                          self-center sm:self-start">
+                          bg-black/5 dark:bg-white/10 text-75 text-sm">
                 <Icon name="material-symbols:edit-document-outline-rounded" class="text-[1.1rem]" />
                 章节创作中
               </div>
@@ -231,17 +226,3 @@ const chapterTitleOf = (slug?: string) =>
     list-style: none;
   }
 </style>
-
-<script>
-  // 目录在手机上默认折叠、电脑上默认展开。
-  // 先直接跑一次（首屏），再挂上 swup 切页事件（Astro 的脚本模块每页只执行一次，
-  // 光靠 astro:page-load 在本站的 swup 下不一定触发）。
-  const syncChapterFold = () => {
-    const fold = document.getElementById("novel-chapters") as HTMLDetailsElement | null;
-    if (fold) fold.open = window.matchMedia("(min-width: 768px)").matches;
-  };
-  syncChapterFold();
-  for (const evt of ["astro:page-load", "swup:page:view", "page:view"]) {
-    document.addEventListener(evt, syncChapterFold);
-  }
-</script>
