@@ -118,6 +118,13 @@ export const interestSections: InterestSection[] = [
     type: "game",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy4c89qqq9dxfDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
     description: "《喋血街头2》（Postal 2）又译《夺命邮差2》是一款第一人称射击游戏游戏。由美国Running With Scissors公司开发发行，2003年4月13日上线。",
+  },
+  {
+    id: "green-hell",
+    name: "绿色地狱",
+    type: "game",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5spbd137lzytg9DIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+    description: "《绿色地狱》是由波兰游戏工作室Creepy Jar开发的开放世界生存模拟游戏，背景设定在危机四伏的亚马逊雨林。",
   }
 ];
 
@@ -211,5 +218,15 @@ export const interestPosts: InterestPost[] = [
     rating: 9.5,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uikiwg5lz1vfnDIYPAIDyAqayAGxzDdU0Dqe=.PNG"],
     content: "没想到还要打BOSS，不开作弊根本打不过。",
+  },
+  {
+    id: "ip-1792513383376",
+    sectionId: "green-hell",
+    title: "求生类神作",
+    date: "2026-10-20",
+    minutes: 2298,
+    rating: 9.5,
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r61ymj7qr8ye5DIYPAIDyAqayAGxzDdU0Dqe=.jpg"],
+    content: "我的求生类游戏启蒙之作，8块钱入手的，赚翻了。\n特别硬核，但也特别好玩。只不过优化实在太差了。",
   }
 ];
