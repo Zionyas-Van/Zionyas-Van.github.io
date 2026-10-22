@@ -1097,7 +1097,36 @@ const mainPanelTop = siteConfig.banner.enable
     function tick() {
       raf = 0;
       let busy = false;
+      const now = performance.now();
       states.forEach((s, el) => {
+        // 松手/离开：用固定 160ms 的缓出补间回到平面。
+        // 不用 CSS transition，是因为卡片自己的过渡时长不受控（有的 150ms、有的更长），
+        // 也不让弹簧慢慢衰减（那样要差不多 1 秒，肉眼像卡了一下）。
+        if (s.back) {
+          const p = Math.min(1, (now - s.back.t0) / 160);
+          const e = 1 - (1 - p) * (1 - p) * (1 - p);
+          const rx = s.back.rx0 * (1 - e);
+          const ry = s.back.ry0 * (1 - e);
+          const sc = 1 + (s.back.sc0 - 1) * (1 - e);
+          if (p < 1) {
+            el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+            el.style.boxShadow = `${(-ry * 2).toFixed(1)}px ${(Math.abs(rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
+            busy = true;
+            return;
+          }
+          el.style.transform = "";
+          el.style.boxShadow = "";
+          el.style.zIndex = "";
+          el.style.position = "";
+          states.delete(el);
+          // 过渡属性要等这一次样式变更落地后再还回去，
+          // 否则同一次样式计算里浏览器会拿回卡片自己的 transition，
+          // 又从最后角度补一帧过渡（实测多拖了 280ms，看起来像"回位卡一下"）
+          setTimeout(() => {
+            if (!states.has(el)) el.style.transition = "";
+          }, 0);
+          return;
+        }
         s.vx = (s.vx + (s.tx - s.rx) * K) * FRICTION;
         s.vy = (s.vy + (s.ty - s.ry) * K) * FRICTION;
         s.rx += s.vx;
@@ -1109,24 +1138,10 @@ const mainPanelTop = siteConfig.banner.enable
           Math.abs(s.tx - s.rx) < 0.02 &&
           Math.abs(s.ty - s.ry) < 0.02 &&
           Math.abs(s.tsc - s.sc) < 0.002;
-        // 目标也是原点（鼠标已经离开）并且已经静止 → 归位，把内联样式交还给 CSS
-        const home = Math.abs(s.tx) < 0.02 && Math.abs(s.ty) < 0.02 && Math.abs(s.tsc - 1) < 0.002;
-        if (still && home) {
-          s.rx = 0;
-          s.ry = 0;
-          s.vx = 0;
-          s.vy = 0;
-          s.sc = 1;
-          el.style.transform = "";
-          el.style.boxShadow = "";
-          el.style.transition = "";
-          states.delete(el);
-          return;
-        }
         el.style.transform = `perspective(900px) rotateX(${s.rx.toFixed(2)}deg) rotateY(${s.ry.toFixed(2)}deg) scale(${s.sc.toFixed(3)})`;
         // 影子朝倾斜的反方向偏移：卡片"立"起来时影子离得更远，立体感更足
         el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
-        // 还没停就继续下一帧；已经停住但鼠标还在卡片上 → 保持这个角度不动
+        // 还没停就继续下一帧；停住后把循环关掉，但保持当前角度（鼠标还在卡片上）
         if (!still) busy = true;
       });
       if (busy) raf = requestAnimationFrame(tick);
@@ -1152,6 +1167,12 @@ const mainPanelTop = siteConfig.banner.enable
         if (!s.hot) {
           s.hot = 1;
           el.style.transition = "none";
+          // 悬停时把这张卡临时提到最上层：倾斜后会压到相邻卡片/容器的阴影上面去，
+          // 不提层级就会被后画的兄弟节点盖住（z-index 只对定位元素生效，所以要加 relative）
+          if (canHover) {
+            el.style.position = "relative";
+            el.style.zIndex = "45";
+          }
         }
         const px = (e.clientX - r.left) / r.width - 0.5;
         const py = (e.clientY - (r.top - (window.scrollY - s.sy))) / r.height - 0.5;
@@ -1162,12 +1183,11 @@ const mainPanelTop = siteConfig.banner.enable
       { passive: true },
     );
 
+    // 离开/松手：记下当前角度，交给 tick 里的 160ms 缓出补间回位
     const release = (el) => {
       const s = el && states.get(el);
       if (!s) return;
-      s.tx = 0;
-      s.ty = 0;
-      s.tsc = 1;
+      s.back = { rx0: s.rx, ry0: s.ry, sc0: s.sc, t0: performance.now() };
       s.rect = null;
       run();
     };
