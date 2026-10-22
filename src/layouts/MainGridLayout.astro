@@ -992,6 +992,7 @@ const mainPanelTop = siteConfig.banner.enable
   function closeLightbox() {
     const box = document.getElementById("img-lightbox");
     const big = document.getElementById("img-lightbox-img");
+    document.body.classList.remove("lightbox-open");
     if (!box) return;
     box.classList.remove("on", "zoomed");
     box.setAttribute("aria-hidden", "true");
@@ -1046,6 +1047,8 @@ const mainPanelTop = siteConfig.banner.enable
         box.classList.add("on");
         box.classList.remove("zoomed");
         box.setAttribute("aria-hidden", "false");
+        // 顶栏的层级比内容区高，不抬一下内容区，放大后的图会钻到顶栏底下
+        document.body.classList.add("lightbox-open");
         return;
       }
       if (!box.classList.contains("on")) return;
@@ -1250,6 +1253,11 @@ const mainPanelTop = siteConfig.banner.enable
     }
   }
   /* 图片放大预览 */
+  /* 预览期间把内容区抬到顶栏之上：顶栏是 z-50，内容区是 z-30，
+     不抬的话放大后的图会钻到顶栏下面去 */
+  body.lightbox-open #main-panel {
+    z-index: 95;
+  }
   #img-lightbox {
     position: fixed;
     inset: 0;
