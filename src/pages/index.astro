@@ -96,7 +96,7 @@ const formatNewsDate = (d: unknown) => {
       <!-- ================= 桌面端：一张大图轮播 + 右侧待播小列表 ================= -->
       <div class="hidden md:grid md:grid-cols-[minmax(0,1fr)_19rem] gap-4" data-featured data-interval="6000">
         <!-- 左侧大图 -->
-        <div class="feat-stage card-base rounded-[var(--radius-large)] overflow-hidden relative">
+        <div data-tilt class="feat-stage card-base rounded-[var(--radius-large)] overflow-hidden relative">
           {featuredItems.map((item, i) => {
             const isProj = item.kind === "project";
             const href = isProj ? `/projects/${item.id}/` : `https://www.bilibili.com/video/${item.bvid}`;
@@ -209,6 +209,7 @@ const formatNewsDate = (d: unknown) => {
               target={isProj ? undefined : "_blank"}
               rel={isProj ? undefined : "noopener noreferrer"}
               class="snap-center shrink-0 w-[85%] card-base rounded-[22px] overflow-hidden"
+              data-tilt
               data-mcard={i}
             >
               <!-- 大图 + 叠在上面的文案（Play 的海报式标题） -->
@@ -293,6 +294,7 @@ const formatNewsDate = (d: unknown) => {
             {novels.slice(0, 4).map((n) => (
               <a
                 href={`/novels/${n.id}/`}
+                data-tilt
                 class="card-base group rounded-[var(--radius-large)] overflow-hidden
                        hover:scale-[1.02] active:scale-100 transition-transform duration-200
                        flex-shrink-0 w-[140px] max-md:w-auto max-md:flex-shrink max-md:flex max-md:flex-row max-md:items-center max-md:gap-3 max-md:p-2.5 max-md:hover:scale-100 lg:w-auto"

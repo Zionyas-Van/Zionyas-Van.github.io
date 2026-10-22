@@ -46,6 +46,7 @@ const hasFeatured = featuredVideos.length > 0;
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {videos.map((v) => (
           <a href={`/videos/${v.id}/`}
+             data-tilt
              class="card-base group rounded-xl overflow-hidden
                     hover:scale-[1.02] active:scale-100 transition-transform duration-200">
             <div class="aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/5 relative">

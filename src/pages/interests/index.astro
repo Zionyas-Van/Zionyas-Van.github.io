@@ -74,6 +74,7 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
             return (
               <a
                 href={c.section ? sectionUrl(c.section.id) : "/interests/"}
+                data-tilt
                 class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
               >
                 <div class="w-11 h-11 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">
@@ -144,6 +145,7 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
           {cards.map((c) => (
             <a
               href={sectionUrl(c.section.id)}
+              data-tilt
               class="interest-card card-base"
               data-type={c.type}
               data-name={`${c.section.name} ${c.section.description || ""}`.toLowerCase()}

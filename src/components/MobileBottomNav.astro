@@ -93,7 +93,7 @@ function isActive(matches: string[], path: string) {
     align-items: stretch;
     /* 注意：<html> 上有 text-[14px] md:text-[16px]，手机端根字号是 14px，
        所以这里的尺寸一律用 px，避免 rem 缩水（3.5rem 会变成 49px 而不是 56px） */
-    height: calc(56px + env(safe-area-inset-bottom));
+    height: calc(64px + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
     background: color-mix(in oklab, var(--card-bg) 92%, transparent);
     backdrop-filter: blur(12px);
@@ -108,7 +108,8 @@ function isActive(matches: string[], path: string) {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1px;
+    /* 图标和文字原来只隔 1px，挤在一起像一行；拉开到 5px */
+    gap: 5px;
     padding: 0 2px;
     text-decoration: none;
     color: var(--content-meta, #8a8a8a);
@@ -121,7 +122,7 @@ function isActive(matches: string[], path: string) {
     align-items: center;
     justify-content: center;
     width: 52px;
-    height: 28px;
+    height: 26px;
     border-radius: 9999px;
     transition: background-color 0.18s ease;
   }
@@ -161,6 +162,6 @@ function isActive(matches: string[], path: string) {
 
   /* 占位高度 = 导航栏高度 + 一点余量，手机上保证最后一行内容不被遮住 */
   .mobile-nav-spacer {
-    height: calc(76px + env(safe-area-inset-bottom));
+    height: calc(84px + env(safe-area-inset-bottom));
   }
 </style>

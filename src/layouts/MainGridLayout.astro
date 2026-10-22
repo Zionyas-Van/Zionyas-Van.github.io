@@ -215,6 +215,7 @@ const mainPanelTop = siteConfig.banner.enable
     // （手机端是 Google Play 图书式封面两列，电脑端仍是原来的横向列表行）
     const rowHtml = (n) => `
       <a href="/novels/${esc(n.id)}/"
+         data-tilt
          class="card-base group rounded-[18px] p-3 flex flex-col md:flex-row gap-3.5 max-md:gap-2 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
         <div class="w-full md:w-[86px] aspect-[3/4] flex-none rounded-xl overflow-hidden bg-black/10 dark:bg-white/5">
           ${n.cover ? `<img src="${esc(n.cover)}" alt="${esc(n.title)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />` : ""}
@@ -310,7 +311,7 @@ const mainPanelTop = siteConfig.banner.enable
       const preview = item.shot || cover;
       const linkAttr = isRes ? 'target="_blank" rel="noopener noreferrer"' : "";
       return `
-        <a href="${esc(href)}" ${linkAttr}
+        <a href="${esc(href)}" ${linkAttr} data-tilt
            class="card-base group block rounded-[20px] md:rounded-[24px] overflow-hidden mb-5 md:mb-7 active:scale-[0.99] transition">
           <div class="aspect-[16/9] md:aspect-[21/9] w-full overflow-hidden bg-black/10 dark:bg-white/5">
             ${preview ? `<img src="${esc(preview)}" alt="${esc(title)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-[1.02]" />` : ""}
@@ -340,7 +341,7 @@ const mainPanelTop = siteConfig.banner.enable
         ? `<img src="${esc(previewSrc)}" alt="" class="w-full h-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" />`
         : `<div class="w-full h-full bg-gradient-to-br from-[var(--primary)]/18 to-[var(--primary)]/5"></div>`;
       return `
-        <a href="${esc(href)}" ${isRes ? 'target="_blank" rel="noopener noreferrer"' : ""}
+        <a href="${esc(href)}" ${isRes ? 'target="_blank" rel="noopener noreferrer"' : ""} data-tilt
            class="card-base group block rounded-[18px] md:rounded-[22px] overflow-hidden
                   hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] active:scale-[0.99] transition-all">
           <div class="hidden md:block aspect-[16/10] w-full overflow-hidden bg-black/10 dark:bg-white/5">
@@ -387,7 +388,7 @@ const mainPanelTop = siteConfig.banner.enable
             ${res
               .map(
                 (r) => `
-              <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"
+              <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer" data-tilt
                  class="card-base flex-shrink-0 w-[150px] md:w-[178px] rounded-[18px] md:rounded-[20px] overflow-hidden
                         hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] active:scale-[0.98] transition-all">
                 <div class="aspect-[16/10] w-full overflow-hidden relative">
@@ -908,7 +909,7 @@ const mainPanelTop = siteConfig.banner.enable
     };
     const cardHtml = (p) => {
       const s = secMap.get(p.sectionId);
-      return `<a href="/interests/${encodeURIComponent(p.sectionId)}/" class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
+      return `<a href="/interests/${encodeURIComponent(p.sectionId)}/" data-tilt class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
         <div class="w-11 h-11 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">${s && s.cover ? `<img src="${esc(s.cover)}" alt="" class="w-full h-full object-cover" loading="lazy">` : ""}</div>
         <div class="min-w-0 flex-1">
           <div class="text-[11px] text-75 mb-0.5 truncate">${esc(s ? s.name : "未分区")}</div>
@@ -979,13 +980,61 @@ const mainPanelTop = siteConfig.banner.enable
     initInterests();
     initInterestSection();
     initLightbox();
+    initTilt();
     initElapsed();
   }
 
   // ---------- ⑩ 图片放大预览 ----------
+  // 行为：点带 data-zoom 的图 → 铺满屏幕（适应窗口）；再点图片 → 放大到 2 倍，
+  // 此时图片超出窗口的部分可以滚轮/手指拖动查看；点图片以外的地方（或 Esc）关闭。
+  // 另外每次切页都强制关闭：这个浮层在 <main> 之外，swup 换页不会移除它，
+  // 以前"返回上一级图片还挂着"就是这么来的。
+  function closeLightbox() {
+    const box = document.getElementById("img-lightbox");
+    const big = document.getElementById("img-lightbox-img");
+    if (!box) return;
+    box.classList.remove("on", "zoomed");
+    box.setAttribute("aria-hidden", "true");
+    box.scrollTop = 0;
+    box.scrollLeft = 0;
+    if (big) {
+      big.removeAttribute("src");
+      big.style.width = "";
+      big.style.maxWidth = "";
+      big.style.maxHeight = "";
+    }
+  }
+
+  function lightboxZoom(on) {
+    const box = document.getElementById("img-lightbox");
+    const big = document.getElementById("img-lightbox-img");
+    if (!box || !big) return;
+    if (!on) {
+      box.classList.remove("zoomed");
+      big.style.width = "";
+      big.style.maxWidth = "";
+      big.style.maxHeight = "";
+      box.scrollTop = 0;
+      box.scrollLeft = 0;
+      return;
+    }
+    const w = big.getBoundingClientRect().width || big.naturalWidth;
+    if (!w) return;
+    big.style.maxWidth = "none";
+    big.style.maxHeight = "none";
+    big.style.width = `${Math.round(w * 2)}px`;
+    box.classList.add("zoomed");
+    // 放大后大致对准中间，别让人一上来只看到图片的一个角
+    requestAnimationFrame(() => {
+      box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2;
+      box.scrollTop = (box.scrollHeight - box.clientHeight) / 2;
+    });
+  }
+
   function initLightbox() {
     const box = document.getElementById("img-lightbox");
     const big = document.getElementById("img-lightbox-img");
+    closeLightbox();
     if (!box || !big) return;
     if (box.dataset.wired === "1") return;
     box.dataset.wired = "1";
@@ -995,16 +1044,161 @@ const mainPanelTop = siteConfig.banner.enable
       if (t && t.tagName === "IMG" && t.hasAttribute("data-zoom") && !box.contains(t)) {
         big.src = t.currentSrc || t.src;
         box.classList.add("on");
+        box.classList.remove("zoomed");
         box.setAttribute("aria-hidden", "false");
         return;
       }
-      // 点任何地方（包括大图本身）→ 关闭
-      if (box.classList.contains("on")) {
-        box.classList.remove("on");
-        box.setAttribute("aria-hidden", "true");
-        big.removeAttribute("src");
+      if (!box.classList.contains("on")) return;
+      // 点大图本身 → 适应窗口 / 2 倍 之间切换
+      if (t === big) {
+        lightboxZoom(!box.classList.contains("zoomed"));
+        return;
       }
+      // 点别处（背景）→ 关闭
+      closeLightbox();
     });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeLightbox();
+    });
+  }
+
+  // ---------- ⑫ 卡片 3D 倾斜（桌面悬停）+ 按压缩放（手机） ----------
+  // 全站一份：pointermove 事件委托，卡片被筛选/搜索重绘后不用重新绑定；
+  // 只对带 data-tilt 的元素生效，不会误伤侧栏、筛选栏里的卡片。
+  function initTilt() {
+    if (window.__tiltWired) return;
+    window.__tiltWired = 1;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const MAX = 5; // 最大倾斜角（度）
+    const K = 0.3; // 弹簧系数，越大越跟手
+    const FRICTION = 0.72; // 阻尼，越小停得越快
+    const states = new Map();
+    let raf = 0;
+    let pressed = null;
+
+    const stateOf = (el) => {
+      let s = states.get(el);
+      if (!s) {
+        s = { rx: 0, ry: 0, vx: 0, vy: 0, tx: 0, ty: 0, sc: 1, tsc: 1, hot: 0, rect: null, sy: 0 };
+        states.set(el, s);
+      }
+      return s;
+    };
+
+    function tick() {
+      raf = 0;
+      let busy = false;
+      states.forEach((s, el) => {
+        s.vx = (s.vx + (s.tx - s.rx) * K) * FRICTION;
+        s.vy = (s.vy + (s.ty - s.ry) * K) * FRICTION;
+        s.rx += s.vx;
+        s.ry += s.vy;
+        s.sc += (s.tsc - s.sc) * 0.24;
+        const moving =
+          Math.abs(s.vx) > 0.02 ||
+          Math.abs(s.vy) > 0.02 ||
+          Math.abs(s.tx - s.rx) > 0.02 ||
+          Math.abs(s.ty - s.ry) > 0.02 ||
+          Math.abs(s.tsc - s.sc) > 0.002;
+        if (moving) {
+          el.style.transform = `perspective(900px) rotateX(${s.rx.toFixed(2)}deg) rotateY(${s.ry.toFixed(2)}deg) scale(${s.sc.toFixed(3)})`;
+          // 影子朝倾斜的反方向偏移：卡片"立"起来时影子离得更远，立体感更足
+          el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
+          busy = true;
+          return;
+        }
+        // 停稳：把内联样式交还给 CSS（卡片自己的 hover 阴影、active:scale 之类）
+        s.rx = 0;
+        s.ry = 0;
+        s.vx = 0;
+        s.vy = 0;
+        s.sc = 1;
+        el.style.transform = "";
+        el.style.boxShadow = "";
+        el.style.transition = "";
+        states.delete(el);
+      });
+      if (busy) raf = requestAnimationFrame(tick);
+    }
+    const run = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+
+    document.addEventListener(
+      "pointermove",
+      (e) => {
+        if (!canHover) return;
+        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        if (!el) return;
+        const s = stateOf(el);
+        // 矩形只取一次：卡片已经在倾斜时再量会把倾斜后的形状当基准，角度会抖
+        if (!s.rect) {
+          s.rect = el.getBoundingClientRect();
+          s.sy = window.scrollY;
+        }
+        const r = s.rect;
+        if (!r.width || !r.height) return;
+        if (!s.hot) {
+          s.hot = 1;
+          el.style.transition = "none";
+        }
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - (r.top - (window.scrollY - s.sy))) / r.height - 0.5;
+        s.tx = -py * 2 * MAX;
+        s.ty = px * 2 * MAX;
+        run();
+      },
+      { passive: true },
+    );
+
+    const release = (el) => {
+      const s = el && states.get(el);
+      if (!s) return;
+      s.tx = 0;
+      s.ty = 0;
+      s.tsc = 1;
+      s.rect = null;
+      run();
+    };
+
+    document.addEventListener(
+      "pointerout",
+      (e) => {
+        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        if (!el) return;
+        if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+        release(el);
+      },
+      { passive: true },
+    );
+
+    // 手机端：按下去"弹起"一点（没有倾斜），松手/滑走/取消就收回
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (canHover) return;
+        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        if (!el) return;
+        pressed = el;
+        el.style.transition = "none";
+        const s = stateOf(el);
+        s.rect = null;
+        s.tx = 0;
+        s.ty = 0;
+        s.tsc = 1.035;
+        run();
+      },
+      { passive: true },
+    );
+    const unpress = () => {
+      if (pressed) release(pressed);
+      pressed = null;
+    };
+    for (const ev of ["pointerup", "pointercancel", "dragend"]) {
+      document.addEventListener(ev, unpress, { passive: true });
+    }
   }
 
   // ---------- ⑪ 兴趣帖子「已过去 X」实时计算 ----------
@@ -1060,7 +1254,7 @@ const mainPanelTop = siteConfig.banner.enable
     padding: 16px;
     background: rgba(0, 0, 0, 0.86);
     backdrop-filter: blur(4px);
-    cursor: zoom-out;
+    cursor: zoom-in;
   }
   #img-lightbox.on {
     display: flex;
@@ -1071,6 +1265,25 @@ const mainPanelTop = siteConfig.banner.enable
     border-radius: 12px;
     object-fit: contain;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    cursor: zoom-in;
+  }
+  /* 放大 2 倍后：容器变成可滚动区域，超出窗口的部分用滚轮/手指拖看 */
+  #img-lightbox.on.zoomed {
+    display: block;
+    padding: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    cursor: zoom-out;
+  }
+  #img-lightbox.on.zoomed img {
+    display: block;
+    margin: 0 auto;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: zoom-out;
   }
 </style>
 </Layout>

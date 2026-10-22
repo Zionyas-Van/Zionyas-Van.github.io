@@ -228,5 +228,14 @@ export const interestPosts: InterestPost[] = [
     rating: 9.5,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r61ymj7qr8ye5DIYPAIDyAqayAGxzDdU0Dqe=.jpg"],
     content: "我的求生类游戏启蒙之作，8块钱入手的，赚翻了。\n特别硬核，但也特别好玩。只不过优化实在太差了。",
+  },
+  {
+    id: "ip-1792682452757",
+    sectionId: "cs2",
+    title: "小鸡快点孵化",
+    date: "2026-10-22",
+    minutes: 3246,
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy7d2x7ujn8f8DIYPAIDyAqayAGxzDdU0Dqe=.jpg", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uinb7tlpses9cDIYPAIDyAqayAGxzDdU0Dqe=.jpg", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dlnm5ts4aitva61znbDIYPAIDyAqayAGxzDdU0Dqe=.jpg"],
+    content: "周奖励只有一个7角的箱子和2角的枪皮，没一个想要的，干脆选了个鸡蛋。\n快点孵化吧我亲爱的小鸡。",
   }
 ];
