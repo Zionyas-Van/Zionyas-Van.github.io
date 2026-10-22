@@ -1068,10 +1068,14 @@ const mainPanelTop = siteConfig.banner.enable
   function initTilt() {
     if (window.__tiltWired) return;
     window.__tiltWired = 1;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // 注意：这里刻意不看 prefers-reduced-motion。
+    // 这台机器的 Chrome 就报 reduce（Windows 的"动画效果"关着），
+    // 一旦按它降级，站主自己要的倾斜效果会直接看不到。
+    // 要改成"系统开减少动态就关掉"，把下面一行取消注释即可：
+    // if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const MAX = 5; // 最大倾斜角（度）
+    const MAX = 7; // 最大倾斜角（度）
     const K = 0.3; // 弹簧系数，越大越跟手
     const FRICTION = 0.72; // 阻尼，越小停得越快
     const states = new Map();
@@ -1096,29 +1100,31 @@ const mainPanelTop = siteConfig.banner.enable
         s.rx += s.vx;
         s.ry += s.vy;
         s.sc += (s.tsc - s.sc) * 0.24;
-        const moving =
-          Math.abs(s.vx) > 0.02 ||
-          Math.abs(s.vy) > 0.02 ||
-          Math.abs(s.tx - s.rx) > 0.02 ||
-          Math.abs(s.ty - s.ry) > 0.02 ||
-          Math.abs(s.tsc - s.sc) > 0.002;
-        if (moving) {
-          el.style.transform = `perspective(900px) rotateX(${s.rx.toFixed(2)}deg) rotateY(${s.ry.toFixed(2)}deg) scale(${s.sc.toFixed(3)})`;
-          // 影子朝倾斜的反方向偏移：卡片"立"起来时影子离得更远，立体感更足
-          el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
-          busy = true;
+        const still =
+          Math.abs(s.vx) < 0.02 &&
+          Math.abs(s.vy) < 0.02 &&
+          Math.abs(s.tx - s.rx) < 0.02 &&
+          Math.abs(s.ty - s.ry) < 0.02 &&
+          Math.abs(s.tsc - s.sc) < 0.002;
+        // 目标也是原点（鼠标已经离开）并且已经静止 → 归位，把内联样式交还给 CSS
+        const home = Math.abs(s.tx) < 0.02 && Math.abs(s.ty) < 0.02 && Math.abs(s.tsc - 1) < 0.002;
+        if (still && home) {
+          s.rx = 0;
+          s.ry = 0;
+          s.vx = 0;
+          s.vy = 0;
+          s.sc = 1;
+          el.style.transform = "";
+          el.style.boxShadow = "";
+          el.style.transition = "";
+          states.delete(el);
           return;
         }
-        // 停稳：把内联样式交还给 CSS（卡片自己的 hover 阴影、active:scale 之类）
-        s.rx = 0;
-        s.ry = 0;
-        s.vx = 0;
-        s.vy = 0;
-        s.sc = 1;
-        el.style.transform = "";
-        el.style.boxShadow = "";
-        el.style.transition = "";
-        states.delete(el);
+        el.style.transform = `perspective(900px) rotateX(${s.rx.toFixed(2)}deg) rotateY(${s.ry.toFixed(2)}deg) scale(${s.sc.toFixed(3)})`;
+        // 影子朝倾斜的反方向偏移：卡片"立"起来时影子离得更远，立体感更足
+        el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
+        // 还没停就继续下一帧；已经停住但鼠标还在卡片上 → 保持这个角度不动
+        if (!still) busy = true;
       });
       if (busy) raf = requestAnimationFrame(tick);
     }
