@@ -1119,6 +1119,7 @@ const mainPanelTop = siteConfig.banner.enable
           el.style.zIndex = "";
           el.style.position = "";
           states.delete(el);
+          if (!states.size) document.documentElement.classList.remove("tilting");
           // 过渡属性要等这一次样式变更落地后再还回去，
           // 否则同一次样式计算里浏览器会拿回卡片自己的 transition，
           // 又从最后角度补一帧过渡（实测多拖了 280ms，看起来像"回位卡一下"）
@@ -1172,6 +1173,10 @@ const mainPanelTop = siteConfig.banner.enable
           if (canHover) {
             el.style.position = "relative";
             el.style.zIndex = "45";
+            // 内容列 <main> 是 overflow:hidden（防超长文本撑破布局），
+            // 会把卡片倾斜时探出去的那一小截直接裁掉。悬停期间临时放开，
+            // 不然卡片贴边时看起来就像被旁边的侧栏"切掉/挡住"了。
+            document.documentElement.classList.add("tilting");
           }
         }
         const px = (e.clientX - r.left) / r.width - 0.5;
@@ -1272,6 +1277,12 @@ const mainPanelTop = siteConfig.banner.enable
       top: 4.4rem !important;
     }
   }
+  /* 卡片倾斜期间：内容列的 overflow:hidden 会把探出去的边角裁掉，临时放开。
+     只在鼠标悬停倾斜时成立，离手立刻恢复，所以不影响平时的防溢出。 */
+  html.tilting main#swup-container {
+    overflow: visible;
+  }
+
   /* 图片放大预览 */
   /* 预览期间把内容区抬到顶栏之上：顶栏是 z-50，内容区是 z-30，
      不抬的话放大后的图会钻到顶栏下面去 */

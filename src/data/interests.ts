@@ -203,11 +203,11 @@ export const interestPosts: InterestPost[] = [
   {
     id: "ip-1792296408244",
     sectionId: "h3r3-gs",
-    title: "还是会向你",
+    title: "还是会想你",
     date: "2026-10-18",
     minutes: 240,
     rating: 9.5,
-    content: "“我知道我可以随时被代替”\n“却还是接受不了这种落差”\n",
+    content: "歌词太真实了。\n“我知道我可以随时被代替”\n“却还是接受不了这种落差”\n",
   },
   {
     id: "ip-1792512081615",
