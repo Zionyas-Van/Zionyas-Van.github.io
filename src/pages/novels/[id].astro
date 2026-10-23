@@ -187,6 +187,7 @@ const chapterTitleOf = (slug?: string) =>
               {novel.chapters.map((ch, i) => (
                 <a
                   href={`/novels/${novel.id}/${ch.slug}/`}
+                  data-tilt
                   class="flex items-center gap-3 py-3 px-3 rounded-lg
                          hover:bg-[var(--primary)]/5 active:scale-[0.99]
                          transition-all group/ch border border-transparent hover:border-[var(--primary)]/20"

@@ -241,7 +241,7 @@ const metricOf = (n: (typeof all)[number], key: string) =>
               <ol class="flex flex-col gap-2.5 max-md:gap-3">
                 {r.items.map((n, i) => (
                   <li>
-                    <a href={`/novels/${n.id}/`} class="flex items-center gap-2.5 group">
+                    <a href={`/novels/${n.id}/`} data-tilt class="flex items-center gap-2.5 group">
                       <span
                         class:list={[
                           "w-5 h-5 flex-none rounded-md text-[11px] font-bold flex items-center justify-center",

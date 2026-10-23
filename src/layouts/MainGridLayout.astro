@@ -1082,9 +1082,12 @@ const mainPanelTop = siteConfig.banner.enable
     });
   }
 
-  // ---------- ⑫ 卡片 3D 倾斜（桌面悬停）+ 按压缩放（手机） ----------
-  // 全站一份：pointermove 事件委托，卡片被筛选/搜索重绘后不用重新绑定；
-  // 只对带 data-tilt 的元素生效，不会误伤侧栏、筛选栏里的卡片。
+  // ---------- ⑫ 卡片/按钮 3D 倾斜（桌面悬停）+ 按压缩放（手机） ----------
+  // 全站一份：pointermove 事件委托，卡片被筛选/搜索重绘后不用重新绑定。
+  // 命中规则：优先带 data-tilt 的卡片（卡片内部的按钮不单独倾斜，避免套娃），
+  // 没有卡片再退到按钮/工具栏这些"小零件"上。
+  const TILT_SEL =
+    "[data-tilt], button, .btn-plain, .btn-card, .btn-regular, .btn-tonal, .pagination, .novel-chip";
   function initTilt() {
     if (window.__tiltWired) return;
     window.__tiltWired = 1;
@@ -1095,19 +1098,27 @@ const mainPanelTop = siteConfig.banner.enable
     // if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const MAX = 7; // 最大倾斜角（度）
+    const MAX = 7; // 大卡片的最大倾斜角（度）
+    const MAX_SMALL = 4.5; // 按钮/小零件：角度小一点，否则像在抖
     const K = 0.3; // 弹簧系数，越大越跟手
     const FRICTION = 0.72; // 阻尼，越小停得越快
     const states = new Map();
     let raf = 0;
     let pressed = null;
 
+    const tiltTarget = (t) => {
+      if (!t || !t.closest) return null;
+      const card = t.closest("[data-tilt]");
+      if (card) return card;
+      return t.closest(TILT_SEL);
+    };
+
     const stateOf = (el) => {
       let s = states.get(el);
       if (!s) {
         s = {
           rx: 0, ry: 0, vx: 0, vy: 0, tx: 0, ty: 0, sc: 1, tsc: 1,
-          hot: 0, rect: null, sy: 0,
+          hot: 0, rect: null, sy: 0, max: MAX, blur: 28, baseY: 12,
           // 上一次真正写进 boxShadow 的角度（NaN = 还没写过，保证第一帧一定写）
           sx: NaN, sy2: NaN,
         };
@@ -1123,7 +1134,7 @@ const mainPanelTop = siteConfig.banner.enable
       if (Math.abs(s.sx - s.rx) < 0.45 && Math.abs(s.sy2 - s.ry) < 0.45) return;
       s.sx = s.rx;
       s.sy2 = s.ry;
-      el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
+      el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + s.baseY).toFixed(1)}px ${s.blur}px rgba(18,16,32,0.18)`;
     };
 
     function tick() {
@@ -1189,7 +1200,7 @@ const mainPanelTop = siteConfig.banner.enable
       "pointermove",
       (e) => {
         if (!canHover) return;
-        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        const el = tiltTarget(e.target);
         if (!el) return;
         const s = stateOf(el);
         // 矩形只取一次：卡片已经在倾斜时再量会把倾斜后的形状当基准，角度会抖
@@ -1202,6 +1213,12 @@ const mainPanelTop = siteConfig.banner.enable
         if (!s.hot) {
           s.hot = 1;
           el.style.transition = "none";
+          // 小零件（按钮、胶囊、章节行）用更小的角度和更小的影子，
+          // 否则一个 36px 的图标按钮歪 7°、拖着一大片影子，看着像在抖。
+          const small = r.width < 200 || r.height < 64;
+          s.max = small ? MAX_SMALL : MAX;
+          s.blur = small ? 14 : 28;
+          s.baseY = small ? 8 : 12;
           // 悬停时把这张卡临时提到最上层：倾斜后会压到相邻卡片/容器的阴影上面去，
           // 不提层级就会被后画的兄弟节点盖住（z-index 只对定位元素生效，所以要加 relative）
           if (canHover) {
@@ -1215,8 +1232,8 @@ const mainPanelTop = siteConfig.banner.enable
         }
         const px = (e.clientX - r.left) / r.width - 0.5;
         const py = (e.clientY - (r.top - (window.scrollY - s.sy))) / r.height - 0.5;
-        s.tx = -py * 2 * MAX;
-        s.ty = px * 2 * MAX;
+        s.tx = -py * 2 * s.max;
+        s.ty = px * 2 * s.max;
         run();
       },
       { passive: true },
@@ -1234,7 +1251,7 @@ const mainPanelTop = siteConfig.banner.enable
     document.addEventListener(
       "pointerout",
       (e) => {
-        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        const el = tiltTarget(e.target);
         if (!el) return;
         if (e.relatedTarget && el.contains(e.relatedTarget)) return;
         release(el);
@@ -1247,7 +1264,7 @@ const mainPanelTop = siteConfig.banner.enable
       "pointerdown",
       (e) => {
         if (canHover) return;
-        const el = e.target && e.target.closest ? e.target.closest("[data-tilt]") : null;
+        const el = tiltTarget(e.target);
         if (!el) return;
         pressed = el;
         el.style.transition = "none";
