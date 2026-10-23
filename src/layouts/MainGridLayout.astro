@@ -1313,8 +1313,11 @@ const mainPanelTop = siteConfig.banner.enable
   }
   /* 内容列原来用 overflow:hidden 防止超长文本撑破布局，但那样会把卡片倾斜探出去的边角裁掉。
      overflow:clip + clip-margin 可以"只允许溢出 32px"，既保住防溢出，又不用在每次悬停时
-     临时切换 overflow（切换会让整列重新布局，是悬停瞬间卡一下的来源）。 */
+     临时切换 overflow（切换会让整列重新布局，是悬停瞬间卡一下的来源）。
+     关键：clip 不像 hidden 那样把网格项的"自动最小尺寸"压成 0，
+     漏掉 min-width:0 的话这一列会按内容撑到 1288px，手机端整页横向溢出、比例全乱。 */
   main#swup-container {
+    min-width: 0;
     overflow: clip;
     overflow-clip-margin: 32px;
   }
