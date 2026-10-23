@@ -584,6 +584,22 @@ const mainPanelTop = siteConfig.banner.enable
       }
     };
 
+    // 滚动 / 缩放时更新位置。
+    // 注意：placeToolbar 里要 getBoundingClientRect（会强制重排），
+    // 所以必须每帧最多算一次，否则滚动时每个 scroll 事件都重排一次，低配机直接糊。
+    const onScrollRaf = (fn) => {
+      let queued = false;
+      return () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => {
+          queued = false;
+          fn();
+        });
+      };
+    };
+    const placeToolbarRaf = onScrollRaf(placeToolbar);
+
     // 初次 + 首屏几次测量（处理布局抖动）
     placeToolbar();
     requestAnimationFrame(placeToolbar);
@@ -594,8 +610,8 @@ const mainPanelTop = siteConfig.banner.enable
     // 之前只在初始化算了一次，所以滚动后位置不跟着变
     if (window.__readerToolbarPosBound !== true) {
       window.__readerToolbarPosBound = true;
-      window.addEventListener("scroll", placeToolbar, { passive: true });
-      window.addEventListener("resize", placeToolbar);
+      window.addEventListener("scroll", placeToolbarRaf, { passive: true });
+      window.addEventListener("resize", placeToolbarRaf);
     }
 
     // 进度条
@@ -614,9 +630,10 @@ const mainPanelTop = siteConfig.banner.enable
       const total = h.scrollHeight - h.clientHeight;
       bar.style.width = (total > 0 ? (top / total) * 100 : 0) + "%";
     };
+    const updateProgressRaf = onScrollRaf(updateProgress);
     if (window.__readerProgressBound !== true) {
       window.__readerProgressBound = true;
-      window.addEventListener("scroll", updateProgress, { passive: true });
+      window.addEventListener("scroll", updateProgressRaf, { passive: true });
     }
     updateProgress();
 
@@ -1088,10 +1105,25 @@ const mainPanelTop = siteConfig.banner.enable
     const stateOf = (el) => {
       let s = states.get(el);
       if (!s) {
-        s = { rx: 0, ry: 0, vx: 0, vy: 0, tx: 0, ty: 0, sc: 1, tsc: 1, hot: 0, rect: null, sy: 0 };
+        s = {
+          rx: 0, ry: 0, vx: 0, vy: 0, tx: 0, ty: 0, sc: 1, tsc: 1,
+          hot: 0, rect: null, sy: 0,
+          // 上一次真正写进 boxShadow 的角度（NaN = 还没写过，保证第一帧一定写）
+          sx: NaN, sy2: NaN,
+        };
         states.set(el, s);
       }
       return s;
+    };
+
+    // 影子只在角度变化超过 0.45° 时才重写一次：
+    // box-shadow 每次变化都要重新光栅化那块区域（还带 28px 模糊），是这套动画里最贵的一笔。
+    // 0.45° 对应影子位移不到 1px，肉眼看不出差别，但重绘次数少一大半。
+    const writeShadow = (el, s) => {
+      if (Math.abs(s.sx - s.rx) < 0.45 && Math.abs(s.sy2 - s.ry) < 0.45) return;
+      s.sx = s.rx;
+      s.sy2 = s.ry;
+      el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
     };
 
     function tick() {
@@ -1109,8 +1141,10 @@ const mainPanelTop = siteConfig.banner.enable
           const ry = s.back.ry0 * (1 - e);
           const sc = 1 + (s.back.sc0 - 1) * (1 - e);
           if (p < 1) {
+            s.rx = rx;
+            s.ry = ry;
             el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
-            el.style.boxShadow = `${(-ry * 2).toFixed(1)}px ${(Math.abs(rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
+            writeShadow(el, s);
             busy = true;
             return;
           }
@@ -1118,6 +1152,7 @@ const mainPanelTop = siteConfig.banner.enable
           el.style.boxShadow = "";
           el.style.zIndex = "";
           el.style.position = "";
+          el.style.willChange = "";
           states.delete(el);
           if (!states.size) document.documentElement.classList.remove("tilting");
           // 过渡属性要等这一次样式变更落地后再还回去，
@@ -1140,8 +1175,7 @@ const mainPanelTop = siteConfig.banner.enable
           Math.abs(s.ty - s.ry) < 0.02 &&
           Math.abs(s.tsc - s.sc) < 0.002;
         el.style.transform = `perspective(900px) rotateX(${s.rx.toFixed(2)}deg) rotateY(${s.ry.toFixed(2)}deg) scale(${s.sc.toFixed(3)})`;
-        // 影子朝倾斜的反方向偏移：卡片"立"起来时影子离得更远，立体感更足
-        el.style.boxShadow = `${(-s.ry * 2).toFixed(1)}px ${(Math.abs(s.rx) * 1.5 + 12).toFixed(1)}px 28px rgba(18,16,32,0.18)`;
+        writeShadow(el, s);
         // 还没停就继续下一帧；停住后把循环关掉，但保持当前角度（鼠标还在卡片上）
         if (!still) busy = true;
       });
@@ -1173,9 +1207,9 @@ const mainPanelTop = siteConfig.banner.enable
           if (canHover) {
             el.style.position = "relative";
             el.style.zIndex = "45";
-            // 内容列 <main> 是 overflow:hidden（防超长文本撑破布局），
-            // 会把卡片倾斜时探出去的那一小截直接裁掉。悬停期间临时放开，
-            // 不然卡片贴边时看起来就像被旁边的侧栏"切掉/挡住"了。
+            // 提前把这张卡提升成独立合成层：之后每帧只改变换矩阵，不用重画卡片内容
+            el.style.willChange = "transform";
+            // 老浏览器（不认识 overflow-clip-margin）走回退路径，见下面的 CSS
             document.documentElement.classList.add("tilting");
           }
         }
@@ -1277,10 +1311,18 @@ const mainPanelTop = siteConfig.banner.enable
       top: 4.4rem !important;
     }
   }
-  /* 卡片倾斜期间：内容列的 overflow:hidden 会把探出去的边角裁掉，临时放开。
-     只在鼠标悬停倾斜时成立，离手立刻恢复，所以不影响平时的防溢出。 */
-  html.tilting main#swup-container {
-    overflow: visible;
+  /* 内容列原来用 overflow:hidden 防止超长文本撑破布局，但那样会把卡片倾斜探出去的边角裁掉。
+     overflow:clip + clip-margin 可以"只允许溢出 32px"，既保住防溢出，又不用在每次悬停时
+     临时切换 overflow（切换会让整列重新布局，是悬停瞬间卡一下的来源）。 */
+  main#swup-container {
+    overflow: clip;
+    overflow-clip-margin: 32px;
+  }
+  /* 老浏览器不支持 overflow-clip-margin：退回原来的做法，悬停期间临时放开 */
+  @supports not (overflow-clip-margin: 1px) {
+    html.tilting main#swup-container {
+      overflow: visible;
+    }
   }
 
   /* 图片放大预览 */
