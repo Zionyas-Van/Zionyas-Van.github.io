@@ -39,7 +39,8 @@ const others = projects
          style="background: linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent) 0%, color-mix(in oklab, var(--primary) 6%, transparent) 100%);">
       <div class="flex flex-col md:flex-row gap-5 md:items-center">
         <!-- 方形图标 -->
-        <div class="w-24 h-24 md:w-32 md:h-32 rounded-[1.5rem] overflow-hidden flex-shrink-0
+        <div data-tilt
+             class="w-24 h-24 md:w-32 md:h-32 rounded-[1.5rem] overflow-hidden flex-shrink-0
                     bg-white shadow-lg ring-1 ring-black/5 dark:ring-white/10">
           <img src={project.cover} alt={project.title}
                class="w-full h-full object-cover" />
@@ -58,7 +59,7 @@ const others = projects
           {project.downloadLinks.length > 0 ? (
             <div class="flex flex-wrap gap-2 mt-4">
               {project.downloadLinks.map((link, i) => (
-                <a href={link.url} target="_blank" rel="noopener noreferrer"
+                <a href={link.url} target="_blank" rel="noopener noreferrer" data-tilt
                    class:list={[
                      "inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold transition-all active:scale-95 max-md:min-h-[44px] max-md:flex-1 max-md:justify-center",
                      i === 0
@@ -83,7 +84,7 @@ const others = projects
 
   <!-- ==================== 横向信息条 ==================== -->
   <div class="onload-animation mb-8">
-    <div class="card-base rounded-[var(--radius-large)] p-5
+    <div data-tilt class="card-base rounded-[var(--radius-large)] p-5
                 grid grid-cols-3 gap-4 text-center divide-x divide-black/5 dark:divide-white/10
                 max-md:gap-2 max-md:p-4 max-md:divide-x-0">
       <div>
@@ -107,7 +108,8 @@ const others = projects
       <h2 class="text-lg font-bold text-90 mb-3 px-1">预览</h2>
       <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
         {project.screenshots.map((src) => (
-          <div class="flex-shrink-0 w-[76vw] md:w-96 aspect-video rounded-2xl overflow-hidden
+          <div data-tilt
+               class="flex-shrink-0 w-[76vw] md:w-96 aspect-video rounded-2xl overflow-hidden
                       bg-black/10 dark:bg-white/5 snap-start
                       ring-1 ring-black/5 dark:ring-white/10">
             <img src={src} alt="截图" data-zoom
@@ -148,6 +150,7 @@ const others = projects
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {related.map((item) => (
           <a href={`/projects/${item.id}/`}
+             data-tilt
              class="card-base group rounded-2xl p-3 flex items-center gap-3
                     hover:bg-[var(--primary)]/5 active:scale-[0.98] transition-all">
             <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
@@ -176,6 +179,7 @@ const others = projects
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {others.map((item) => (
           <a href={`/projects/${item.id}/`}
+             data-tilt
              class="card-base group rounded-2xl p-3 flex items-center gap-3
                     hover:bg-[var(--primary)]/5 active:scale-[0.98] transition-all">
             <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/10 dark:bg-white/5">
