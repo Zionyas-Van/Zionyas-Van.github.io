@@ -15,7 +15,11 @@ import {
 	getSortedDailyPosts,
 	getSortedPostsExcludingDaily,
 } from "../utils/content-utils";
+import { featuredPosts, postExcerpt, renderPostMarkdown } from "../utils/interests";
 import { getPostUrlBySlug } from "../utils/url-utils";
+
+// 被标记为「文章」的兴趣帖子（首页「我的兴趣」下方，最新 3 条）
+const interestArticles = featuredPosts(3);
 
 // 所有非日常文章
 const allNonDaily = await getSortedPostsExcludingDaily();
@@ -363,6 +367,55 @@ const formatNewsDate = (d: unknown) => {
               </a>
             ))}
           </div>
+
+          <!-- 上方分区、下方 3 条「设为文章」的兴趣帖子 -->
+          {interestArticles.length > 0 && (
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+              {interestArticles.map((p) => {
+                const sec = interestSections.find((s) => s.id === p.sectionId);
+                const meta = INTEREST_TYPE_META[sec ? sec.type : "other"];
+                return (
+                  <div
+                    role="button"
+                    tabindex="0"
+                    data-preview={p.id}
+                    data-tilt
+                    class="card-base rounded-[var(--radius-large)] p-3.5 flex flex-col gap-2 cursor-pointer hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+                  >
+                    <div class="flex items-center gap-1.5 text-[11px] text-75 min-w-0">
+                      <Icon name={meta.icon} class="text-[0.95rem] text-[var(--primary)] flex-none" />
+                      <span class="truncate">{sec?.name || "未分区"}</span>
+                      <span class="text-75/45 flex-none">·</span>
+                      <span class="tabular-nums flex-none">{p.date}</span>
+                    </div>
+                    <h3 class="font-semibold text-[14px] text-90 line-clamp-2 leading-snug">{p.title}</h3>
+                    <p class="text-[12px] text-75/75 line-clamp-2 leading-relaxed">{postExcerpt(p.content, 60)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {interestArticles.length > 0 && (
+            <div hidden>
+              {interestArticles.map((p) => {
+                const sec = interestSections.find((s) => s.id === p.sectionId);
+                const metaBits = [sec?.name, p.date];
+                if (p.minutes) metaBits.push(`${p.minutes} 分钟`);
+                if (p.rating) metaBits.push(`${p.rating} 分`);
+                return (
+                  <template
+                    data-pp-template
+                    data-pid={p.id}
+                    data-title={p.title}
+                    data-meta={metaBits.filter(Boolean).join(" · ")}
+                    data-section={sec ? `/interests/${sec.id}/` : "/interests/"}
+                  >
+                    <Fragment set:html={renderPostMarkdown(p.content)} />
+                  </template>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

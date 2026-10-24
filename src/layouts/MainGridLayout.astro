@@ -1160,9 +1160,31 @@ const mainPanelTop = siteConfig.banner.enable
     };
 
     document.addEventListener("click", (e) => {
-      const card = e.target.closest ? e.target.closest("[data-preview]") : null;
+      const card = e.target.closest
+        ? e.target.closest("[data-preview], [data-preview-self]")
+        : null;
       if (!card) return;
+      // 卡片里的真链接、按钮、可放大的图片按自己的逻辑走
+      if (e.target.closest("a, button, img[data-zoom]")) return;
+      // 拖选文字时不弹窗（方便复制）
+      const sel = window.getSelection && String(window.getSelection()).trim();
+      if (sel) return;
       e.preventDefault();
+
+      // 分区页里的帖子：正文就在卡片里面，直接拿现成的 HTML，不用另外存一份
+      if (card.hasAttribute("data-preview-self")) {
+        const md = card.querySelector(".custom-md");
+        if (titleEl) titleEl.textContent = card.dataset.ppTitle || "";
+        if (metaEl) metaEl.textContent = card.dataset.ppMeta || "";
+        if (bodyEl) {
+          bodyEl.innerHTML = md ? md.innerHTML : "";
+          bodyEl.scrollTop = 0;
+        }
+        if (linkEl) linkEl.hidden = true;
+        box.classList.add("on");
+        box.setAttribute("aria-hidden", "false");
+        return;
+      }
       openPreview(card.dataset.preview);
     });
   }

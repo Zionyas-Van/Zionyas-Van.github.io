@@ -196,3 +196,11 @@ export function randomPosts(n: number): InterestPost[] {
 export function latestPosts(n: number): InterestPost[] {
 	return [...interestPosts].sort(byDateDesc).slice(0, Math.max(0, n));
 }
+
+/** 被标记为「文章」的帖子（首页「我的兴趣」下方展示），按日期倒序 */
+export function featuredPosts(n = 3): InterestPost[] {
+	return [...interestPosts]
+		.filter((p) => p.featured)
+		.sort(byDateDesc)
+		.slice(0, Math.max(0, n));
+}

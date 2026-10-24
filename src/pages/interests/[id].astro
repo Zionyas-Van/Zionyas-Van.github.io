@@ -106,7 +106,17 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
         {posts.map((p) => (
           <article
             data-tilt
-            class="card-base rounded-[var(--radius-large)] p-4 md:p-5"
+            data-preview-self
+            data-pp-title={p.title}
+            data-pp-meta={[
+              section.name,
+              p.date,
+              fields.minutes && (p.minutes || 0) > 0 ? fmtMinutes(p.minutes || 0) : "",
+              fields.rating && (p.rating || 0) > 0 ? `${fmtRating(p.rating)} 分` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            class="card-base rounded-[var(--radius-large)] p-4 md:p-5 cursor-pointer"
             data-post
             data-time={p.date}
             data-text={`${p.title} ${p.content || ""}`.toLowerCase()}

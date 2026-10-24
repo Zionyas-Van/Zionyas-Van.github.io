@@ -34,6 +34,7 @@ export interface InterestPost {
 	date: string; // 日期 YYYY-MM-DD
 	minutes?: number; // 游戏/音乐：已游玩 / 已听时长（分钟，进度快照）
 	rating?: number; // 影视/书籍：10 分制
+	featured?: boolean; // 设为「文章」：显示在首页「我的兴趣」下方（最新 3 条）
 }
 
 export const INTEREST_TYPE_META: Record<
@@ -160,6 +161,13 @@ export const interestSections: InterestSection[] = [
     type: "game",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqa94d4a4wnk9DIYPAIDyAqayAGxzDdU0Dqe=.jpg",
     description: "协议三：保护铁驭。",
+  },
+  {
+    id: "frostrail154",
+    name: "Frostrail",
+    type: "game",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66tpkq52jhsDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+    description: "雪国列车。",
   }
 ];
 
@@ -322,5 +330,22 @@ export const interestPosts: InterestPost[] = [
     title: "我的小鸡怎么还没长大",
     date: "2026-10-24",
     content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0k29zaisslvDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n都已经过去这么几天了，为什么还没长大。",
+  },
+  {
+    id: "ip-1792859814679",
+    sectionId: "frostrail154",
+    title: "发现一款宝藏求生类游戏",
+    date: "2026-10-24",
+    rating: 8.5,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66tpkq52jhsDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n\n今天晚上本来打算上 B站 看新一集提欧奥特曼的，突然发现了这条视频：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r657bfuuwdhz2DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n\n我一看 —— **列车、末日、求生、丧尸**......这怎么和番茄小说上的**末日列车**还有我的世界列车**惊变100天**这么像......\n我本来也是一个喜欢玩求生建造类游戏的玩家，那必须尝尝咸淡，上小黑盒一搜，目前还在Demo测试中，于是我火速上线了：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66vscq54c58DIYPAIDyAqayAGxzDdU0Dqe=.png)\n",
+  },
+  {
+    id: "ip-1792860266393",
+    sectionId: "frostrail154",
+    title: "准备启程了！",
+    date: "2026-10-24",
+    minutes: 30,
+    rating: 9,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66tpkq52jhsDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n\n## **Frostrail 雪国列车 Demo版初次游玩体验**\n\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy7l8shuvpybkDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n\n游戏一开始就出生在一个阴森的小屋里，面前不知道是壁炉还是什么。整个游戏的画风有点像像素的味道，不知道是为什么。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj122y8q3ac7oDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n进入候车厅后，正中央的大树上就绑着一个怪物，这个游戏把他叫“亡灵”，用木棍做成简易木棒两下就能让他去世。\n随后搜了搜候车厅就准备上车了：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0jzl1aiq4l5DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqaix6uagxbe5DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n列车核心车厢里有一个大壁炉，这个不像是上世纪蒸汽火车的炉子，更不像现代火车，我感觉它长得好像一个心脏。\n把木棍放进去就可以燃烧了，让我们启程吧！\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uinjmihq4h2r8DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66ut6q538gmDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n",
   }
 ];

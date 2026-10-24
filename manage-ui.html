@@ -614,7 +614,7 @@ const ENTITIES = {
     create: "/api/interests/posts/add", update: "/api/interests/posts/update",
     remove: (it) => `/api/interests/posts/delete?id=${encodeURIComponent(it.id)}`,
     title: (it) => it.title,
-    sub: (it) => `${sectionName(it.sectionId)} · ${it.date || "无日期"}${it.minutes ? " · " + fmtMin(it.minutes) : ""}${it.rating ? " · " + it.rating + " 分" : ""}`,
+    sub: (it) => `${sectionName(it.sectionId)} · ${it.date || "无日期"}${it.minutes ? " · " + fmtMin(it.minutes) : ""}${it.rating ? " · " + it.rating + " 分" : ""}${it.featured ? " · 文章" : ""}`,
     thumb: () => null, searchKeys: ["title", "content", "sectionId"],
     fields: [
       { k: "sectionId", label: "所属分区", type: "select", required: true, options: [] },
@@ -622,6 +622,7 @@ const ENTITIES = {
       { k: "date", label: "日期", type: "text", ph: "2026-10-17，留空用今天" },
       { k: "minutes", label: "已游玩 / 已听时长", type: "duration", hint: "填「到目前为止」的总时长快照（不是这一次玩了多久）。统计时每个分区取最大值。" },
       { k: "rating", label: "我的评分（10 分制）", type: "text", ph: "0-10，可填 8.5；影视/书籍用" },
+      { k: "featured", label: "设为文章", type: "switch", text: "显示在首页「我的兴趣」下方（取最新 3 条）" },
       // 正文改成 Markdown：图片直接用工具栏的「图片」按钮插链接，
       // 所以原来的「截图链接」字段去掉了（老帖子里已有的截图数据仍会照旧显示）
       { k: "content", label: "正文（Markdown，可插图片）", type: "markdown" },

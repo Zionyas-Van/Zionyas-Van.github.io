@@ -255,11 +255,13 @@ function formatInterestPost(p) {
 	const minutes = Number(p.minutes) > 0 ? `\n    minutes: ${Math.round(Number(p.minutes))},` : "";
 	const rating =
 		Number(p.rating) > 0 ? `\n    rating: ${Math.round(Number(p.rating) * 10) / 10},` : "";
+	// 「设为文章」：只有 true 才写进去，普通帖子保持文件干净
+	const featured = p.featured === true ? "\n    featured: true," : "";
 	return `  {
     id: "${ds(p.id)}",
     sectionId: "${ds(p.sectionId)}",
     title: "${ds(p.title)}",
-    date: "${ds(p.date)}",${minutes}${rating}${shots}
+    date: "${ds(p.date)}",${minutes}${rating}${featured}${shots}
     content: "${ds(p.content)}",
   }`;
 }
