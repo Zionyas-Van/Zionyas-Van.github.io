@@ -6,6 +6,7 @@ import {
 	fmtMinutes,
 	fmtRating,
 	postsOfSection,
+	renderPostMarkdown,
 	sectionFirstDate,
 	sectionMaxMinutes,
 	sectionMaxRating,
@@ -132,7 +133,7 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
               </div>
             </div>
             {p.content && (
-              <p class="text-[13.5px] text-75 leading-relaxed whitespace-pre-line mt-2">{p.content}</p>
+              <div class="custom-md text-[13.5px] !max-w-none mt-2" set:html={renderPostMarkdown(p.content)} />
             )}
             {(p.screenshots || []).length > 0 && (
               <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">

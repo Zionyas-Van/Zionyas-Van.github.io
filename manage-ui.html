@@ -359,6 +359,7 @@ const FIELD = {
         <div class="actions" style="margin-top:10px">
           <button type="button" class="btn tonal sm" data-act="upload" data-target="${f.k}">${ic("upload")}上传本地图片</button>
           <button type="button" class="btn outline sm" data-act="clear-img" data-target="${f.k}">清除</button>
+          <a class="btn outline sm" href="https://yun.123pan.cn/imgHome" target="_blank" rel="noopener noreferrer" title="打开 123 图床官网，传完把图片链接粘回来">${ic("image")}去 123 图床</a>
         </div>
         ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}
       </div>
@@ -368,6 +369,7 @@ const FIELD = {
     return `<div data-imglist="${f.k}">
       ${list.map((u, i) => imgRowHtml(u, i)).join("")}
       <button type="button" class="btn outline sm" data-act="add-img" data-target="${f.k}">${ic("add")}添加一张</button>
+      <a class="btn outline sm" href="https://yun.123pan.cn/imgHome" target="_blank" rel="noopener noreferrer" title="打开 123 图床官网，传完把图片链接粘回来">${ic("image")}去 123 图床</a>
       ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}
     </div>`;
   },
@@ -619,8 +621,9 @@ const ENTITIES = {
       { k: "date", label: "日期", type: "text", ph: "2026-10-17，留空用今天" },
       { k: "minutes", label: "已游玩 / 已听时长", type: "duration", hint: "填「到目前为止」的总时长快照（不是这一次玩了多久）。统计时每个分区取最大值。" },
       { k: "rating", label: "我的评分（10 分制）", type: "text", ph: "0-10，可填 8.5；影视/书籍用" },
-      { k: "screenshots", label: "截图链接（可多张）", type: "imagelist", hint: "图床链接，详情页会以九宫格展示" },
-      { k: "content", label: "正文", type: "area", rows: 8 },
+      // 正文改成 Markdown：图片直接用工具栏的「图片」按钮插链接，
+      // 所以原来的「截图链接」字段去掉了（老帖子里已有的截图数据仍会照旧显示）
+      { k: "content", label: "正文（Markdown，可插图片）", type: "markdown" },
     ],
   },
 };

@@ -1,3 +1,4 @@
+import MarkdownIt from "markdown-it";
 import {
 	type InterestPost,
 	type InterestSection,
@@ -6,6 +7,26 @@ import {
 	interestPosts,
 	interestSections,
 } from "../data/interests";
+
+// 兴趣帖子的正文现在是 Markdown（管理工具里用 Markdown 编辑器写，图片直接用 Markdown 插）
+const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
+
+/** 正文 Markdown → HTML（图片自动带上 data-zoom，点一下就能全屏放大） */
+export function renderPostMarkdown(src: string): string {
+	return md.render(String(src || "")).replace(/<img\s/g, "<img data-zoom ");
+}
+
+/** 正文转纯文本摘要（去掉图片/链接语法），用于列表卡片和搜索 */
+export function postExcerpt(src: string, max = 90): string {
+	const text = String(src || "")
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // 图片
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // 链接只留文字
+		.replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, " ") // 标题/引用/列表符号
+		.replace(/[*_`~]/g, "")
+		.replace(/\s+/g, " ")
+		.trim();
+	return text.length > max ? `${text.slice(0, max)}…` : text;
+}
 
 /** 分钟 → 「6 小时 30 分」/「45 分钟」 */
 export function fmtMinutes(total: number): string {
@@ -169,4 +190,9 @@ export function randomPosts(n: number): InterestPost[] {
 		[pool[i], pool[j]] = [pool[j], pool[i]];
 	}
 	return pool.slice(0, Math.max(0, n));
+}
+
+/** 最新 n 条帖子（按日期倒序），用于兴趣页「最近动态」 */
+export function latestPosts(n: number): InterestPost[] {
+	return [...interestPosts].sort(byDateDesc).slice(0, Math.max(0, n));
 }

@@ -8,6 +8,8 @@ import {
 	getSectionCards,
 	getSectionCardsByType,
 	getInterestSummary,
+	latestPosts,
+	postExcerpt,
 	randomPosts,
 	sectionUrl,
 	typeLabel,
@@ -19,6 +21,8 @@ const summary = getInterestSummary();
 
 // 初始展示的 5 条帖子（构建时随机；前端「换一批」会重新随机）
 const initialPosts = randomPosts(5);
+// 最近动态：最新 2 条
+const recentPosts = latestPosts(2);
 const sectionById = new Map(interestSections.map((s) => [s.id, s]));
 
 // 交给前端的帖子数据（用于「换一批」）
@@ -30,7 +34,7 @@ const postsJson = JSON.stringify(
 		date: p.date,
 		minutes: p.minutes || 0,
 		rating: p.rating || 0,
-		excerpt: String(p.content || "").replace(/\s+/g, " ").slice(0, 80),
+		excerpt: postExcerpt(p.content, 80),
 	})),
 ).replace(/</g, "\\u003c");
 
@@ -42,7 +46,7 @@ const types = [
 const postCard = (p: { id: string; sectionId: string; title: string; date: string; minutes?: number; rating?: number; content?: string }) => {
 	const s = sectionById.get(p.sectionId);
 	const meta = s ? INTEREST_TYPE_META[s.type] : INTEREST_TYPE_META.other;
-	return { ...p, section: s, meta, excerpt: String(p.content || "").replace(/\s+/g, " ").slice(0, 90) };
+	return { ...p, section: s, meta, excerpt: postExcerpt(p.content, 90) };
 };
 ---
 
@@ -92,6 +96,47 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
                     {!!c.minutes && <span>· {fmtMinutes(c.minutes)}</span>}
                     {!!c.rating && <span>· {fmtRating(c.rating)} 分</span>}
                   </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ============ 最近动态：最新 2 条 ============ -->
+  {
+    recentPosts.length > 0 && (
+      <section class="mt-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold text-90 flex items-center gap-2">
+            <Icon name="material-symbols:history-rounded" class="text-[var(--primary)] text-[1.25rem]" />
+            最近动态
+          </h2>
+          <span class="text-[12px] text-75/60">最新 {recentPosts.length} 条</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {recentPosts.map((p) => {
+            const c = postCard(p);
+            return (
+              <a
+                href={c.section ? sectionUrl(c.section.id) : "/interests/"}
+                data-tilt
+                class="card-base rounded-[var(--radius-large)] p-4 flex gap-3.5 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+              >
+                <div class="w-12 h-12 rounded-[12px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">
+                  {c.section?.cover && <img src={c.section.cover} alt="" class="w-full h-full object-cover" loading="lazy" />}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 text-[11px] text-75 mb-0.5">
+                    <Icon name={c.meta.icon} class="text-[0.95rem] text-[var(--primary)]" />
+                    <span class="truncate">{c.section?.name || "未分区"}</span>
+                    <span class="text-75/45">·</span>
+                    <span class="tabular-nums">{c.date}</span>
+                  </div>
+                  <h3 class="font-semibold text-[14px] text-90 truncate">{c.title}</h3>
+                  <p class="text-[12px] text-75/75 mt-1 line-clamp-2 leading-relaxed">{c.excerpt}</p>
                 </div>
               </a>
             );
