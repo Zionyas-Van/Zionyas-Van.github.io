@@ -175,8 +175,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 /* 编辑器 */
 .editor{margin-top:4px}
 .toolbar{display:flex;gap:4px;flex-wrap:wrap;padding:8px;background:var(--surf-2);border:1px solid var(--out);border-bottom:none;border-radius:var(--r-md) var(--r-md) 0 0}
-.toolbar button{border:none;background:transparent;color:var(--txt-2);border-radius:8px;padding:6px 8px;cursor:pointer;font:inherit;font-size:12.5px;display:flex;align-items:center;gap:5px}
-.toolbar button:hover{background:var(--surf-3);color:var(--pri)}
+.toolbar button,.toolbar a{border:none;background:transparent;color:var(--txt-2);border-radius:8px;padding:6px 8px;cursor:pointer;font:inherit;font-size:12.5px;display:flex;align-items:center;gap:5px;text-decoration:none}
+.toolbar button:hover,.toolbar a:hover{background:var(--surf-3);color:var(--pri)}
 .editor textarea{border-radius:0 0 var(--r-md) var(--r-md);min-height:320px;font-family:"JetBrains Mono Variable",ui-monospace,Consolas,monospace;font-size:13.5px}
 .editor.preview textarea{display:none}
 .previewbox{display:none;border:1px solid var(--out);border-radius:0 0 var(--r-md) var(--r-md);padding:18px 20px;background:var(--surf);min-height:320px;max-height:640px;overflow:auto}
@@ -390,6 +390,7 @@ const FIELD = {
         <button type="button" data-act="md" data-md="code">代码块</button>
         <button type="button" data-act="md" data-md="link">链接</button>
         <button type="button" data-act="md" data-md="image">${ic("image")}图片</button>
+        <a href="https://yun.123pan.cn/imgHome" target="_blank" rel="noopener noreferrer" title="打开 123 图床官网，传完把图片链接粘进来（配合左边的「图片」按钮插入）">${ic("link")}去 123 图床</a>
         <button type="button" data-act="md" data-md="hr">分割线</button>
         <span style="flex:1"></span>
         <button type="button" data-act="mdpreview">${ic("visibility")}预览</button>
