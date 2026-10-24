@@ -1018,6 +1018,7 @@ const mainPanelTop = siteConfig.banner.enable
     initInterestSection();
     initLightbox();
     initPostPreview();
+    initCardLinks();
     initTilt();
     initElapsed();
   }
@@ -1163,6 +1164,29 @@ const mainPanelTop = siteConfig.banner.enable
       if (!card) return;
       e.preventDefault();
       openPreview(card.dataset.preview);
+    });
+  }
+
+  // ---------- ⑭ 整张卡片可点（博客文章卡） ----------
+  // 卡片里还有分类/标签/封面/标题这些真链接，套一层 <a> 会变成嵌套链接（非法），
+  // 所以改成点击时判断：没点在内部链接/按钮上、也没在拖选文字，就整张卡跳转。
+  // 用 swup.navigate 走站内过渡，别整页刷新。
+  function initCardLinks() {
+    if (window.__cardLinkWired) return;
+    window.__cardLinkWired = 1;
+    document.addEventListener("click", (e) => {
+      const card = e.target.closest ? e.target.closest("[data-card-href]") : null;
+      if (!card) return;
+      if (e.defaultPrevented) return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (e.target.closest("a, button, input, textarea, select, label, [role='button']")) return;
+      const sel = window.getSelection && String(window.getSelection()).trim();
+      if (sel) return;
+      const href = card.dataset.cardHref;
+      if (!href) return;
+      const swup = window.swup;
+      if (swup && typeof swup.navigate === "function") swup.navigate(href);
+      else location.href = href;
     });
   }
 

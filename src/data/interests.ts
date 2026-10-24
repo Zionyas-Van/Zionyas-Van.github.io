@@ -285,7 +285,7 @@ export const interestPosts: InterestPost[] = [
   {
     id: "ip-1792685469539",
     sectionId: "supermarkt-together",
-    title: "又是一款保障开黑游戏",
+    title: "又是一款神奇开黑游戏",
     date: "2026-01-22",
     minutes: 978,
     rating: 8,
@@ -315,5 +315,12 @@ export const interestPosts: InterestPost[] = [
     minutes: 455,
     rating: 9,
     content: "协议三：保护铁驭。\n剧情太感人了。",
+  },
+  {
+    id: "ip-1792859085184",
+    sectionId: "cs2",
+    title: "我的小鸡怎么还没长大",
+    date: "2026-10-24",
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0k29zaisslvDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n都已经过去这么几天了，为什么还没长大。",
   }
 ];
