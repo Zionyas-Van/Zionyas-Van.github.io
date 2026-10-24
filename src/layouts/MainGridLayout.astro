@@ -967,8 +967,37 @@ const mainPanelTop = siteConfig.banner.enable
     });
   }
 
-  // ---------- ⑨ 分区页：帖子搜索 ----------
+  // ---------- ⑨ 分区页：帖子搜索 + 排序 + 正文限高 ----------
   function initInterestSection() {
+    const listEl = document.getElementById("section-posts");
+    if (!listEl) return;
+
+    // 正文限高：超过 max-height 的才显示「阅读全部」，短帖子不要多一个按钮
+    document.querySelectorAll("[data-clamp]").forEach((box) => {
+      const tall = box.scrollHeight > box.clientHeight + 8;
+      box.classList.toggle("clamped", tall);
+      const btn = box.parentElement && box.parentElement.querySelector("[data-pp-open]");
+      if (btn) btn.hidden = !tall;
+    });
+
+    // 排序：直接挪 DOM，不重新渲染（图片、弹窗数据都不用重建）
+    const parseDate = (raw) => {
+      const t = new Date(String(raw || "").replace(/-/g, "/")).getTime();
+      return Number.isNaN(t) ? 0 : t;
+    };
+    const sortBtns = Array.from(document.querySelectorAll("[data-sort]"));
+    sortBtns.forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const dir = btn.dataset.sort === "asc" ? 1 : -1;
+        const items = Array.from(listEl.querySelectorAll("[data-post]"));
+        items.sort((a, b) => (parseDate(a.dataset.time) - parseDate(b.dataset.time)) * dir);
+        items.forEach((el) => listEl.appendChild(el));
+        sortBtns.forEach((b) => (b.dataset.active = b === btn ? "true" : "false"));
+      });
+    });
+
     const input = document.getElementById("section-post-search");
     if (!input || input.dataset.bound === "1") return;
     input.dataset.bound = "1";
@@ -1164,11 +1193,16 @@ const mainPanelTop = siteConfig.banner.enable
         ? e.target.closest("[data-preview], [data-preview-self]")
         : null;
       if (!card) return;
-      // 卡片里的真链接、按钮、可放大的图片按自己的逻辑走
-      if (e.target.closest("a, button, img[data-zoom]")) return;
-      // 拖选文字时不弹窗（方便复制）
-      const sel = window.getSelection && String(window.getSelection()).trim();
-      if (sel) return;
+      // 「阅读全部」按钮：即使它是 button 也要放行
+      const opener = e.target.closest ? e.target.closest("[data-pp-open]") : null;
+      const viaOpener = !!opener && card.contains(opener);
+      if (!viaOpener) {
+        // 卡片里的真链接、按钮、可放大的图片按自己的逻辑走
+        if (e.target.closest("a, button, img[data-zoom]")) return;
+        // 拖选文字时不弹窗（方便复制）
+        const sel = window.getSelection && String(window.getSelection()).trim();
+        if (sel) return;
+      }
       e.preventDefault();
 
       // 分区页里的帖子：正文就在卡片里面，直接拿现成的 HTML，不用另外存一份
@@ -1440,7 +1474,7 @@ const mainPanelTop = siteConfig.banner.enable
       else if (days < 31) txt = `${days} 天`;
       else if (days < 365) txt = `${Math.floor(days / 30)} 个月`;
       else txt = `${(days / 365).toFixed(1).replace(/\.0$/, "")} 年`;
-      el.textContent = `已过去 ${txt}`;
+      el.textContent = el.hasAttribute("data-elapsed-plain") ? `${txt}前` : `已过去 ${txt}`;
     });
   }
 

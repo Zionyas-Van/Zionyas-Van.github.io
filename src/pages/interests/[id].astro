@@ -81,18 +81,22 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
   </div>
 
   <!-- ============ 帖子 ============ -->
-  <div class="flex items-center justify-between mb-3">
+  <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
     <h2 class="text-lg font-bold text-90 flex items-center gap-2">
       <Icon name="material-symbols:article-outline-rounded" class="text-[var(--primary)] text-[1.25rem]" />
       全部记录
     </h2>
-    <input
-      id="section-post-search"
-      class="h-[34px] px-3.5 rounded-full border border-black/10 dark:border-white/15 bg-transparent text-[13px] outline-none focus:border-[var(--primary)] w-40"
-      type="text"
-      placeholder="搜索标题或内容"
-      autocomplete="off"
-    />
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <button type="button" class="interest-sort" data-sort="desc" data-active="true">由新到旧</button>
+      <button type="button" class="interest-sort" data-sort="asc" data-active="false">由旧到新</button>
+      <input
+        id="section-post-search"
+        class="h-[32px] px-3.5 rounded-full border border-black/10 dark:border-white/15 bg-transparent text-[13px] outline-none focus:border-[var(--primary)] w-40"
+        type="text"
+        placeholder="搜索标题或内容"
+        autocomplete="off"
+      />
+    </div>
   </div>
 
   {
@@ -142,18 +146,25 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
                 </div>
               </div>
             </div>
-            {p.content && (
-              <div class="custom-md text-[13.5px] !max-w-none mt-2" set:html={renderPostMarkdown(p.content)} />
-            )}
-            {(p.screenshots || []).length > 0 && (
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
-                {(p.screenshots || []).map((src) => (
-                  <div class="aspect-video rounded-[var(--radius-small)] overflow-hidden bg-black/10 dark:bg-white/10">
-                    <img src={src} alt="" data-zoom class="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
-                  </div>
-                ))}
-              </div>
-            )}
+            <!-- 正文限高：超出部分收起来，点「阅读全部」或卡片任意处看全文 -->
+            <div class="post-clamp" data-clamp>
+              {p.content && (
+                <div class="custom-md text-[13.5px] !max-w-none mt-2" set:html={renderPostMarkdown(p.content)} />
+              )}
+              {(p.screenshots || []).length > 0 && (
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+                  {(p.screenshots || []).map((src) => (
+                    <div class="aspect-video rounded-[var(--radius-small)] overflow-hidden bg-black/10 dark:bg-white/10">
+                      <img src={src} alt="" data-zoom class="w-full h-full object-cover cursor-zoom-in" loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button type="button" class="post-readall" data-pp-open hidden>
+              <Icon name="material-symbols:expand-more-rounded" class="text-[1rem]" />
+              阅读全部
+            </button>
           </article>
         ))}
       </div>
@@ -163,3 +174,61 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
     没有匹配的记录
   </p>
 </MainGridLayout>
+
+<style>
+  /* 正文限高：过长的帖子在列表里只露一截，点「阅读全部」看全文（弹窗里图片才能放大） */
+  .post-clamp {
+    position: relative;
+    max-height: 20rem;
+    overflow: hidden;
+  }
+  .post-clamp.clamped::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--card-bg) 85%);
+  }
+  /* 卡片状态下的图片不做放大预览，点哪都是打开全文 */
+  .post-clamp img {
+    pointer-events: none;
+    cursor: pointer;
+  }
+  .post-readall {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+    color: var(--primary);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .post-readall:hover {
+    background: color-mix(in oklab, var(--primary) 16%, transparent);
+  }
+  .interest-sort {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(128, 128, 128, 0.18);
+    background: transparent;
+    color: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .interest-sort[data-active="true"] {
+    background: color-mix(in oklab, var(--primary) 12%, transparent);
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent);
+    color: var(--primary);
+    font-weight: 600;
+  }
+</style>

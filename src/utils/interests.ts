@@ -109,9 +109,19 @@ export function getSectionCards(): SectionCard[] {
 	return interestSections
 		.map(toCard)
 		.sort((a, b) => {
-			if (a.lastDate && b.lastDate) return b.lastDate.localeCompare(a.lastDate);
-			return a.lastDate ? -1 : b.lastDate ? 1 : 0;
+			// 必须先把 2026-9-30 补成 2026-09-30 再比，否则 10 月会被排到 9 月前面
+			const da = padDate(a.lastDate);
+			const db = padDate(b.lastDate);
+			if (da && db) return db.localeCompare(da);
+			return da ? -1 : db ? 1 : 0;
 		});
+}
+
+/** 所有分区里最新的一条动态日期（用于「最新一条动态发布于…」） */
+export function latestOverallDate(): string {
+	const dates = interestPosts.map((p) => p.date).filter(Boolean);
+	if (!dates.length) return "";
+	return dates.sort((a, b) => padDate(b).localeCompare(padDate(a)))[0];
 }
 
 export function getSectionCardsByType(type: InterestType | "all"): SectionCard[] {

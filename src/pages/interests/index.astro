@@ -9,6 +9,7 @@ import {
 	getSectionCardsByType,
 	getInterestSummary,
 	latestPosts,
+	latestOverallDate,
 	postExcerpt,
 	randomPosts,
 	renderPostMarkdown,
@@ -19,6 +20,8 @@ import { interestPosts, interestSections, INTEREST_TYPE_META } from "../../data/
 
 const cards = getSectionCards();
 const summary = getInterestSummary();
+// 「最新一条动态发布于…」：所有分区里最新那条帖子的日期
+const latestDate = latestOverallDate();
 
 // 初始展示的 5 条帖子（构建时随机；前端「换一批」会重新随机）
 const initialPosts = randomPosts(5);
@@ -160,6 +163,14 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
       </h2>
       <span class="text-[12px] text-75/60" id="interest-count">{cards.length} 个</span>
     </div>
+
+    {latestDate && (
+      <p class="text-[12px] text-75/70 mb-3 flex items-center gap-1.5">
+        <Icon name="material-symbols:schedule-rounded" class="text-[1rem] text-[var(--primary)]" />
+        最新一条动态发布于
+        <span data-elapsed data-time={latestDate} data-elapsed-plain></span>
+      </p>
+    )}
 
     <div class="card-base rounded-[var(--radius-large)] p-3 md:p-4 mb-4" data-interest-filterbar>
       <div class="interest-frow">
