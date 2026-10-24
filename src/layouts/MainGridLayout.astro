@@ -107,6 +107,26 @@ const mainPanelTop = siteConfig.banner.enable
         <!-- 图片放大预览（点带 data-zoom 的图片打开，点任意处关闭） -->
         <div id="img-lightbox" aria-hidden="true"><img id="img-lightbox-img" alt="" /></div>
 
+        <!-- 兴趣帖子全文预览（点带 data-preview 的卡片打开，样式对齐博客文章页） -->
+        <div id="post-preview" aria-hidden="true">
+          <div class="pp-mask" data-pp-close></div>
+          <div class="pp-panel" role="dialog" aria-modal="true" aria-labelledby="pp-title">
+            <div class="pp-head">
+              <div class="min-w-0">
+                <h2 id="pp-title"></h2>
+                <div id="pp-meta" class="pp-meta"></div>
+              </div>
+              <button type="button" class="pp-close" data-pp-close aria-label="关闭预览">
+                <Icon name="material-symbols:close-rounded" class="text-[1.2rem]" />
+              </button>
+            </div>
+            <div id="pp-body" class="pp-body custom-md"></div>
+            <div class="pp-foot">
+              <a id="pp-section" href="/interests/">查看所在分区 →</a>
+            </div>
+          </div>
+        </div>
+
         <!-- 移动端底部导航栏（全站，放在 main 之外，切页不丢、刷新也在） -->
         <MobileBottomNav />
 
@@ -926,7 +946,7 @@ const mainPanelTop = siteConfig.banner.enable
     };
     const cardHtml = (p) => {
       const s = secMap.get(p.sectionId);
-      return `<a href="/interests/${encodeURIComponent(p.sectionId)}/" data-tilt class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
+      return `<div role="button" tabindex="0" data-preview="${esc(p.id)}" data-tilt class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 cursor-pointer hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all">
         <div class="w-11 h-11 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">${s && s.cover ? `<img src="${esc(s.cover)}" alt="" class="w-full h-full object-cover" loading="lazy">` : ""}</div>
         <div class="min-w-0 flex-1">
           <div class="text-[11px] text-75 mb-0.5 truncate">${esc(s ? s.name : "未分区")}</div>
@@ -935,7 +955,7 @@ const mainPanelTop = siteConfig.banner.enable
           <div class="flex items-center gap-2 mt-1.5 text-[11px] text-75/60">
             ${p.date ? `<span>${esc(p.date)}</span>` : ""}${p.minutes ? `<span>· ${fmtMin(p.minutes)}</span>` : ""}${p.rating ? `<span>· ${p.rating} 分</span>` : ""}
           </div>
-        </div></a>`;
+        </div></div>`;
     };
     btn.addEventListener("click", () => {
       const pool = [...posts];
@@ -997,6 +1017,7 @@ const mainPanelTop = siteConfig.banner.enable
     initInterests();
     initInterestSection();
     initLightbox();
+    initPostPreview();
     initTilt();
     initElapsed();
   }
@@ -1079,6 +1100,69 @@ const mainPanelTop = siteConfig.banner.enable
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeLightbox();
+    });
+  }
+
+  // ---------- ⑬ 兴趣帖子全文预览（点击卡片弹窗，样式对齐博客文章页） ----------
+  // 点击带 data-preview 的卡片 → 从页面里内嵌的 <template data-pid> 取整篇 HTML 塞进弹窗。
+  // 正文在构建时已经渲染成 HTML，前端不需要再解析 Markdown。
+  function initPostPreview() {
+    const box = document.getElementById("post-preview");
+    if (!box) return;
+    const titleEl = document.getElementById("pp-title");
+    const metaEl = document.getElementById("pp-meta");
+    const bodyEl = document.getElementById("pp-body");
+    const linkEl = document.getElementById("pp-section");
+    const close = () => {
+      if (!box.classList.contains("on")) return;
+      box.classList.remove("on");
+      box.setAttribute("aria-hidden", "true");
+      if (bodyEl) bodyEl.innerHTML = "";
+    };
+    // 每次切页都关掉，避免残留（和图片预览同样的坑）
+    close();
+    if (box.dataset.wired === "1") return;
+    box.dataset.wired = "1";
+
+    box.addEventListener("click", (e) => {
+      if (e.target.closest("[data-pp-close]")) close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      // 卡片是 role="button"，键盘回车/空格也能打开
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest ? e.target.closest("[data-preview]") : null;
+      if (!card) return;
+      e.preventDefault();
+      openPreview(card.dataset.preview);
+    });
+
+    const openPreview = (id) => {
+      const tpl = id ? document.querySelector(`[data-pp-template][data-pid="${id}"]`) : null;
+      if (!tpl) return;
+      if (titleEl) titleEl.textContent = tpl.dataset.title || "";
+      if (metaEl) metaEl.textContent = tpl.dataset.meta || "";
+      if (bodyEl) {
+        bodyEl.innerHTML = tpl.innerHTML;
+        bodyEl.scrollTop = 0;
+      }
+      if (linkEl) {
+        const href = tpl.dataset.section || "";
+        linkEl.hidden = !href;
+        if (href) linkEl.setAttribute("href", href);
+      }
+      box.classList.add("on");
+      box.setAttribute("aria-hidden", "false");
+    };
+
+    document.addEventListener("click", (e) => {
+      const card = e.target.closest ? e.target.closest("[data-preview]") : null;
+      if (!card) return;
+      e.preventDefault();
+      openPreview(card.dataset.preview);
     });
   }
 
@@ -1342,6 +1426,96 @@ const mainPanelTop = siteConfig.banner.enable
   @supports not (overflow-clip-margin: 1px) {
     html.tilting main#swup-container {
       overflow: visible;
+    }
+  }
+
+  /* 帖子全文预览弹窗：面板用卡片色，正文用 custom-md（和博客文章页同一套排版） */
+  #post-preview {
+    position: fixed;
+    inset: 0;
+    z-index: 88;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #post-preview.on {
+    display: flex;
+  }
+  #post-preview .pp-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+  }
+  #post-preview .pp-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(52rem, 100%);
+    max-height: 86vh;
+    border-radius: var(--radius-large);
+    background: var(--card-bg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+  #post-preview .pp-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+  }
+  #post-preview #pp-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  #post-preview .pp-meta {
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--content-meta, #6b7280);
+  }
+  #post-preview .pp-close {
+    margin-left: auto;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--content-meta, #6b7280);
+    cursor: pointer;
+  }
+  #post-preview .pp-close:hover {
+    background: rgba(128, 128, 128, 0.14);
+  }
+  #post-preview .pp-body {
+    padding: 2px 18px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #post-preview .pp-body > :first-child {
+    margin-top: 12px;
+  }
+  #post-preview .pp-foot {
+    padding: 10px 18px;
+    border-top: 1px solid rgba(128, 128, 128, 0.12);
+    font-size: 13px;
+  }
+  #post-preview .pp-foot a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+  @media (max-width: 767px) {
+    #post-preview {
+      padding: 8px;
+    }
+    #post-preview .pp-panel {
+      max-height: 90vh;
     }
   }
 

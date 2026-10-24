@@ -11,6 +11,7 @@ import {
 	latestPosts,
 	postExcerpt,
 	randomPosts,
+	renderPostMarkdown,
 	sectionUrl,
 	typeLabel,
 } from "../../utils/interests";
@@ -76,10 +77,12 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
           {initialPosts.map((p) => {
             const c = postCard(p);
             return (
-              <a
-                href={c.section ? sectionUrl(c.section.id) : "/interests/"}
+              <div
+                role="button"
+                tabindex="0"
+                data-preview={p.id}
                 data-tilt
-                class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+                class="card-base rounded-[var(--radius-large)] p-3.5 flex gap-3 cursor-pointer hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
               >
                 <div class="w-11 h-11 rounded-[11px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">
                   {c.section?.cover && <img src={c.section.cover} alt="" class="w-full h-full object-cover" loading="lazy" />}
@@ -97,7 +100,7 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
                     {!!c.rating && <span>· {fmtRating(c.rating)} 分</span>}
                   </div>
                 </div>
-              </a>
+              </div>
             );
           })}
         </div>
@@ -120,10 +123,12 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
           {recentPosts.map((p) => {
             const c = postCard(p);
             return (
-              <a
-                href={c.section ? sectionUrl(c.section.id) : "/interests/"}
+              <div
+                role="button"
+                tabindex="0"
+                data-preview={p.id}
                 data-tilt
-                class="card-base rounded-[var(--radius-large)] p-4 flex gap-3.5 hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
+                class="card-base rounded-[var(--radius-large)] p-4 flex gap-3.5 cursor-pointer hover:shadow-[0_6px_18px_rgba(18,16,32,0.10)] transition-all"
               >
                 <div class="w-12 h-12 rounded-[12px] overflow-hidden flex-none bg-black/10 dark:bg-white/10">
                   {c.section?.cover && <img src={c.section.cover} alt="" class="w-full h-full object-cover" loading="lazy" />}
@@ -138,7 +143,7 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
                   <h3 class="font-semibold text-[14px] text-90 truncate">{c.title}</h3>
                   <p class="text-[12px] text-75/75 mt-1 line-clamp-2 leading-relaxed">{c.excerpt}</p>
                 </div>
-              </a>
+              </div>
             );
           })}
         </div>
@@ -232,6 +237,27 @@ const postCard = (p: { id: string; sectionId: string; title: string; date: strin
       没有符合条件的分类，换个条件试试～
     </p>
   </section>
+
+  <!-- 帖子全文：构建时渲染成 HTML，点卡片弹预览时直接塞进去（<template> 不渲染、不占版面、也不会提前加载图片） -->
+  <div id="interest-previews" hidden>
+    {interestPosts.map((p) => {
+      const s = sectionById.get(p.sectionId);
+      const metaBits = [s?.name, p.date];
+      if (p.minutes) metaBits.push(fmtMinutes(p.minutes));
+      if (p.rating) metaBits.push(`${p.rating} 分`);
+      return (
+        <template
+          data-pp-template
+          data-pid={p.id}
+          data-title={p.title}
+          data-meta={metaBits.filter(Boolean).join(" · ")}
+          data-section={s ? sectionUrl(s.id) : "/interests/"}
+        >
+          <Fragment set:html={renderPostMarkdown(p.content)} />
+        </template>
+      );
+    })}
+  </div>
 
   <script type="application/json" id="interest-posts" set:html={postsJson}></script>
   <script type="application/json" id="interest-sections" set:html={JSON.stringify(
