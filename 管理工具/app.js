@@ -1,0 +1,1383 @@
+/* ============================================================
+   基础工具
+   ============================================================ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const ICONS = window.MS_ICONS || {};
+const ic = (name, cls = "") =>
+  `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ""}</svg>`;
+const esc = (s) =>
+  String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const nl2br = (s) => esc(s).replace(/\\n/g, "<br>");
+
+/* 兴趣系统的小工具 */
+const INTEREST_TYPE_LABEL = { game: "游戏", music: "音乐", film: "影视", book: "书籍", other: "其它" };
+const typeLabel = (t) => INTEREST_TYPE_LABEL[t] || "其它";
+const fmtMin = (m) => {
+  const v = Math.max(0, Math.round(Number(m) || 0));
+  if (!v) return "0 分钟";
+  const h = Math.floor(v / 60);
+  const r = v % 60;
+  return h ? (r ? `${h} 小时 ${r} 分` : `${h} 小时`) : `${r} 分钟`;
+};
+const sectionName = (id) => {
+  const s = (STATE.refs.interestSections || []).find((x) => x.id === id);
+  return s ? s.name : id || "未分区";
+};
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 300) || "返回内容无法解析" }; }
+  if (res.status === 404 && /Not Found/i.test(text))
+    throw new Error(`接口不存在（${path}）—— 管理工具的服务器还是旧版本，请把这个窗口关掉，重新双击「管理工具.bat」再试。`);
+  if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
+  return data;
+}
+const post = (p, body) => api(p, { method: "POST", body: JSON.stringify(body) });
+const put  = (p, body) => api(p, { method: "PUT",  body: JSON.stringify(body) });
+const del  = (p)       => api(p, { method: "DELETE" });
+
+function toast(msg, kind = "ok") {
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.innerHTML = `${ic(kind === "err" ? "error" : "check-circle")}<span>${esc(msg)}</span>`;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), kind === "err" ? 6000 : 3200);
+}
+function showError(e) { toast(e && e.message ? e.message : String(e), "err"); }
+
+/* 弹窗 */
+function openDialog({ title, body, footer }) {
+  const root = $("#modal-root");
+  root.innerHTML = `
+    <div class="scrim" data-act="close-modal"></div>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header>${ic("edit")}<h3>${esc(title)}</h3>
+        <button class="btn icon" data-act="close-modal" title="关闭">${ic("close")}</button>
+      </header>
+      <div class="body">${body}</div>
+      ${footer ? `<footer>${footer}</footer>` : ""}
+    </div>`;
+  root.classList.add("on");
+  return root;
+}
+function closeDialog() { const r = $("#modal-root"); r.classList.remove("on"); r.innerHTML = ""; }
+
+/* ============================================================
+   字段系统：所有表单都由字段描述生成，避免"某个字段忘了做"
+   ============================================================ */
+const FIELD = {
+  text: (f, v) => `<input type="text" data-k="${f.k}" placeholder="${esc(f.ph || "")}" value="${esc(v ?? f.def ?? "")}">`,
+  url:  (f, v) => `<input type="url" data-k="${f.k}" placeholder="${esc(f.ph || "https://…")}" value="${esc(v ?? f.def ?? "")}">`,
+  area: (f, v) => `<textarea data-k="${f.k}" rows="${f.rows || 3}" placeholder="${esc(f.ph || "")}">${esc(v ?? f.def ?? "")}</textarea>`,
+  select: (f, v) => `<select data-k="${f.k}">${(f.options || [])
+      .map(([val, label]) => `<option value="${esc(val)}"${String(v ?? f.def) === String(val) ? " selected" : ""}>${esc(label)}</option>`)
+      .join("")}</select>`,
+  switch: (f, v) => `<label class="switch"><input type="checkbox" data-k="${f.k}"${v === true || v === "true" ? " checked" : ""}><span class="track"></span><span>${esc(f.text || f.label)}</span></label>`,
+  chips: (f, v) => {
+    const list = Array.isArray(v) ? v : [];
+    return `<div class="chips" data-chips="${f.k}">
+      ${list.map((t) => chipHtml(t)).join("")}
+      <input type="text" data-chip-input="${f.k}" placeholder="${esc(f.ph || "输入后按回车添加")}">
+    </div>
+    <div class="sugg" data-sugg="${f.k}"></div>`;
+  },
+  image: (f, v) => `<div class="coverbox">
+      <div class="preview" data-preview="${f.k}" style="${v ? `background-image:url('${esc(v)}')` : ""}">${v ? "" : "无图"}</div>
+      <div class="grow">
+        <input type="url" data-k="${f.k}" placeholder="${esc(f.ph || "贴入图片链接")}" value="${esc(v ?? "")}">
+        <div class="actions" style="margin-top:10px">
+          <button type="button" class="btn tonal sm" data-act="upload" data-target="${f.k}">${ic("upload")}上传本地图片</button>
+          <button type="button" class="btn outline sm" data-act="clear-img" data-target="${f.k}">清除</button>
+          <a class="btn outline sm" href="https://yun.123pan.cn/imgHome" target="_blank" rel="noopener noreferrer" title="打开 123 图床官网，传完把图片链接粘回来">${ic("image")}去 123 图床</a>
+        </div>
+        ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}
+      </div>
+    </div>`,
+  imagelist: (f, v) => {
+    const list = Array.isArray(v) ? v : [];
+    return `<div data-imglist="${f.k}">
+      ${list.map((u, i) => imgRowHtml(u, i)).join("")}
+      <button type="button" class="btn outline sm" data-act="add-img" data-target="${f.k}">${ic("add")}添加一张</button>
+      <a class="btn outline sm" href="https://yun.123pan.cn/imgHome" target="_blank" rel="noopener noreferrer" title="打开 123 图床官网，传完把图片链接粘回来">${ic("image")}去 123 图床</a>
+      ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}
+    </div>`;
+  },
+  links: (f, v) => {
+    const list = Array.isArray(v) ? v : [];
+    return `<div data-links="${f.k}">
+      ${list.map((l, i) => linkRowHtml(l, i)).join("")}
+      <button type="button" class="btn outline sm" data-act="add-link" data-target="${f.k}">${ic("add")}添加一个下载按钮</button>
+    </div>`;
+  },
+  markdown: (f, v) => `<div class="editor" data-editor="${f.k}">
+      <div class="toolbar">
+        <button type="button" data-act="md" data-md="h2">标题</button>
+        <button type="button" data-act="md" data-md="bold"><b>粗体</b></button>
+        <button type="button" data-act="md" data-md="italic"><i>斜体</i></button>
+        <button type="button" data-act="md" data-md="quote">引用</button>
+        <button type="button" data-act="md" data-md="ul">列表</button>
+        <button type="button" data-act="md" data-md="code">代码块</button>
+        <button type="button" data-act="md" data-md="link">链接</button>
+        <button type="button" data-act="md" data-md="image">${ic("image")}图片</button>
+        <a href="https://yun.123pan.cn/imgHome" target="_blank" rel="noopener noreferrer" title="打开 123 图床官网，传完把图片链接粘进来（配合左边的「图片」按钮插入）">${ic("link")}去 123 图床</a>
+        <button type="button" data-act="md" data-md="hr">分割线</button>
+        <span style="flex:1"></span>
+        <button type="button" data-act="mdpreview">${ic("visibility")}预览</button>
+      </div>
+      <textarea data-k="${f.k}" placeholder="${esc(f.ph || "在这里写 Markdown 正文…")}">${esc(v ?? "")}</textarea>
+      <div class="previewbox"></div>
+      <div class="editor-meta"><span data-count="${f.k}"></span><span>支持 Markdown：标题、粗体、列表、代码块、图片、链接</span></div>
+    </div>`,
+  category: (f, v) => `<input type="text" data-k="${f.k}" list="dl-cats" placeholder="${esc(f.ph || "选择或输入新的分类文件夹名")}" value="${esc(v ?? "")}">
+      <datalist id="dl-cats"></datalist>
+      ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}`,
+  rescat: (f, v) => `<select data-k="category" data-res="1">
+      <option value="">（未分类）</option>${f.opts || ""}
+      <option value="__new__">＋ 新建分类…</option></select>
+    <input type="text" data-k="category" data-res-new="1" placeholder="输入新的分类名" style="margin-top:8px;display:none">`,
+  slug: (f, v) => `<div class="row" style="align-items:flex-end">
+      <div style="flex:1 1 auto"><input type="text" data-k="${f.k}" placeholder="留空则自动生成" value="${esc(v ?? "")}"></div>
+      <button type="button" class="btn outline sm" data-act="gen-slug" style="margin-bottom:2px">${ic("sync")}按标题生成</button>
+    </div>
+    <div class="hint">${ic("info")}<span>留空就行 —— 保存时会按标题自动生成（中文标题会用日期兜底）。上面的按钮可以手动预览/改。</span></div>`,
+  /* 时长：小时 + 分钟两个框，提交时合并成分钟数（存 minutes） */
+  duration: (f, v) => {
+    const total = Math.max(0, Math.round(Number(v) || 0));
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return `<div data-duration="${f.k}" style="display:flex;gap:8px;align-items:center">
+      <input type="number" min="0" step="1" data-dk="h" value="${total ? h : ""}" placeholder="小时" style="flex:1 1 0">
+      <span style="opacity:.5">小时</span>
+      <input type="number" min="0" max="59" step="1" data-dk="m" value="${total ? m : ""}" placeholder="分钟" style="flex:1 1 0">
+      <span style="opacity:.5">分钟</span>
+    </div>
+    ${f.hint ? `<div class="hint">${ic("info")}<span>${esc(f.hint)}</span></div>` : ""}`;
+  },
+};
+
+const chipHtml = (t) =>
+  `<span class="chip" data-val="${esc(t)}">${esc(t)}<button type="button" data-act="del-chip" title="移除">${ic("close")}</button></span>`;
+const imgRowHtml = (u, i) => `<div class="imgrow" data-i="${i}">
+  <div class="thumb" style="${u ? `background:url('${esc(u)}') center/cover` : ""}"></div>
+  <input type="url" class="img-url" placeholder="图片链接（宣传图/截图）" value="${esc(u || "")}">
+  <button type="button" class="btn icon" data-act="up-img" title="上移">${ic("expand-more")}</button>
+  <button type="button" class="btn icon" data-act="del-img" title="删除">${ic("delete")}</button>
+</div>`;
+const linkRowHtml = (l = {}, i) => `<div class="imgrow" data-i="${i}">
+  <input type="text" class="lk-label" placeholder="按钮文字" value="${esc(l.label || "")}" style="flex:0 1 130px">
+  <input type="url" class="lk-url" placeholder="下载链接" value="${esc(l.url || "")}">
+  <input type="text" class="lk-icon" placeholder="图标(可空)" value="${esc(l.icon || "")}" style="flex:0 1 130px">
+  <button type="button" class="btn icon" data-act="del-link" title="删除">${ic("delete")}</button>
+</div>`;
+
+function fieldHtml(f, v) {
+  const need = f.required ? ' <span class="req">*</span>' : "";
+  const wide = ["markdown", "imagelist", "links", "chips"].includes(f.type);
+  return `<div class="f" data-f="${f.k}"${wide ? ' style="flex:1 1 100%"' : ""}>
+    ${f.type === "switch" ? FIELD.switch(f, v) : `<label>${esc(f.label)}${need}</label>${FIELD[f.type](f, v)}`}
+  </div>`;
+}
+function formHtml(fields, values = {}) {
+  let out = "", i = 0;
+  while (i < fields.length) {
+    const f = fields[i];
+    const wide = ["markdown", "imagelist", "links", "chips"].includes(f.type);
+    if (!wide && fields[i + 1] && !["markdown", "imagelist", "links", "chips", "switch"].includes(fields[i + 1].type)) {
+      out += `<div class="row">${fieldHtml(f, values[f.k])}${fieldHtml(fields[i + 1], values[fields[i + 1].k])}</div>`;
+      i += 2;
+    } else {
+      out += fieldHtml(f, values[f.k]);
+      i += 1;
+    }
+  }
+  return out;
+}
+function readForm(root) {
+  const out = {};
+  $$("[data-k]", root).forEach((el) => {
+    const k = el.dataset.k;
+    if (el.type === "checkbox") out[k] = el.checked;
+    else if (el.dataset.k && el.tagName === "SELECT") out[k] = el.value;
+    else out[k] = el.value;
+  });
+  $$("[data-chips]", root).forEach((box) => {
+    out[box.dataset.chips] = $$(".chip", box).map((c) => c.dataset.val);
+  });
+  $$("[data-imglist]", root).forEach((box) => {
+    out[box.dataset.imglist] = $$(".img-url", box).map((i) => i.value.trim()).filter(Boolean);
+  });
+  $$("[data-links]", root).forEach((box) => {
+    out[box.dataset.links] = $$(".imgrow", box)
+      .map((r) => ({ label: $(".lk-label", r).value.trim(), url: $(".lk-url", r).value.trim(), icon: $(".lk-icon", r).value.trim() }))
+      .filter((l) => l.label && l.url);
+  });
+  // 时长：小时 + 分钟 → 分钟
+  $$("[data-duration]", root).forEach((box) => {
+    const h = Number(($('[data-dk="h"]', box) || {}).value || 0);
+    const m = Number(($('[data-dk="m"]', box) || {}).value || 0);
+    out[box.dataset.duration] = Math.max(0, h) * 60 + Math.min(59, Math.max(0, m));
+  });
+  return out;
+}
+/* slug 预览（与服务器同规则，仅用于显示） */
+function slugPreview(title) {
+  let base = String(title || "").toLowerCase().replace(/['"’”]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (base.length < 3) {
+    const d = new Date(), p = (n) => String(n).padStart(2, "0");
+    base = `post-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-随机4位`;
+  }
+  return base.slice(0, 60);
+}
+
+/* ============================================================
+   实体定义：每个内容类型有哪些字段、走哪些接口
+   ============================================================ */
+const ENTITIES = {
+  post: {
+    name: "博客文章", icon: "edit-note", list: "/api/posts/list",
+    create: "/api/create-post", update: "/api/posts/update",
+    remove: (it) => `/api/posts/delete?category=${encodeURIComponent(it.category)}&slug=${encodeURIComponent(it.slug)}`,
+    detail: (it) => `/api/posts/detail?category=${encodeURIComponent(it.category)}&slug=${encodeURIComponent(it.slug)}`,
+    title: (it) => it.title, sub: (it) => `${it.category} · ${it.published || "无日期"}`,
+    thumb: () => null, searchKeys: ["title", "slug", "category", "displayCategory", "description"],
+    fields: [
+      { k: "title", label: "标题", type: "text", required: true, ph: "文章标题" },
+      { k: "category", label: "分类文件夹", type: "category", required: true, hint: "决定文件存放的文件夹；显示名可以另填" },
+      { k: "displayCategory", label: "显示分类名", type: "text", ph: "留空则与文件夹同名" },
+      { k: "description", label: "一句话描述", type: "text", ph: "用于列表卡片和搜索结果" },
+      { k: "tags", label: "标签", type: "chips", ph: "输入标签后按回车" },
+      { k: "image", label: "封面图", type: "image", hint: "可贴图床链接，也可以上传本地图片" },
+      { k: "published", label: "发布时间", type: "text", ph: "留空 = 保存时的当前时间" },
+      { k: "lang", label: "语言", type: "select", options: [["zh_CN", "中文 zh_CN"], ["en", "英文 en"]], def: "zh_CN" },
+      { k: "slug", label: "URL 标识（进阶）", type: "slug" },
+      { k: "draft", label: "草稿", type: "switch", text: "存为草稿（不在网站显示）" },
+      { k: "content", label: "正文", type: "markdown", required: true },
+    ],
+  },
+  project: {
+    name: "作品", icon: "apps", list: "/api/projects/list",
+    create: "/api/create-project", update: "/api/projects/update",
+    remove: (it) => `/api/projects/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title, sub: (it) => `${it.type === "game" ? "游戏" : "软件"} · ${it.status || ""} · ${it.platform || ""}`,
+    thumb: (it) => it.cover, searchKeys: ["id", "title", "description", "platform", "status"],
+    fields: [
+      { k: "id", label: "唯一 ID", type: "text", required: true, ph: "英文短名，如 my-app" },
+      { k: "title", label: "作品名称", type: "text", required: true },
+      { k: "type", label: "类型", type: "select", options: [["software", "软件"], ["game", "游戏"]], def: "software" },
+      { k: "status", label: "状态", type: "select", options: [["已发布", "已发布"], ["开发中", "开发中"], ["抢先体验", "抢先体验"], ["已完结", "已完结"]], def: "开发中" },
+      { k: "platform", label: "平台", type: "text", ph: "Windows / macOS / Web / Android" },
+      { k: "description", label: "一句话描述", type: "text" },
+      { k: "cover", label: "封面图（方形图标）", type: "image" },
+      { k: "screenshots", label: "宣传图 / 截图（可多张）", type: "imagelist", hint: "详情页会横向滑动展示，建议 16:9 截图" },
+      { k: "tags", label: "标签", type: "chips" },
+      { k: "longDescription", label: "详细介绍", type: "area", rows: 5 },
+      { k: "downloadLinks", label: "下载链接", type: "links" },
+      { k: "featured", label: "首页精选", type: "switch", text: "在首页「猜你喜欢」中展示" },
+    ],
+  },
+  video: {
+    name: "视频", icon: "play-circle", list: "/api/videos/list",
+    create: "/api/create-video", update: "/api/videos/update",
+    remove: (it) => `/api/videos/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title, sub: (it) => `BV${it.bvid || ""} ${it.featured ? "· 精选" : ""}`,
+    thumb: (it) => it.cover, searchKeys: ["title", "bvid", "id", "description"],
+    fields: [
+      { k: "bvid", label: "B 站 BV 号", type: "text", required: true, ph: "BV1xx411c7XX" },
+      { k: "title", label: "视频标题", type: "text", required: true },
+      { k: "id", label: "ID", type: "text", ph: "留空自动用 BV 号" },
+      { k: "cover", label: "封面图", type: "image" },
+      { k: "description", label: "简介", type: "area", rows: 5 },
+      { k: "featured", label: "首页精选", type: "switch", text: "在视频区顶部大图展示" },
+    ],
+  },
+  novel: {
+    name: "小说", icon: "auto-stories", list: "/api/novels/list",
+    create: "/api/novels/add", update: "/api/novels/update",
+    remove: (it) => `/api/novels/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title, sub: (it) => `${it.author || "佚名"} · ${it.platform || ""} · ${(it.chapters || []).length} 章`,
+    thumb: (it) => it.cover, searchKeys: ["title", "author", "platform", "description"],
+    fields: [
+      { k: "title", label: "小说名", type: "text", required: true },
+      { k: "author", label: "作者", type: "text" },
+      { k: "publishedDate", label: "发布日期", type: "text", ph: "2026-07-27" },
+      { k: "platform", label: "发布平台", type: "text", ph: "B站专栏 / 番茄 / 起点" },
+      { k: "cover", label: "封面图（竖版）", type: "image", hint: "建议 3:4 竖图" },
+      { k: "description", label: "一句话简介", type: "text" },
+      { k: "intro", label: "详细介绍", type: "area", rows: 5 },
+    ],
+  },
+  resource: {
+    name: "资源", icon: "package-2", list: "/api/resources/list",
+    create: "/api/resources/add", update: "/api/resources/update",
+    remove: (it) => `/api/resources/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.name, sub: (it) => `${it.category || "未分类"} · ${it.url || ""}`,
+    thumb: (it) => it.cover, searchKeys: ["name", "url", "category", "description"],
+    fields: [
+      { k: "name", label: "名称", type: "text", required: true },
+      { k: "url", label: "链接", type: "url", required: true },
+      { k: "description", label: "描述", type: "text" },
+      { k: "category", label: "分类", type: "select", options: [] },
+      { k: "cover", label: "配图", type: "image" },
+    ],
+  },
+  /* ---- 兴趣分区：一部作品（一个游戏/一张专辑/一部影视/一本书） ---- */
+  interestSection: {
+    name: "兴趣分区", icon: "library-books", list: "/api/interests/sections/list",
+    create: "/api/interests/sections/add", update: "/api/interests/sections/update",
+    remove: (it) => `/api/interests/sections/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.name,
+    sub: (it) => `${typeLabel(it.type)} · ${it.id}${it.description ? " · " + it.description : ""}`,
+    thumb: (it) => it.cover, searchKeys: ["id", "name", "description", "type"],
+    fields: [
+      { k: "name", label: "分区名称", type: "text", required: true, ph: "例如 反恐精英2" },
+      { k: "id", label: "网址标识（进阶）", type: "text", hint: "留空自动从名称生成；会成为 /interests/<标识>/" },
+      { k: "type", label: "类型", type: "select", def: "game", hint: "类型决定帖子要填「时长」还是「评分」",
+        options: [["game", "游戏"], ["music", "音乐"], ["film", "影视"], ["book", "书籍"], ["other", "其它"]] },
+      { k: "cover", label: "封面图链接", type: "image", hint: "直接用图床链接即可" },
+      { k: "description", label: "一句话介绍", type: "text" },
+    ],
+  },
+  /* ---- 兴趣帖子：分区下的一条记录 ---- */
+  interestPost: {
+    name: "兴趣帖子", icon: "article", list: "/api/interests/posts/list",
+    create: "/api/interests/posts/add", update: "/api/interests/posts/update",
+    remove: (it) => `/api/interests/posts/delete?id=${encodeURIComponent(it.id)}`,
+    title: (it) => it.title,
+    sub: (it) => `${sectionName(it.sectionId)} · ${it.date || "无日期"}${it.minutes ? " · " + fmtMin(it.minutes) : ""}${it.rating ? " · " + it.rating + " 分" : ""}${it.featured ? " · 文章" : ""}`,
+    thumb: () => null, searchKeys: ["title", "content", "sectionId"],
+    fields: [
+      { k: "sectionId", label: "所属分区", type: "select", required: true, options: [] },
+      { k: "title", label: "标题", type: "text", required: true, ph: "例如 第一次上分" },
+      { k: "date", label: "日期", type: "text", ph: "2026-10-17，留空用今天" },
+      { k: "minutes", label: "已游玩 / 已听时长", type: "duration", hint: "填「到目前为止」的总时长快照（不是这一次玩了多久）。统计时每个分区取最大值。" },
+      { k: "rating", label: "我的评分（10 分制）", type: "text", ph: "0-10，可填 8.5；影视/书籍用" },
+      { k: "featured", label: "设为文章", type: "switch", text: "显示在首页「我的兴趣」下方（取最新 3 条）" },
+      // 正文改成 Markdown：图片直接用工具栏的「图片」按钮插链接，
+      // 所以原来的「截图链接」字段去掉了（老帖子里已有的截图数据仍会照旧显示）
+      { k: "content", label: "正文（Markdown，可插图片）", type: "markdown" },
+    ],
+  },
+};
+
+/* ============================================================
+   导航
+   ============================================================ */
+const NAV = [
+  { title: "概览", items: [{ id: "dash", label: "仪表盘", icon: "space-dashboard" }] },
+  { title: "发布新内容", items: [
+    { id: "pub-post", label: "博客文章", icon: "edit-note" },
+    { id: "pub-project", label: "作品", icon: "apps" },
+    { id: "pub-video", label: "视频", icon: "play-circle" },
+    { id: "pub-novel", label: "小说", icon: "auto-stories" },
+    { id: "pub-resource", label: "资源", icon: "package-2" },
+    { id: "pub-interestSection", label: "兴趣分区", icon: "library-books" },
+    { id: "pub-interestPost", label: "兴趣帖子", icon: "article" },
+  ]},
+  { title: "管理内容", items: [
+    { id: "adm-post", label: "博客文章", icon: "article" },
+    { id: "adm-project", label: "作品", icon: "library-books" },
+    { id: "adm-video", label: "视频", icon: "movie" },
+    { id: "adm-novel", label: "小说", icon: "book-2" },
+    { id: "novel-logs", label: "小说日志", icon: "history" },
+    { id: "adm-resource", label: "资源", icon: "link" },
+    { id: "adm-interestSection", label: "兴趣分区", icon: "library-books" },
+    { id: "adm-interestPost", label: "兴趣帖子", icon: "article" },
+  ]},
+  { title: "系统", items: [{ id: "deploy", label: "推送与部署", icon: "rocket-launch" }] },
+];
+const PANEL_META = {
+  dash: ["仪表盘", "站点内容与部署状态一览"],
+  "pub-post": ["发布博客文章", "写完直接保存，URL 标识留空会自动生成"],
+  "pub-project": ["发布作品", "应用 / 游戏，支持多张宣传图"],
+  "pub-video": ["发布视频", "同步 B 站视频到视频专区"],
+  "pub-novel": ["发布小说", "创建后可以继续添加章节"],
+  "pub-resource": ["发布资源", "网站 / 应用 / 游戏 / 文件等收藏"],
+  "adm-post": ["管理博客文章", "搜索、编辑、删除"],
+  "adm-project": ["管理作品", "搜索、编辑、删除"],
+  "adm-video": ["管理视频", "搜索、编辑、删除"],
+  "adm-novel": ["管理小说", "编辑信息与章节"],
+  "novel-logs": ["小说日志", "先选小说，再写/改/删它的创作日志"],
+  "adm-resource": ["管理资源", "搜索、编辑、删除"],
+  "pub-interestSection": ["新建兴趣分区", "一个分区 = 一部作品（游戏/专辑/影视/书）"],
+  "pub-interestPost": ["发布兴趣帖子", "选分区后按类型填时长或评分"],
+  "adm-interestSection": ["管理兴趣分区", "搜索、编辑、删除"],
+  "adm-interestPost": ["管理兴趣帖子", "搜索、编辑、删除"],
+  deploy: ["推送与部署", "推送到 GitHub 并实时查看构建进度"],
+};
+
+let STATE = { panel: "dash", caches: {}, refs: { categories: [], tags: [], resCats: [] } };
+
+function renderNav() {
+  $("#nav").innerHTML = NAV.map((g) => `
+    <div class="nav-group">
+      <div>${g.title}</div>
+      <div class="items">
+        ${g.items.map((it) => `<button class="nav-item" data-nav="${it.id}" data-on="${STATE.panel === it.id ? 1 : 0}">
+          ${ic(it.icon)}<span>${it.label}</span></button>`).join("")}
+      </div>
+    </div>`).join("");
+}
+async function loadRefs() {
+  const [cats, tags, meta] = await Promise.all([
+    api("/api/categories").catch(() => []),
+    api("/api/tags").catch(() => []),
+    api("/api/resources/meta").catch(() => ({ categories: [] })),
+  ]);
+  STATE.refs.categories = cats || [];
+  STATE.refs.tags = tags || [];
+  STATE.refs.resCats = (meta && meta.categories) || [];
+  const dl = $("#dl-cats");
+  if (dl) dl.innerHTML = STATE.refs.categories.map((c) => `<option value="${esc(c)}">`).join("");
+  // 兴趣分区的下拉选项（发帖子时用）
+  const secs = await api("/api/interests/sections/list").catch(() => []);
+  STATE.refs.interestSections = secs || [];
+  STATE.refs.interestPosts = await api("/api/interests/posts/list").catch(() => []);
+  const secField = ENTITIES.interestPost.fields.find((x) => x.k === "sectionId");
+  if (secField) {
+    secField.options = (secs || []).length
+      ? (secs || []).map((s) => [s.id, `${s.name}（${typeLabel(s.type)}）`])
+      : [["", "还没有分区，先去「新建兴趣分区」"]];
+  }
+  const sel = $('[data-k="category"][data-res="1"]');
+  if (sel) sel.innerHTML = STATE.refs.resCats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+}
+/* 渲染令牌：切页时丢弃"迟到的旧渲染"，否则旧结果会把新页面覆盖掉 */
+let renderToken = 0;
+
+async function go(panel) {
+  STATE.panel = panel;
+  renderNav();
+  const [t, s] = PANEL_META[panel] || ["", ""];
+  $("#p-title").textContent = t;
+  $("#p-sub").textContent = s;
+  const token = ++renderToken;
+  const view = $("#view");
+  view.innerHTML = `<div class="card"><p class="muted">加载中…</p></div>`;
+  try {
+    const html = await buildPanel(panel);
+    if (token !== renderToken) return;
+    view.innerHTML = html;
+    await afterRender(panel);
+  } catch (e) {
+    if (token !== renderToken) return;
+    view.innerHTML = `<div class="card"><div class="note err">${ic("error")}<span>${esc(e.message)}</span></div>
+      <div class="actions"><button class="btn outline" data-act="reload">${ic("refresh")}重试</button></div></div>`;
+  }
+}
+async function buildPanel(panel) {
+  if (panel === "dash") return buildDash();
+  if (panel === "deploy") return buildDeploy();
+  if (panel === "novel-logs") return buildNovelLogs();
+  if (panel.startsWith("pub-")) return buildPublish(panel.slice(4));
+  if (panel.startsWith("adm-")) return buildManage(panel.slice(4));
+  return `<div class="card">未知页面</div>`;
+}
+async function afterRender(panel) {
+  await loadRefs();
+  wireDynamic($("#view"));
+  updateCounts($("#view"));
+  if (panel.startsWith("adm-")) {
+    const q = $("#q");
+    if (q) {
+      q.addEventListener("input", () => renderList(panel.slice(4), q.value.trim()));
+      renderList(panel.slice(4), "");
+    }
+  }
+  if (panel === "dash") loadDeployInto("#dash-deploy");
+  if (panel === "deploy") loadDeployInto("#deploy-box");
+  if (panel === "novel-logs") renderLogs();
+}
+/* 部署状态异步填充：绝不阻塞页面渲染 */
+async function loadDeployInto(sel) {
+  if (!$(sel)) return;
+  $(sel).innerHTML = `<div class="note info">${ic("progress-activity")}<span>正在查询部署状态…</span></div>`;
+  let d = null;
+  try { d = await api("/api/deploy-status"); } catch { d = null; }
+  const el = $(sel);
+  if (el) el.innerHTML = deployHtml(d);
+  if (d && d.run && (d.run.status === "in_progress" || d.run.status === "queued")) startDeployPoll();
+}
+
+/* ============================================================
+   仪表盘
+   ============================================================ */
+async function buildDash() {
+  const s = await api("/api/summary");
+  const c = s.counts || {};
+  const card = (n, label, icon, panel) =>
+    `<div class="stat" data-nav="${panel}"><div class="n">${n ?? 0}</div><div class="l">${ic(icon)}${label}</div></div>`;
+  return `
+    <div class="stats" style="margin-bottom:18px">
+      ${card(c.posts, "篇文章", "article", "adm-post")}
+      ${card(c.projects, "个作品", "library-books", "adm-project")}
+      ${card(c.videos, "个视频", "movie", "adm-video")}
+      ${card(c.novels, "部小说", "book-2", "adm-novel")}
+      ${card(c.resources, "条资源", "link", "adm-resource")}
+    </div>
+    <div class="card">
+      <h2>${ic("rocket-launch")}最近一次部署</h2>
+      <p class="sub">推送后会自动构建并发布到 Cloudflare Pages</p>
+      <div id="dash-deploy"><div class="muted">正在查询部署状态…</div></div>
+      <div class="actions">
+        <button class="btn tonal" data-nav="deploy">${ic("upload")}去推送</button>
+        <button class="btn outline" data-act="refresh-deploy">${ic("refresh")}刷新状态</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>${ic("history")}最近的文章</h2>
+      <p class="sub">点击任意一条可以直接去管理页搜索它</p>
+      <div class="list">
+        ${(s.recent || []).map((p) => `<div class="item" data-act="find-post" data-q="${esc(p.title)}" style="cursor:pointer">
+          <div class="thumb">${ic("article")}</div>
+          <div class="body"><div class="t">${esc(p.title)}</div>
+            <div class="m"><span>${esc(p.category)}</span><span>${esc(p.published || "")}</span></div></div>
+          <div class="acts">${ic("chevron-right")}</div>
+        </div>`).join("") || `<div class="empty">还没有文章</div>`}
+      </div>
+    </div>
+    <div class="card">
+      <h2>${ic("sell")}分类与标签</h2>
+      <p class="sub">点击标签可以直接跳到「管理博客文章」并带上搜索词</p>
+      <div class="sec-title">分类文件夹</div>
+      <div class="tags">${(s.categories || []).map((x) => `<span class="tag" data-act="find-post" data-q="${esc(x)}">${esc(x)}</span>`).join("") || "<span class='muted'>无</span>"}</div>
+      <div class="sec-title">全部标签（${(s.tags || []).length}）</div>
+      <div class="tags">${(s.tags || []).map((x) => `<span class="tag" data-act="find-post" data-q="${esc(x)}">${esc(x)}</span>`).join("") || "<span class='muted'>无</span>"}</div>
+    </div>`;
+}
+
+/* ============================================================
+   发布面板
+   ============================================================ */
+/* 发布兴趣帖子 · 第一步：分区卡片墙（按最近更新排序 + 搜索）
+   分区多了以后靠一个下拉框找太费劲，所以先选分区、再进发布表单。 */
+const padDate = (d) => String(d || "").split(/[-/.]/).map((x, i) => (i ? String(x).padStart(2, "0") : x)).join("-");
+
+function buildSectionPicker() {
+  const secs = STATE.refs.interestSections || [];
+  const posts = STATE.refs.interestPosts || [];
+  if (!secs.length) {
+    return `<div class="card"><h2>${ic("article")}发布兴趣帖子</h2>
+      <div class="note warn">${ic("warning")}<span>还没有任何分区。请先去「新建兴趣分区」建一个，然后再回来发帖。</span></div></div>`;
+  }
+  const typeLabelOf = (t) => ({ game: "游戏", music: "音乐", film: "影视", book: "书籍", other: "其它" }[t] || "其它");
+  const lastOf = (id) => {
+    const list = posts.filter((p) => p.sectionId === id).map((p) => padDate(p.date)).sort();
+    return list.length ? list[list.length - 1] : "";
+  };
+  const cards = secs
+    .map((s) => ({ ...s, last: lastOf(s.id), count: posts.filter((p) => p.sectionId === s.id).length }))
+    .sort((a, b) => String(b.last || "").localeCompare(String(a.last || "")));
+  return `<div class="card">
+    <h2>${ic("article")}发布兴趣帖子</h2>
+    <p class="sub">先选一个分区 —— 按最近更新排序，点卡片进入发布页</p>
+    <div style="margin:14px 0"><input id="pick-search" type="text" placeholder="搜索分区名称…" style="width:100%"></div>
+    <div id="pick-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+      ${cards
+        .map(
+          (s) => `<button type="button" data-act="pick-section" data-id="${esc(s.id)}"
+        data-name="${esc(`${s.name} ${s.description || ""}`.toLowerCase())}"
+        class="pick-card"
+        style="display:flex;align-items:center;gap:10px;text-align:left;padding:10px;border-radius:14px;
+               border:1px solid var(--out);background:var(--surf-2);cursor:pointer">
+        <span style="width:40px;height:40px;flex:none;border-radius:10px;overflow:hidden;background:var(--surf-3);
+                     display:flex;align-items:center;justify-content:center">
+          ${s.cover ? `<img src="${esc(s.cover)}" alt="" style="width:100%;height:100%;object-fit:cover">` : ic("library-books")}
+        </span>
+        <span style="min-width:0;flex:1">
+          <b style="display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</b>
+          <em style="display:block;font-style:normal;font-size:11.5px;color:var(--txt-3);margin-top:2px">
+            ${typeLabelOf(s.type)} · ${s.count} 条${s.last ? " · 最近 " + s.last : " · 还没发过"}
+          </em>
+        </span>
+        ${ic("chevron-right")}
+      </button>`,
+        )
+        .join("")}
+    </div>
+    <p id="pick-empty" class="hidden muted" style="margin-top:12px">没有匹配的分区</p>
+  </div>`;
+}
+
+async function buildPublish(key) {
+  await loadRefs();
+  const ent = ENTITIES[key];
+  // 兴趣帖子：没选分区就先出卡片墙；选了才出表单
+  if (key === "interestPost" && !STATE.pickSection) return buildSectionPicker();
+  let values = {};
+  if (key === "post") values = { lang: "zh_CN" };
+  if (key === "resource") values = { category: "" };
+  // 资源分类：用数据里真实存在的分类做下拉，同时留一个「新建分类」入口
+  let fields = ent.fields;
+  if (key === "resource") {
+    const opts = STATE.refs.resCats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+    fields = fields.map((f) => (f.k === "category" ? { ...f, type: "rescat", opts } : f));
+  }
+  // 兴趣帖子：分区已经在第一步选好了，表单里不再出现下拉
+  let head = "";
+  if (key === "interestPost") {
+    const sec = (STATE.refs.interestSections || []).find((s) => s.id === STATE.pickSection);
+    fields = fields.filter((f) => f.k !== "sectionId");
+    values = { date: new Date().toISOString().slice(0, 10) };
+    head = `<div class="note info" style="margin-bottom:12px">${ic("info")}
+      <span>发布到：<b>${esc(sec ? sec.name : STATE.pickSection)}</b>
+      <button type="button" class="btn outline sm" data-act="pick-back" style="margin-left:10px">${ic("sync")}换一个分区</button></span></div>`;
+  }
+  return `
+    <div class="card">
+      <h2>${ic(ent.icon)}新建${ent.name}</h2>
+      <p class="sub">带 <span style="color:var(--err)">*</span> 的是必填项，其余留空即可</p>
+      ${head}
+      <form id="pub-form" autocomplete="off">${formHtml(fields, values)}</form>
+      <div id="pub-result"></div>
+      <div class="actions">
+        <button class="btn" data-act="pub-save" data-ent="${key}">${ic("save")}保存并发布</button>
+        <button class="btn outline" data-act="pub-reset" data-ent="${key}">${ic("refresh")}清空重填</button>
+      </div>
+    </div>`;
+}
+
+/* 通用：给动态小组件挂事件（在容器上做事件委托，只挂一次） */
+function wireDynamic(root) {
+  root.querySelectorAll("[data-editor]").forEach((ed) => {
+    if (ed.dataset.wired === "1") return;
+    ed.dataset.wired = "1";
+    const ta = $("textarea", ed);
+    const cnt = $("[data-count]", ed) || $(`[data-count="${ta.dataset.k}"]`, root);
+    const upd = () => { if (cnt) cnt.textContent = `${ta.value.length} 字`; };
+    ta.addEventListener("input", upd);
+    upd();
+  });
+}
+function updateCounts(root) {
+  root.querySelectorAll("[data-editor]").forEach((ed) => {
+    const ta = $("textarea", ed);
+    const cnt = $("[data-count]", ed);
+    if (cnt && ta) cnt.textContent = `${ta.value.length} 字`;
+  });
+}
+
+/* ============================================================
+   管理面板（搜索 + 列表 + 编辑弹窗 + 删除）
+   ============================================================ */
+async function buildManage(key) {
+  await loadRefs();
+  const ent = ENTITIES[key];
+  const items = await api(ent.list);
+  STATE.caches[key] = items;
+  return `
+    <div class="card">
+      <h2>${ic(ent.icon)}${ent.name}列表</h2>
+      <p class="sub">共 <span id="cnt-all">${items.length}</span> 条，支持按标题/标签/分类搜索</p>
+      <div class="searchbar">
+        <label class="box">${ic("search")}<input type="text" id="q" placeholder="搜索${ent.name}…"></label>
+        <button class="btn outline sm" data-act="clear-q">清除</button>
+      </div>
+      <div id="list" class="list"><div class="empty">加载中…</div></div>
+    </div>`;
+}
+function matchItem(ent, it, q) {
+  if (!q) return true;
+  const s = q.toLowerCase();
+  return (ent.searchKeys || []).some((k) => String(it[k] ?? "").toLowerCase().includes(s))
+    || (it.tags || []).some((t) => String(t).toLowerCase().includes(s));
+}
+function renderList(key, q) {
+  const ent = ENTITIES[key];
+  const all = STATE.caches[key] || [];
+  const items = all.filter((it) => matchItem(ent, it, q));
+  const box = $("#list");
+  if (!items.length) {
+    box.innerHTML = `<div class="empty">${ic("search")}<div>${q ? `没有匹配「${esc(q)}」的内容` : "还没有内容"}</div></div>`;
+    return;
+  }
+  box.innerHTML = items.map((it, i) => {
+    const thumb = ent.thumb(it);
+    const isImg = thumb && /^(https?:|\/)/.test(thumb);
+    return `<div class="item" data-idx="${all.indexOf(it)}">
+      <div class="thumb">${isImg ? `<img src="${esc(thumb)}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='${ic(ent.icon).replace(/'/g, "&#39;")}'">` : ic(ent.icon)}</div>
+      <div class="body">
+        <div class="t">${esc(ent.title(it) || "(无标题)")}</div>
+        <div class="m"><span>${esc(ent.sub(it) || "")}</span></div>
+        ${(it.tags || []).length ? `<div class="tags">${it.tags.map((t) => `<span class="tag" data-act="filter-tag" data-q="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="acts">
+        <button class="btn icon" data-act="edit" data-key="${key}" title="编辑">${ic("edit")}</button>
+        <button class="btn icon" data-act="del" data-key="${key}" title="删除">${ic("delete")}</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* 编辑弹窗 */
+async function openEditor(key, item) {
+  // 记住"正在编辑哪条记录"：没有 id 字段的实体保存时要靠它
+  STATE.editItem = { key, item };
+  const ent = ENTITIES[key];
+  let values = { ...item };
+  let editorKey = null;
+  if (key === "post") {
+    const d = await api(ent.detail(item));
+    values = { ...values, ...d, category: d.category, slug: d.slug };
+    editorKey = { category: item.category, slug: item.slug };
+  }
+  const body = `<form id="edit-form">${formHtml(ent.fields, values)}
+      ${key === "novel" ? `<div class="sec-title">${ic("list-alt")}章节管理</div><div id="chapter-mgr"></div>` : ""}
+    </form>`;
+  const footer = `
+    <button class="btn outline" data-act="close-modal">取消</button>
+    <button class="btn" data-act="save-edit" data-key="${key}">${ic("save")}保存修改</button>`;
+  openDialog({ title: `编辑${ent.name}`, body, footer });
+  await loadRefs();
+  wireDynamic($("#modal-root"));
+  if (key === "novel") renderChapterMgr(item);
+  $("#modal-root").dataset.editCtx = JSON.stringify(editorKey || {});
+}
+
+/* 小说章节管理（内联编辑）
+   以前是再开一个弹窗编辑章节，但 openDialog 会覆盖 #modal-root，
+   小说编辑表单（含 #chapter-mgr）会被销毁 → 保存章节时报
+   "Cannot read properties of null (reading 'dataset')"。
+   改成在列表里就地展开编辑器：表单不会被顶掉，也不需要叠层弹窗。 */
+let CH_CTX = { item: null, openIdx: null }; // openIdx: null=收起，-1=新增，>=0=编辑第 n 章
+
+function chVal(root, k) {
+  const el = root.querySelector(`[data-ck="${k}"]`);
+  return el ? el.value : "";
+}
+
+/* 把展开中的编辑器内容写回章节数组；标题为空则不提交（返回 false） */
+function chCommit() {
+  const ed = $("[data-ch-editor]");
+  if (!ed || !CH_CTX.item) return true;
+  const title = chVal(ed, "title").trim();
+  if (!title) {
+    toast("章节标题不能为空", "err");
+    return false;
+  }
+  const idx = CH_CTX.openIdx;
+  const list = (CH_CTX.item.chapters = CH_CTX.item.chapters || []);
+  const slug =
+    chVal(ed, "slug").trim() ||
+    `chapter-${String((idx >= 0 ? idx : list.length) + 1).padStart(2, "0")}`;
+  const ch = {
+    slug,
+    title,
+    date: chVal(ed, "date").trim(),
+    content: chVal(ed, "content"),
+  };
+  if (idx >= 0) list[idx] = ch;
+  else list.push(ch);
+  CH_CTX.openIdx = null;
+  return true;
+}
+
+function chEditorHtml(ch, idx) {
+  return `<div class="chapter-edit" data-ch-editor>
+    <div class="row">
+      <div class="f"><label>章节标题 <span class="req">*</span></label><input type="text" data-ck="title" value="${esc(ch.title || "")}"></div>
+      <div class="f"><label>标识 slug</label><input type="text" data-ck="slug" placeholder="留空自动用 chapter-01 形式" value="${esc(ch.slug || "")}"></div>
+      <div class="f"><label>日期</label><input type="text" data-ck="date" value="${esc(ch.date || "")}"></div>
+    </div>
+    <div class="f"><label>正文</label>
+      <textarea data-ck="content" rows="12" placeholder="章节正文（Markdown）">${esc(ch.content || "")}</textarea>
+    </div>
+    <div class="che-act">
+      <button type="button" class="btn outline" data-act="ch-cancel">取消</button>
+      <button type="button" class="btn" data-act="ch-save" data-i="${idx}">${ic("save")}确定</button>
+    </div>
+  </div>`;
+}
+
+function renderChapterMgr(item) {
+  if (item) CH_CTX.item = item;
+  const box = $("#chapter-mgr");
+  const cur = CH_CTX.item;
+  if (!box || !cur) return;
+  const chs = cur.chapters || [];
+  box.innerHTML = `
+    <div class="note info">${ic("info")}<span>章节保存在小说数据里。改完记得点右下角「保存修改」。</span></div>
+    <div class="list">${chs.map((c, i) => `<div class="item">
+        <div class="thumb">${i + 1}</div>
+        <div class="body"><div class="t">${esc(c.title)}</div>
+          <div class="m"><span>${esc(c.slug)}</span>${c.date ? `<span>${esc(c.date)}</span>` : ""}<span>${(c.content || "").length} 字</span></div></div>
+        <div class="acts">
+          <button type="button" class="btn icon" data-act="ch-edit" data-i="${i}" title="编辑">${ic("edit")}</button>
+          <button type="button" class="btn icon" data-act="ch-del" data-i="${i}" title="删除">${ic("delete")}</button>
+        </div></div>
+        ${CH_CTX.openIdx === i ? chEditorHtml(c, i) : ""}`).join("") || `<div class="empty">还没有章节</div>`}
+    </div>
+    ${CH_CTX.openIdx === -1 ? chEditorHtml({ slug: "", title: "", date: "", content: "" }, -1) : `<button type="button" class="btn tonal sm" data-act="ch-add" style="margin-top:12px">${ic("add")}添加章节</button>`}`;
+  box.dataset.item = JSON.stringify(cur);
+}
+
+/* ============================================================
+   小说日志（选小说 → 列表 → 内联增删改，点「确定」立刻写回 novels.ts）
+   日志存在 novels.ts 每本小说的 logs 字段里，详情页按日期倒序展示。
+   ============================================================ */
+const LOG_CTX = { novelId: null, openIdx: null, logs: [], novel: null };
+
+const todayYmd = () => {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+async function buildNovelLogs() {
+  const list = (await api("/api/novels/list")) || [];
+  const cur = list.find((n) => n.id === LOG_CTX.novelId);
+  if (!cur) {
+    LOG_CTX.novelId = null;
+    return `
+      <div class="card">
+        <h2>${ic("history")}选一本小说</h2>
+        <p class="sub">日志会显示在这本小说详情页的「创作日志」栏，按日期倒序</p>
+        <div class="list">
+          ${list.map((n) => `<div class="item" data-act="log-pick" data-id="${esc(n.id)}" style="cursor:pointer">
+            <div class="thumb">${
+              /^(https?:|\/)/.test(n.cover || "")
+                ? `<img src="${esc(n.cover)}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy">`
+                : ic("auto-stories")
+            }</div>
+            <div class="body">
+              <div class="t">${esc(n.title)}</div>
+              <div class="m"><span>${(n.logs || []).length} 条日志</span><span>${(n.chapters || []).length} 章</span></div>
+            </div>
+            <div class="acts">${ic("chevron-right")}</div>
+          </div>`).join("") || `<div class="empty">还没有小说，先去「发布小说」建一本</div>`}
+        </div>
+      </div>`;
+  }
+  LOG_CTX.novel = cur;
+  LOG_CTX.logs = (cur.logs || []).map((g) => ({ ...g, images: g.images || [] }));
+  LOG_CTX.openIdx = null;
+  return `
+    <div class="card">
+      <h2>${ic("history")}《${esc(cur.title)}》的创作日志</h2>
+      <p class="sub">点「确定」会立刻写进 novels.ts，不用再去别处保存</p>
+      <div class="actions" style="margin-bottom:14px">
+        <button class="btn outline sm" data-act="log-back">${ic("sync")}换一本小说</button>
+        <button class="btn tonal sm" data-act="log-add">${ic("add")}写一条日志</button>
+      </div>
+      <div id="log-mgr"></div>
+    </div>`;
+}
+
+function logEditorHtml(g, idx) {
+  const chs = (LOG_CTX.novel && LOG_CTX.novel.chapters) || [];
+  return `<div class="chapter-edit" data-log-editor>
+    <div class="row">
+      <div class="f"><label>标题 <span class="req">*</span></label>
+        <input type="text" data-lk="title" placeholder="例如：第四章写完了" value="${esc(g.title || "")}"></div>
+      <div class="f"><label>日期</label>
+        <input type="text" data-lk="date" placeholder="2026-10-19" value="${esc(g.date || todayYmd())}"></div>
+      <div class="f"><label>关联章节</label>
+        <select data-lk="chapterSlug">
+          <option value="">不关联</option>
+          ${chs.map((c) => `<option value="${esc(c.slug)}"${c.slug === g.chapterSlug ? " selected" : ""}>${esc(c.title)}</option>`).join("")}
+        </select></div>
+    </div>
+    <div class="f"><label>配图链接（一行一张，可留空）</label>
+      <textarea data-lk="images" rows="3" style="min-height:auto;height:84px" placeholder="https://图床/1.png&#10;https://图床/2.png">${esc((g.images || []).join("\n"))}</textarea>
+    </div>
+    <div class="f"><label>正文</label>
+      <textarea data-lk="content" rows="6" placeholder="这条日志想说什么…">${esc(g.content || "")}</textarea>
+    </div>
+    <div class="che-act">
+      <button type="button" class="btn outline" data-act="log-cancel">取消</button>
+      <button type="button" class="btn" data-act="log-commit" data-i="${idx}">${ic("save")}确定</button>
+    </div>
+  </div>`;
+}
+
+function renderLogs() {
+  const box = $("#log-mgr");
+  if (!box) return;
+  const logs = LOG_CTX.logs || [];
+  box.innerHTML = `
+    <div class="list">
+      ${logs.map((g, i) => `<div class="item">
+        <div class="thumb">${
+          (g.images || [])[0]
+            ? `<img src="${esc(g.images[0])}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy">`
+            : i + 1
+        }</div>
+        <div class="body">
+          <div class="t">${esc(g.title || "(无标题)")}</div>
+          <div class="m">
+            <span>${esc(padDate(g.date) || "无日期")}</span>
+            ${g.chapterSlug ? `<span>关联：${esc(g.chapterSlug)}</span>` : ""}
+            ${(g.images || []).length ? `<span>${g.images.length} 张图</span>` : ""}
+            <span>${(g.content || "").length} 字</span>
+          </div>
+        </div>
+        <div class="acts">
+          <button type="button" class="btn icon" data-act="log-edit" data-i="${i}" title="编辑">${ic("edit")}</button>
+          <button type="button" class="btn icon" data-act="log-del" data-i="${i}" title="删除">${ic("delete")}</button>
+        </div>
+      </div>
+      ${LOG_CTX.openIdx === i ? logEditorHtml(g, i) : ""}`).join("") || `<div class="empty">还没有日志，点上面「写一条日志」开始</div>`}
+    </div>
+    ${LOG_CTX.openIdx === -1 ? logEditorHtml({ title: "", date: todayYmd(), images: [], content: "", chapterSlug: "" }, -1) : ""}`;
+}
+
+/* 把展开中的编辑器内容收进内存；标题为空则不提交（返回 false） */
+function logCommit() {
+  const ed = $("[data-log-editor]");
+  if (!ed) return true;
+  const get = (k) => { const el = ed.querySelector(`[data-lk="${k}"]`); return el ? el.value : ""; };
+  const title = get("title").trim();
+  if (!title) { toast("日志标题不能为空", "err"); return false; }
+  const log = {
+    title,
+    date: padDate(get("date").trim()) || todayYmd(),
+    chapterSlug: get("chapterSlug").trim(),
+    images: get("images").split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+    content: get("content"),
+  };
+  const i = LOG_CTX.openIdx;
+  if (i >= 0) LOG_CTX.logs[i] = log;
+  else LOG_CTX.logs.push(log);
+  return true;
+}
+
+/* 立刻写回文件（服务端是合并保存，只传 id + logs，不动别的字段） */
+function logWrite() {
+  return put("/api/novels/update", { id: LOG_CTX.novelId, logs: LOG_CTX.logs });
+}
+
+/* ============================================================
+   推送与部署
+   ============================================================ */
+function deployHtml(d) {
+  if (!d) return `<div class="note warn">${ic("warning")}<span>暂时拿不到部署状态（可能是网络问题，或仓库地址变了）</span></div>`;
+  if (d.error) return `<div class="note err">${ic("error")}<span>${esc(d.error)}</span></div>`;
+  const r = d.run || {};
+  const map = { queued: ["排队中", "warn"], in_progress: ["构建中", "pri"], completed: [r.conclusion === "success" ? "部署成功" : "部署失败", r.conclusion === "success" ? "ok" : "err"] };
+  const [label, cls] = map[r.status] || [r.status, ""];
+  const steps = ((d.jobs || [])[0] || {}).steps || [];
+  const done = steps.filter((s) => s.conclusion === "success").length;
+  const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
+  return `
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span class="badge ${cls}">${esc(label)}</span>
+      <span class="muted">第 ${r.number} 次 · ${esc(r.sha || "")} · ${esc(r.title || "")}</span>
+      ${r.url ? `<a class="muted" href="${esc(r.url)}" target="_blank">在 GitHub 查看</a>` : ""}
+    </div>
+    ${r.status === "in_progress" || r.status === "queued" ? `<div class="progress"><i style="width:${pct}%"></i></div>` : ""}
+    ${steps.length ? `<div class="steps">${steps.map((s) => `<div class="step" data-s="${s.conclusion || s.status}">
+        ${ic(s.conclusion === "success" ? "check-circle" : s.status === "in_progress" ? "progress-activity" : s.conclusion === "failure" ? "error" : "schedule")}
+        <span>${esc(s.name)}</span></div>`).join("")}</div>` : ""}
+    <div class="muted" style="margin-top:10px">查询时间：${esc((d.fetchedAt || "").replace("T", " ").slice(0, 19))}</div>`;
+}
+let deployTimer = null;
+function startDeployPoll() {
+  if (deployTimer) return;
+  deployTimer = setInterval(async () => {
+    try {
+      const d = await api("/api/deploy-status");
+      const box = $("#dash-deploy") || $("#deploy-box");
+      if (box) box.innerHTML = deployHtml(d);
+      if (!d.run || d.run.status === "completed") stopDeployPoll();
+    } catch {}
+  }, 5000);
+}
+function stopDeployPoll() { if (deployTimer) { clearInterval(deployTimer); deployTimer = null; } }
+
+async function buildDeploy() {
+  return `
+    <div class="card">
+      <h2>${ic("upload")}推送到线上</h2>
+      <p class="sub">会把当前所有改动提交到 GitHub，然后自动触发构建发布</p>
+      <div class="f"><label>提交说明</label>
+        <input type="text" id="push-msg" value="更新内容" placeholder="这次改了什么"></div>
+      <div class="actions">
+        <button class="btn" data-act="push">${ic("upload")}开始推送</button>
+        <button class="btn outline" data-act="refresh-deploy">${ic("refresh")}刷新部署状态</button>
+      </div>
+      <div id="push-log"></div>
+    </div>
+    <div class="card">
+      <h2>${ic("rocket-launch")}部署进度</h2>
+      <p class="sub">每 5 秒自动刷新，构建完成后会自动停止</p>
+      <div id="deploy-box"><div class="muted">正在查询部署状态…</div></div>
+    </div>`;
+}
+
+/* ============================================================
+   事件委托
+   ============================================================ */
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-act],[data-nav]");
+  if (!t) return;
+  if (t.dataset.nav) { stopDeployPoll(); return go(t.dataset.nav); }
+  const act = t.dataset.act;
+  const view = $("#view");
+  const formRoot = t.closest("#edit-form") || t.closest("#pub-form") || $("#modal-root");
+
+  try {
+    if (act === "close-modal") return closeDialog();
+    if (act === "reload") { toast("已刷新"); return go(STATE.panel); }
+    /* ---- 兴趣帖子：分区卡片墙 ---- */
+    if (act === "pick-section") { STATE.pickSection = t.dataset.id; return go("pub-interestPost"); }
+    if (act === "pick-back") { STATE.pickSection = null; return go("pub-interestPost"); }
+
+    /* ---- 发布：保存 / 重置 ---- */
+    if (act === "pub-save") {
+      const key = t.dataset.ent, ent = ENTITIES[key];
+      const data = readForm($("#pub-form"));
+      if (key === "resource") {
+        const sel = $('[data-k="category"][data-res="1"]');
+        const nw = $('[data-k="category"][data-res-new="1"]');
+        data.category = sel && sel.value === "__new__" ? (nw ? nw.value.trim() : "") : (sel ? sel.value : "");
+      }
+      if (key === "video" && !String(data.id || "").trim()) data.id = String(data.bvid || "").trim();
+      // 兴趣帖子：分区是在上一步卡片墙里选的，这里补上
+      if (key === "interestPost" && STATE.pickSection) data.sectionId = STATE.pickSection;
+      if (!data.slug) delete data.slug; // 交给服务器自动生成
+      t.disabled = true;
+      const r = await post(ent.create, data);
+      t.disabled = false;
+      toast(`已保存：${ent.name}`);
+      $("#pub-result").innerHTML = `<div class="note ok">${ic("check-circle")}<span>保存成功${
+        r.path ? `：src/content/posts/${esc(r.path)}` : r.id ? `，ID：${esc(r.id)}` : ""
+      }${r.slug ? `（URL 标识：${esc(r.slug)}）` : ""}</span></div>`;
+      if (key === "novel" && r.id) {
+        const it = await api("/api/novels/list").then((l) => l.find((x) => x.id === r.id));
+        if (it) return openEditor("novel", it);
+      }
+      if (key === "post") { $("#pub-form").reset(); await loadRefs(); }
+      return;
+    }
+    if (act === "pub-reset") { return go(STATE.panel); }
+
+    /* ---- 分类下拉选「新建」 ---- */
+    if (t.tagName === "SELECT" && t.dataset.res === "1") {
+      const nw = $('[data-k="category"][data-res-new="1"]');
+      if (nw) nw.style.display = t.value === "__new__" ? "block" : "none";
+    }
+
+    /* ---- 动态字段：标签 / 图片列表 / 下载链接 ---- */
+    if (act === "del-chip") { t.closest(".chip").remove(); return; }
+    if (act === "add-img") {
+      const box = $(`[data-imglist="${t.dataset.target}"]`);
+      const idx = box.querySelectorAll(".imgrow").length;
+      t.insertAdjacentHTML("beforebegin", imgRowHtml("", idx));
+      return;
+    }
+    if (act === "del-img") { t.closest(".imgrow").remove(); return; }
+    if (act === "up-img") {
+      const row = t.closest(".imgrow"), prev = row.previousElementSibling;
+      if (prev && prev.classList.contains("imgrow")) prev.before(row);
+      return;
+    }
+    if (act === "add-link") {
+      const box = $(`[data-links="${t.dataset.target}"]`);
+      t.insertAdjacentHTML("beforebegin", linkRowHtml({}, box.querySelectorAll(".imgrow").length));
+      return;
+    }
+    if (act === "del-link") { t.closest(".imgrow").remove(); return; }
+
+    /* ---- 封面：上传 / 清除 ---- */
+    if (act === "upload") { return pickImage((url) => setImageValue(t.dataset.target, url)); }
+    if (act === "clear-img") return setImageValue(t.dataset.target, "");
+
+    /* ---- Markdown 工具 ---- */
+    if (act === "md") {
+      const ed = t.closest("[data-editor]");
+      return mdInsert($("textarea", ed), t.dataset.md);
+    }
+    if (act === "mdpreview") {
+      const ed = t.closest("[data-editor]");
+      ed.classList.toggle("preview");
+      $(".previewbox", ed).innerHTML = mdToHtml($("textarea", ed).value);
+      return;
+    }
+    if (act === "gen-slug") {
+      const title = $('[data-k="title"]', formRoot).value;
+      $('[data-k="slug"]', formRoot).value = slugPreview(title);
+      return toast("已按标题生成 URL 标识");
+    }
+
+    /* ---- 列表 ---- */
+    if (act === "clear-q") { const q = $("#q"); if (q) { q.value = ""; renderList(STATE.panel.slice(4), ""); } return; }
+    if (act === "filter-tag" || act === "find-post") {
+      const q = t.dataset.q;
+      const target = act === "find-post" ? "adm-post" : STATE.panel;
+      if (STATE.panel !== target) await go(target);
+      const box = $("#q");
+      if (box) { box.value = q; renderList(target.slice(4), q); }
+      return;
+    }
+    if (act === "edit") {
+      const key = t.dataset.key;
+      const item = STATE.caches[key][Number(t.closest(".item").dataset.idx)];
+      return openEditor(key, item);
+    }
+    if (act === "del") {
+      const key = t.dataset.key, ent = ENTITIES[key];
+      const item = STATE.caches[key][Number(t.closest(".item").dataset.idx)];
+      if (!confirm(`确认删除「${ent.title(item)}」吗？此操作不可撤销。`)) return;
+      await del(ent.remove(item));
+      toast("已删除");
+      return go(STATE.panel);
+    }
+    if (act === "save-edit") {
+      const key = t.dataset.key, ent = ENTITIES[key];
+      const ctx = JSON.parse($("#modal-root").dataset.editCtx || "{}");
+      // 章节编辑器还开着的话先收内容，否则正在编辑的那一章会被丢掉
+      if (key === "novel" && !chCommit()) return;
+      const data = { ...readForm($("#edit-form")) };
+      if (key === "post") { data.category = ctx.category; data.slug = ctx.slug; }
+      // 没有 id 字段的实体（资源、兴趣帖子等）必须把原记录 id 带上，
+      // 否则服务端找不到记录 → 404「记录不存在」（以前会被误显示成"服务器旧版本"）
+      if (!data.id && STATE.editItem && STATE.editItem.key === key) data.id = STATE.editItem.item.id;
+      if (key === "novel" && CH_CTX.item) {
+        // 章节必须一起写回：服务端是合并保存，不传 chapters 就会一直沿用旧章节
+        data.id = CH_CTX.item.id;
+        data.chapters = CH_CTX.item.chapters || [];
+      }
+      if (!data.slug) delete data.slug;
+      await put(ent.update, data);
+      closeDialog();
+      toast("已保存修改");
+      return go(STATE.panel);
+    }
+
+    /* ---- 章节（内联编辑）---- */
+    if (act === "ch-add") {
+      if (chCommit()) { CH_CTX.openIdx = -1; renderChapterMgr(); }
+      return;
+    }
+    if (act === "ch-edit") {
+      if (chCommit()) { CH_CTX.openIdx = Number(t.dataset.i); renderChapterMgr(); }
+      return;
+    }
+    if (act === "ch-cancel") {
+      CH_CTX.openIdx = null;
+      return renderChapterMgr();
+    }
+    if (act === "ch-del") {
+      const i = Number(t.dataset.i);
+      if (!confirm("删除这一章？")) return;
+      if (!CH_CTX.item) return;
+      (CH_CTX.item.chapters = CH_CTX.item.chapters || []).splice(i, 1);
+      if (CH_CTX.openIdx === i) CH_CTX.openIdx = null;
+      return renderChapterMgr();
+    }
+    if (act === "ch-save") {
+      if (!chCommit()) return;
+      renderChapterMgr();
+      return toast("章节已更新，别忘了点「保存修改」写回文件");
+    }
+
+    /* ---- 小说日志 ---- */
+    if (act === "log-pick") { LOG_CTX.novelId = t.dataset.id; return go("novel-logs"); }
+    if (act === "log-back") { LOG_CTX.novelId = null; return go("novel-logs"); }
+    if (act === "log-add") { LOG_CTX.openIdx = -1; return renderLogs(); }
+    if (act === "log-edit") { LOG_CTX.openIdx = Number(t.dataset.i); return renderLogs(); }
+    if (act === "log-cancel") { LOG_CTX.openIdx = null; return renderLogs(); }
+    if (act === "log-del") {
+      const i = Number(t.dataset.i);
+      if (!confirm("删除这条日志？")) return;
+      const snapshot = LOG_CTX.logs.map((g) => ({ ...g }));
+      LOG_CTX.logs.splice(i, 1);
+      try {
+        await logWrite();
+      } catch (err) {
+        // 写盘失败就把内存恢复，别让界面显示"删掉了"其实文件没变
+        LOG_CTX.logs = snapshot;
+        renderLogs();
+        return showError(err);
+      }
+      LOG_CTX.openIdx = null;
+      renderLogs();
+      return toast("日志已删除");
+    }
+    if (act === "log-commit") {
+      const snapshot = LOG_CTX.logs.map((g) => ({ ...g }));
+      if (!logCommit()) return;
+      t.disabled = true;
+      try {
+        await logWrite();
+        LOG_CTX.openIdx = null;
+        renderLogs();
+        toast("日志已保存");
+      } catch (err) {
+        LOG_CTX.logs = snapshot;
+        renderLogs();
+        showError(err);
+      } finally { t.disabled = false; }
+      return;
+    }
+
+    /* ---- 推送 / 部署 ---- */
+    if (act === "push") {
+      const msg = ($("#push-msg") || {}).value || "更新内容";
+      t.disabled = true;
+      $("#push-log").innerHTML = `<div class="note info">${ic("progress-activity")}<span>正在推送…</span></div>`;
+      try {
+        const r = await post("/api/push", { message: msg });
+        $("#push-log").innerHTML = `<div class="note ok">${ic("check-circle")}<span>推送完成，正在等待构建</span></div><div class="log">${esc(r.log || "")}</div>`;
+        toast("已推送，正在构建");
+        const d = await api("/api/deploy-status").catch(() => null);
+        const box = $("#deploy-box"); if (box) box.innerHTML = deployHtml(d);
+        startDeployPoll();
+      } catch (err) {
+        $("#push-log").innerHTML = `<div class="note err">${ic("error")}<span>${esc(err.message)}</span></div>`;
+      }
+      t.disabled = false;
+      return;
+    }
+    if (act === "refresh-deploy") {
+      const d = await api("/api/deploy-status").catch(() => null);
+      const box = $("#dash-deploy") || $("#deploy-box");
+      if (box) box.innerHTML = deployHtml(d);
+      if (d && d.run && (d.run.status === "in_progress" || d.run.status === "queued")) startDeployPoll();
+      return toast("部署状态已刷新");
+    }
+  } catch (err) { showError(err); }
+});
+
+/* 标签输入：回车添加 */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && $("#modal-root").classList.contains("on")) return closeDialog();
+  const inp = e.target.closest("[data-chip-input]");
+  if (!inp) return;
+  if (e.key === "Enter" || e.key === "," || e.key === "，" ) {
+    e.preventDefault();
+    const v = inp.value.trim().replace(/[,，]$/, "");
+    if (!v) return;
+    const box = inp.closest("[data-chips]");
+    if ($$(".chip", box).some((c) => c.dataset.val === v)) { inp.value = ""; return; }
+    inp.insertAdjacentHTML("beforebegin", chipHtml(v));
+    inp.value = "";
+  } else if (e.key === "Backspace" && !inp.value) {
+    const chips = $$(".chip", inp.closest("[data-chips]"));
+    if (chips.length) chips[chips.length - 1].remove();
+  }
+});
+/* 标签候选渲染（输入框获得焦点时展示） */
+document.addEventListener("focusin", (e) => {
+  const inp = e.target.closest("[data-chip-input]");
+  if (!inp) return;
+  const key = inp.dataset.chipInput;
+  const box = $(`[data-sugg="${key}"]`);
+  if (!box) return;
+  const used = new Set($$(".chip", inp.closest("[data-chips]")).map((c) => c.dataset.val));
+  const list = STATE.refs.tags.filter((t) => !used.has(t)).slice(0, 18);
+  box.innerHTML = list.length ? list.map((t) => `<button type="button" data-tagpick="${esc(t)}">${esc(t)}</button>`).join("") : "";
+});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tagpick]");
+  if (!b) return;
+  const box = b.closest(".sugg").previousElementSibling;
+  const inp = $("[data-chip-input]", box);
+  const v = b.dataset.tagpick;
+  if (!$$(".chip", box).some((c) => c.dataset.val === v)) inp.insertAdjacentHTML("beforebegin", chipHtml(v));
+  b.remove();
+});
+/* 封面链接变化时更新预览 */
+document.addEventListener("input", (e) => {
+  const el = e.target.closest("[data-k]");
+  if (!el) return;
+  const key = el.dataset.k;
+  const pv = $(`[data-preview="${key}"]`);
+  if (pv) pv.style.backgroundImage = el.value ? `url('${el.value}')` : "";
+  const ed = el.closest("[data-editor]");
+  if (ed && ed.classList.contains("preview")) $(".previewbox", ed).innerHTML = mdToHtml(el.value);
+});
+
+/* 图片选择（本地文件 → 上传 → 回填链接） */
+function pickImage(cb) {
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "image/*";
+  inp.onchange = () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    if (file.size > 6 * 1024 * 1024) return toast("图片太大（超过 6MB），建议先压缩或用图床", "err");
+    const fr = new FileReader();
+    fr.onload = async () => {
+      try {
+        toast("正在上传…");
+        const r = await post("/api/upload-image", { data: fr.result });
+        cb(r.path);
+        toast("已上传并填入链接");
+      } catch (e) { showError(e); }
+    };
+    fr.readAsDataURL(file);
+  };
+  inp.click();
+}
+function setImageValue(key, url) {
+  const inp = $(`[data-k="${key}"]`);
+  if (inp) { inp.value = url; inp.dispatchEvent(new Event("input", { bubbles: true })); }
+}
+
+/* Markdown 工具 */
+function mdInsert(ta, kind) {
+  if (!ta) return;
+  const s = ta.selectionStart, e2 = ta.selectionEnd;
+  const sel = ta.value.slice(s, e2);
+  const wrap = { bold: ["**", "**", "粗体"], italic: ["*", "*", "斜体"], code: ["```\n", "\n```", "代码"] };
+  let out;
+  if (kind === "image") { return pickImage((url) => { insert(`![图片](${url})`); toast("图片已插入"); }); }
+  if (kind === "link") out = `[${sel || "链接文字"}](https://)`;
+  else if (kind === "h2") out = `\n## ${sel || "小标题"}\n`;
+  else if (kind === "quote") out = `\n> ${sel || "引用"}\n`;
+  else if (kind === "ul") out = `\n- ${sel || "列表项"}\n- \n`;
+  else if (kind === "hr") out = `\n---\n`;
+  else { const w = wrap[kind] || ["", "", ""]; out = `${w[0]}${sel || w[2]}${w[1]}`; }
+  insert(out);
+  function insert(text) {
+    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e2);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = s + text.length;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+}
+
+/* 极简 Markdown 预览 */
+function mdToHtml(src) {
+  const escd = esc(src);
+  const inline = (s) => s
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  const lines = escd.split(/\r?\n/);
+  const out = [];
+  let inCode = false, inUl = false, inOl = false;
+  for (const line of lines) {
+    if (/^```/.test(line)) { out.push(inCode ? "</code></pre>" : "<pre><code>"); inCode = !inCode; continue; }
+    if (inCode) { out.push(line); continue; }
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) { if (inUl) { out.push("</ul>"); inUl = false; } if (inOl) { out.push("</ol>"); inOl = false; }
+      out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); continue; }
+    if (/^\s*[-*]\s+/.test(line)) { if (!inUl) { out.push("<ul>"); inUl = true; }
+      out.push(`<li>${inline(line.replace(/^\s*[-*]\s+/, ""))}</li>`); continue; }
+    if (inUl) { out.push("</ul>"); inUl = false; }
+    if (/^\s*\d+\.\s+/.test(line)) { if (!inOl) { out.push("<ol>"); inOl = true; }
+      out.push(`<li>${inline(line.replace(/^\s*\d+\.\s+/, ""))}</li>`); continue; }
+    if (inOl) { out.push("</ol>"); inOl = false; }
+    if (/^\s*>\s?/.test(line)) { out.push(`<blockquote>${inline(line.replace(/^\s*>\s?/, ""))}</blockquote>`); continue; }
+    if (/^\s*(---|\*\*\*)\s*$/.test(line)) { out.push("<hr>"); continue; }
+    if (!line.trim()) { out.push(""); continue; }
+    out.push(`<p>${inline(line)}</p>`);
+  }
+  if (inUl) out.push("</ul>");
+  if (inOl) out.push("</ol>");
+  if (inCode) out.push("</code></pre>");
+  return out.join("\n");
+}
+
+/* 启动 */
+renderNav();
+go("dash");
