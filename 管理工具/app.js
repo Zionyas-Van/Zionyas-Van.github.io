@@ -369,8 +369,8 @@ const ENTITIES = {
    导航
    ============================================================ */
 const NAV = [
-  { title: "概览", items: [{ id: "dash", label: "仪表盘", icon: "space-dashboard" }] },
-  { title: "发布新内容", items: [
+  { title: "", items: [{ id: "dash", label: "首页", icon: "space-dashboard" }] },
+  { title: "发布", items: [
     { id: "pub-post", label: "博客文章", icon: "edit-note" },
     { id: "pub-project", label: "作品", icon: "apps" },
     { id: "pub-video", label: "视频", icon: "play-circle" },
@@ -379,7 +379,7 @@ const NAV = [
     { id: "pub-interestSection", label: "兴趣分区", icon: "library-books" },
     { id: "pub-interestPost", label: "兴趣帖子", icon: "article" },
   ]},
-  { title: "管理内容", items: [
+  { title: "内容管理", items: [
     { id: "adm-post", label: "博客文章", icon: "article" },
     { id: "adm-project", label: "作品", icon: "library-books" },
     { id: "adm-video", label: "视频", icon: "movie" },
@@ -389,10 +389,12 @@ const NAV = [
     { id: "adm-interestSection", label: "兴趣分区", icon: "library-books" },
     { id: "adm-interestPost", label: "兴趣帖子", icon: "article" },
   ]},
-  { title: "系统", items: [{ id: "deploy", label: "推送与部署", icon: "rocket-launch" }] },
+  { title: "", items: [{ id: "files", label: "原文件编辑", icon: "folder" }] },
+  { title: "", items: [{ id: "deploy", label: "部署", icon: "rocket-launch" }] },
 ];
 const PANEL_META = {
-  dash: ["仪表盘", "站点内容与部署状态一览"],
+  files: ["原文件编辑", "直接改 content 与 src/data 下的文件"],
+  dash: ["首页", "站点内容与部署状态一览"],
   "pub-post": ["发布博客文章", "写完直接保存，URL 标识留空会自动生成"],
   "pub-project": ["发布作品", "应用 / 游戏，支持多张宣传图"],
   "pub-video": ["发布视频", "同步 B 站视频到视频专区"],
@@ -408,7 +410,7 @@ const PANEL_META = {
   "pub-interestPost": ["发布兴趣帖子", "选分区后按类型填时长或评分"],
   "adm-interestSection": ["管理兴趣分区", "搜索、编辑、删除"],
   "adm-interestPost": ["管理兴趣帖子", "搜索、编辑、删除"],
-  deploy: ["推送与部署", "推送到 GitHub 并实时查看构建进度"],
+  deploy: ["部署", "推送到 GitHub 并实时查看构建进度"],
 };
 
 let STATE = { panel: "dash", caches: {}, refs: { categories: [], tags: [], resCats: [] } };
@@ -470,10 +472,70 @@ async function go(panel) {
       <div class="actions"><button class="btn outline" data-act="reload">${ic("refresh")}重试</button></div></div>`;
   }
 }
+/* ============================================================
+   原文件编辑（content 下的文章 + src/data 下的数据）
+   ============================================================ */
+let FILE_CUR = "";
+const fmtSize = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : n > 1024 ? (n / 1024).toFixed(1) + " KB" : n + " B");
+
+async function buildFiles() {
+  const data = await api("/api/files");
+  const files = data.files || [];
+  return `<div class="card">
+    <h2>${ic("folder")}原文件</h2>
+    <p class="muted">共 ${files.length} 个文件 · content 里的文章、src/data 里的数据。<b>保存会直接写入本地文件</b>，改坏了用 git 回滚。</p>
+    <div class="filelist">
+      ${files
+        .map(
+          (f) => `<button class="fileitem" data-act="open-file" data-file="${esc(f.path)}">
+        <span class="ic" data-ic="article"></span>
+        <span class="grow"><b>${esc(f.path)}</b><small>${fmtSize(f.size)} · ${esc(f.mtime)}</small></span>
+      </button>`,
+        )
+        .join("") || `<p class="muted">没有可编辑的文件</p>`}
+    </div>
+  </div>
+  <div class="card" id="file-editor" hidden>
+    <h2>${ic("edit-note")}<span id="file-name">未选择文件</span></h2>
+    <textarea id="file-body" class="filebox" spellcheck="false"></textarea>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" data-act="save-file">${ic("save")}保存</button>
+      <span class="muted" id="file-state"></span>
+    </div>
+  </div>`;
+}
+
+async function openFile(p) {
+  const box = $("#file-editor"), name = $("#file-name"), ta = $("#file-body"), st = $("#file-state");
+  if (!box || !ta) return;
+  const d = await api(`/api/file?path=${encodeURIComponent(p)}`);
+  FILE_CUR = p;
+  box.hidden = false;
+  name.textContent = p;
+  ta.value = d.content || "";
+  st.textContent = "";
+  ta.focus();
+}
+
+async function saveFile(btn) {
+  if (!FILE_CUR) return toast("先在左边选一个文件", "err");
+  const ta = $("#file-body"), st = $("#file-state");
+  btn.disabled = true;
+  try {
+    await post("/api/file", { path: FILE_CUR, content: ta.value });
+    if (st) st.textContent = `已保存 ${new Date().toLocaleTimeString()}`;
+    toast("已写入文件");
+  } catch (e) {
+    toast(e.message, "err");
+  }
+  btn.disabled = false;
+}
+
 async function buildPanel(panel) {
   if (panel === "dash") return buildDash();
   if (panel === "deploy") return buildDeploy();
   if (panel === "novel-logs") return buildNovelLogs();
+  if (panel === "files") return buildFiles();
   if (panel.startsWith("pub-")) return buildPublish(panel.slice(4));
   if (panel.startsWith("adm-")) return buildManage(panel.slice(4));
   return `<div class="card">未知页面</div>`;
@@ -1022,6 +1084,9 @@ document.addEventListener("click", async (e) => {
   try {
     if (act === "close-modal") return closeDialog();
     if (act === "reload") { toast("已刷新"); return go(STATE.panel); }
+    /* ---- 原文件编辑 ---- */
+    if (act === "open-file") return openFile(t.dataset.file);
+    if (act === "save-file") return saveFile(t);
     /* ---- 兴趣帖子：分区卡片墙 ---- */
     if (act === "pick-section") { STATE.pickSection = t.dataset.id; return go("pub-interestPost"); }
     if (act === "pick-back") { STATE.pickSection = null; return go("pub-interestPost"); }

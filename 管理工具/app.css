@@ -228,3 +228,44 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   .card{padding:18px;border-radius:var(--r-lg)}
   .row>*{flex:1 1 100%}
 }
+
+/* ============================================================
+   新外壳：顶栏（品牌 + 推送）+ 左侧栏在其下方
+   ============================================================ */
+.topbar{
+  position:fixed; top:0; left:0; right:0; height:60px; z-index:40;
+  display:flex; align-items:center; gap:14px; padding:0 20px;
+  background:var(--surf); border-bottom:1px solid var(--out);
+}
+.topbar .brand{padding:0; font-size:15.5px; font-weight:650; text-decoration:none; color:var(--txt)}
+.topbar .brand:hover{text-decoration:none}
+.topbar .brand .logo{width:30px;height:30px;border-radius:10px}
+.topbar .brand small{font-size:11px}
+.topbar .grow{flex:1;min-width:0}
+.rail{top:60px; inset:60px auto 0 0; padding:14px 12px}
+.main{margin-left:var(--rail); padding-top:60px}
+.pagehead{
+  position:sticky; top:60px; z-index:20; background:rgba(245,244,250,.92);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--out);
+  padding:14px 28px; display:flex; align-items:center; gap:16px;
+}
+.pagehead h1{margin:0;font-size:19px;font-weight:650;letter-spacing:-.01em}
+.pagehead p{margin:2px 0 0;font-size:12.5px;color:var(--txt-3)}
+.pagehead .grow{flex:1;min-width:0}
+
+/* 原文件编辑列表 */
+.filelist{display:flex;flex-direction:column;gap:2px;margin-top:12px;max-height:46vh;overflow:auto}
+.fileitem{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border:none;border-radius:10px;
+  background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;
+}
+.fileitem:hover{background:var(--surf-2)}
+.fileitem[data-on="1"]{background:var(--pri-c);color:var(--on-pri-c)}
+.fileitem .grow{min-width:0}
+.fileitem b{display:block;font-size:13px;font-weight:600;word-break:break-all}
+.fileitem small{font-size:11.5px;color:var(--txt-3)}
+.filebox{
+  width:100%;min-height:52vh;margin-top:10px;padding:14px;border:1px solid var(--out);
+  border-radius:var(--r-md);background:var(--surf-2);color:var(--txt);
+  font:13px/1.65 "JetBrains Mono Variable",ui-monospace,Consolas,monospace;resize:vertical;
+}

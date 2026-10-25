@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZionyasVan's 管理工具</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>🛠️</text></svg>">
+<link rel="stylesheet" href="/app.css">
+<script src="/manage-icons.js"></script>
+</head>
+<body>
+
+<!-- 顶栏：左边品牌，右边推送 -->
+<header class="topbar">
+  <a class="brand" href="#" data-nav="dash">
+    <div class="logo"><svg class="ic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 4 7v10l8 5 8-5V7zm0 2.3 5.5 3.4L12 11.1 6.5 7.7zM6 9.4l5 3.1v6.9l-5-3.1zm7 10V12.5l5-3.1v6.9z"/></svg></div>
+    <div>ZionyasVan's<small>管理工具</small></div>
+  </a>
+  <div class="grow"></div>
+  <button class="btn" data-nav="deploy"><span class="ic" data-ic="rocket-launch"></span>推送</button>
+</header>
+
+<!-- 左侧栏 -->
+<aside class="rail">
+  <nav id="nav"></nav>
+</aside>
+
+<div class="main">
+  <div class="pagehead">
+    <div class="grow">
+      <h1 id="p-title">首页</h1>
+      <p id="p-sub">站点内容一览</p>
+    </div>
+    <button class="btn outline sm" data-act="reload"><span class="ic" data-ic="refresh"></span>刷新数据</button>
+  </div>
+  <div class="viewport" id="view"></div>
+</div>
+
+<div id="toasts"></div>
+<div id="modal-root"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

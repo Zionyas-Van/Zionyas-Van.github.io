@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  🛠️ ZionyasVan 内容管理工具 - 后端服务器 v2.0
 //  用法: 双击 "管理工具.bat"
 // ============================================================
@@ -529,13 +529,37 @@ const server = http.createServer(async (req, res) => {
 		req.method === "GET" &&
 		(req.url === "/" || req.url === "/manage-ui.html")
 	) {
-		const html = fs.readFileSync(path.join(ROOT, "manage-ui.html"), "utf-8");
+		// 新界面在「管理工具」文件夹里；没有就退回老的单文件界面
+		const newUI = path.join(ROOT, "管理工具", "index.html");
+		const file = fs.existsSync(newUI)
+			? newUI
+			: path.join(ROOT, "manage-ui.html");
+		const html = fs.readFileSync(file, "utf-8");
 		// 必须禁止缓存：否则改完界面刷新看到的还是旧版本（这是之前"改了没用"的元凶）
 		res.writeHead(200, {
 			"Content-Type": "text/html; charset=utf-8",
 			...NO_STORE,
 		});
 		return res.end(html);
+	}
+
+	// 新界面的样式 / 脚本（管理工具/app.css、app.js）
+	if (
+		req.method === "GET" &&
+		(req.url === "/app.css" || req.url === "/app.js")
+	) {
+		const file = path.join(ROOT, "管理工具", req.url.slice(1));
+		if (!fs.existsSync(file)) {
+			res.writeHead(404, NO_STORE);
+			return res.end("/* missing */");
+		}
+		res.writeHead(200, {
+			"Content-Type":
+				(req.url.endsWith(".css") ? "text/css" : "application/javascript") +
+				"; charset=utf-8",
+			...NO_STORE,
+		});
+		return res.end(fs.readFileSync(file, "utf-8"));
 	}
 
 	// 图标表（Material Symbols 的内联路径）单独一个文件，改界面时不用碰它
@@ -687,6 +711,76 @@ const server = http.createServer(async (req, res) => {
 			return sendJSON(res, data);
 		} catch (e) {
 			return sendJSON(res, { error: `查询失败: ${e.message}` }, 502);
+		}
+	}
+
+	// API: 原文件编辑（只允许 content/ 与 src/data/ 下的 .md/.mdx/.ts/.json）
+	const EDIT_DIRS = [path.join("src", "content"), path.join("src", "data")];
+	const EDIT_EXT = [".md", ".mdx", ".ts", ".json"];
+	function resolveEditable(rel) {
+		const clean = String(rel || "")
+			.replace(/\\/g, "/")
+			.trim();
+		if (!clean || clean.includes("..") || clean.startsWith("/")) return null;
+		const abs = path.resolve(ROOT, clean);
+		if (!abs.startsWith(ROOT + path.sep)) return null;
+		if (!EDIT_EXT.includes(path.extname(abs).toLowerCase())) return null;
+		if (!EDIT_DIRS.some((d) => abs.startsWith(path.join(ROOT, d) + path.sep)))
+			return null;
+		return abs;
+	}
+	if (req.method === "GET" && req.url === "/api/files") {
+		try {
+			const files = [];
+			const walk = (dir) => {
+				if (!fs.existsSync(dir)) return;
+				for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+					const full = path.join(dir, entry.name);
+					if (entry.isDirectory()) {
+						if (entry.name !== "node_modules" && !entry.name.startsWith("."))
+							walk(full);
+						continue;
+					}
+					if (!EDIT_EXT.includes(path.extname(entry.name).toLowerCase()))
+						continue;
+					const st = fs.statSync(full);
+					files.push({
+						path: path.relative(ROOT, full).replace(/\\/g, "/"),
+						size: st.size,
+						mtime: st.mtime.toISOString().slice(0, 16).replace("T", " "),
+					});
+				}
+			};
+			EDIT_DIRS.forEach((d) => walk(path.join(ROOT, d)));
+			files.sort((a, b) => a.path.localeCompare(b.path));
+			return sendJSON(res, { ok: true, files });
+		} catch (e) {
+			return sendJSON(res, { error: `读取目录失败: ${e.message}` }, 500);
+		}
+	}
+	if (req.method === "GET" && req.url.startsWith("/api/file?")) {
+		const abs = resolveEditable(
+			new URL(req.url, "http://x").searchParams.get("path"),
+		);
+		if (!abs) return sendJSON(res, { error: "路径不允许" }, 400);
+		if (!fs.existsSync(abs)) return sendJSON(res, { error: "文件不存在" }, 404);
+		return sendJSON(res, {
+			ok: true,
+			path: path.relative(ROOT, abs).replace(/\\/g, "/"),
+			content: fs.readFileSync(abs, "utf-8"),
+		});
+	}
+	if (req.method === "POST" && req.url === "/api/file") {
+		try {
+			const body = JSON.parse(await readBody(req));
+			const abs = resolveEditable(body.path);
+			if (!abs) return sendJSON(res, { error: "路径不允许" }, 400);
+			if (typeof body.content !== "string")
+				return sendJSON(res, { error: "内容格式不对" }, 400);
+			fs.writeFileSync(abs, body.content, "utf-8");
+			return sendJSON(res, { ok: true });
+		} catch (e) {
+			return sendJSON(res, { error: e.message }, 500);
 		}
 	}
 
