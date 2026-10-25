@@ -104,8 +104,13 @@ const mainPanelTop = siteConfig.banner.enable
             </div>
         </div>
 
-        <!-- 图片放大预览（点带 data-zoom 的图片打开，点任意处关闭） -->
-        <div id="img-lightbox" aria-hidden="true"><img id="img-lightbox-img" alt="" /></div>
+        <!-- 图片放大预览（点带 data-zoom 的图片打开，点任意处/×/返回键关闭） -->
+        <div id="img-lightbox" aria-hidden="true">
+          <button type="button" class="lb-close" data-lb-close aria-label="关闭图片预览">
+            <Icon name="material-symbols:close-rounded" class="text-[1.4rem]" />
+          </button>
+          <img id="img-lightbox-img" alt="" />
+        </div>
 
         <!-- 兴趣帖子全文预览（点带 data-preview 的卡片打开，样式对齐博客文章页） -->
         <div id="post-preview" aria-hidden="true">
@@ -1057,9 +1062,14 @@ const mainPanelTop = siteConfig.banner.enable
   // 此时图片超出窗口的部分可以滚轮/手指拖动查看；点图片以外的地方（或 Esc）关闭。
   // 另外每次切页都强制关闭：这个浮层在 <main> 之外，swup 换页不会移除它，
   // 以前"返回上一级图片还挂着"就是这么来的。
+  // ponytail: 图片预览用 history.pushState 拿一次「返回」用来关图；只处理这一层，不做多层栈
+  let lbPushed = false;
+  let lbSuppressPop = false;
+
   function closeLightbox() {
     const box = document.getElementById("img-lightbox");
     const big = document.getElementById("img-lightbox-img");
+    lbPushed = false;
     document.body.classList.remove("lightbox-open");
     if (!box) return;
     box.classList.remove("on", "zoomed");
@@ -1107,30 +1117,126 @@ const mainPanelTop = siteConfig.banner.enable
     if (!box || !big) return;
     if (box.dataset.wired === "1") return;
     box.dataset.wired = "1";
+
+    const touchUI = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    let tapTimer = 0;
+    let downY = 0;
+    let downX = 0;
+    let dragging = false;
+
+    const openLightbox = (src) => {
+      big.src = src;
+      box.classList.add("on");
+      box.classList.remove("zoomed");
+      box.setAttribute("aria-hidden", "false");
+      // 顶栏的层级比内容区高，不抬一下内容区，放大后的图会钻到顶栏底下
+      document.body.classList.add("lightbox-open");
+      // 手机系统级返回：先关图，不要直接退出页面
+      if (!lbPushed) {
+        try {
+          history.pushState({ dshLightbox: true }, "");
+          lbPushed = true;
+        } catch {}
+      }
+    };
+
+    // 用户主动关闭（X / 点背景 / 下滑）：把刚塞进去的那条历史记录吃掉
+    const closeByUser = () => {
+      const hadPush = lbPushed;
+      closeLightbox();
+      if (hadPush) {
+        lbSuppressPop = true;
+        history.back();
+      }
+    };
+
+    window.addEventListener(
+      "popstate",
+      (e) => {
+        if (lbSuppressPop) {
+          lbSuppressPop = false;
+          // 我们自己 history.back() 引起的那一下，别让 swup 当成页面切换
+          e.stopImmediatePropagation();
+          return;
+        }
+        if (box.classList.contains("on")) {
+          lbPushed = false;
+          closeLightbox();
+          e.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+
     document.addEventListener("click", (e) => {
       const t = e.target;
       // 点带 data-zoom 的图片 → 打开
       if (t && t.tagName === "IMG" && t.hasAttribute("data-zoom") && !box.contains(t)) {
-        big.src = t.currentSrc || t.src;
-        box.classList.add("on");
-        box.classList.remove("zoomed");
-        box.setAttribute("aria-hidden", "false");
-        // 顶栏的层级比内容区高，不抬一下内容区，放大后的图会钻到顶栏底下
-        document.body.classList.add("lightbox-open");
+        openLightbox(t.currentSrc || t.src);
         return;
       }
       if (!box.classList.contains("on")) return;
-      // 点大图本身 → 适应窗口 / 2 倍 之间切换
-      if (t === big) {
-        lightboxZoom(!box.classList.contains("zoomed"));
+      // 右侧 X 按钮 → 关闭
+      if (t.closest && t.closest("[data-lb-close]")) {
+        closeByUser();
         return;
       }
-      // 点别处（背景）→ 关闭
-      closeLightbox();
+      if (t === big) {
+        if (!touchUI) {
+          // 电脑：点图片在适应窗口 / 2 倍之间切换
+          lightboxZoom(!box.classList.contains("zoomed"));
+          return;
+        }
+        // 手机：单击关闭（延迟一下，好和双击放大区分开）
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(closeByUser, 260);
+        return;
+      }
+      // 点背景 → 关闭
+      closeByUser();
+    });
+    document.addEventListener("dblclick", (e) => {
+      if (e.target !== big || !touchUI) return;
+      clearTimeout(tapTimer);
+      lightboxZoom(!box.classList.contains("zoomed"));
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeLightbox();
+      if (e.key === "Escape") closeByUser();
     });
+
+    // 手机：往下拖 → 关闭（看大图的习惯手势）
+    if (touchUI) {
+      big.addEventListener(
+        "pointerdown",
+        (e) => {
+          downY = e.clientY;
+          downX = e.clientX;
+          dragging = true;
+          big.style.transition = "none";
+        },
+        { passive: true },
+      );
+      big.addEventListener(
+        "pointermove",
+        (e) => {
+          if (!dragging) return;
+          const dy = e.clientY - downY;
+          const dx = e.clientX - downX;
+          if (dy > 0 && Math.abs(dx) < dy) big.style.transform = `translateY(${dy}px) scale(${Math.max(0.7, 1 - dy / 900)})`;
+        },
+        { passive: true },
+      );
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        const dy = (e && e.clientY) - downY || 0;
+        big.style.transition = "";
+        big.style.transform = "";
+        if (dy > 80) closeByUser();
+      };
+      big.addEventListener("pointerup", endDrag, { passive: true });
+      big.addEventListener("pointercancel", endDrag, { passive: true });
+    }
   }
 
   // ---------- ⑬ 兴趣帖子全文预览（点击卡片弹窗，样式对齐博客文章页） ----------
@@ -1619,6 +1725,27 @@ const mainPanelTop = siteConfig.banner.enable
   }
   #img-lightbox.on {
     display: flex;
+  }
+  /* 右上角关闭按钮：手机上没有它根本不知道该点哪 */
+  #img-lightbox .lb-close {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    right: 12px;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #img-lightbox .lb-close:active {
+    background: rgba(255, 255, 255, 0.3);
   }
   #img-lightbox img {
     max-width: 94vw;
