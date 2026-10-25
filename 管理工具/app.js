@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    基础工具
    ============================================================ */
 const $  = (s, r = document) => r.querySelector(s);
@@ -254,9 +254,6 @@ const ENTITIES = {
       { k: "tags", label: "标签", type: "chips", ph: "输入标签后按回车" },
       { k: "image", label: "封面图", type: "image", hint: "可贴图床链接，也可以上传本地图片" },
       { k: "published", label: "发布时间", type: "text", ph: "留空 = 保存时的当前时间" },
-      { k: "lang", label: "语言", type: "select", options: [["zh_CN", "中文 zh_CN"], ["en", "英文 en"]], def: "zh_CN" },
-      { k: "slug", label: "URL 标识（进阶）", type: "slug" },
-      { k: "draft", label: "草稿", type: "switch", text: "存为草稿（不在网站显示）" },
       { k: "content", label: "正文", type: "markdown", required: true },
     ],
   },
@@ -386,8 +383,7 @@ const NAV = [
     { id: "adm-novel", label: "小说", icon: "book-2" },
     { id: "novel-logs", label: "小说日志", icon: "history" },
     { id: "adm-resource", label: "资源", icon: "link" },
-    { id: "adm-interestSection", label: "兴趣分区", icon: "library-books" },
-    { id: "adm-interestPost", label: "兴趣帖子", icon: "article" },
+    { id: "adm-interest", label: "兴趣", icon: "library-books" },
   ]},
   { title: "", items: [{ id: "files", label: "原文件编辑", icon: "folder" }] },
   { title: "", items: [{ id: "deploy", label: "部署", icon: "rocket-launch" }] },
@@ -413,7 +409,7 @@ const PANEL_META = {
   deploy: ["部署", "推送到 GitHub 并实时查看构建进度"],
 };
 
-let STATE = { panel: "dash", caches: {}, refs: { categories: [], tags: [], resCats: [] } };
+let STATE = { panel: "dash", caches: {}, refs: { categories: [], tags: [], resCats: [] }, interestTab: "interestSection" };
 
 function renderNav() {
   $("#nav").innerHTML = NAV.map((g) => `
@@ -542,13 +538,13 @@ async function buildPanel(panel) {
 }
 async function afterRender(panel) {
   await loadRefs();
-  wireDynamic($("#view"));
-  updateCounts($("#view"));
   if (panel.startsWith("adm-")) {
+    // 兴趣是合并界面：实际列表要用当前页签对应的 key
+    const key = panel === "adm-interest" ? STATE.interestTab || "interestSection" : panel.slice(4);
     const q = $("#q");
     if (q) {
-      q.addEventListener("input", () => renderList(panel.slice(4), q.value.trim()));
-      renderList(panel.slice(4), "");
+      q.addEventListener("input", () => renderList(key, q.value.trim()));
+      renderList(key, "");
     }
   }
   if (panel === "dash") loadDeployInto("#dash-deploy");
@@ -569,19 +565,133 @@ async function loadDeployInto(sel) {
 /* ============================================================
    仪表盘
    ============================================================ */
+/* 顶部分页签：发布 / 内容管理 共用（7 个类型） */
+const TAB_ITEMS = [
+  ["post", "博客文章"],
+  ["project", "作品"],
+  ["video", "视频"],
+  ["novel", "小说"],
+  ["resource", "资源"],
+  ["interestSection", "兴趣分区"],
+  ["interestPost", "兴趣帖子"],
+];
+function tabsHtml(prefix, active) {
+  return `<div class="tabs">${TAB_ITEMS.map(
+    ([k, label]) =>
+      `<button class="tab" data-nav="${prefix}-${k}" data-on="${k === active}">${label}</button>`,
+  ).join("")}</div>`;
+}
+/* 兴趣：分区 / 帖子 两个页签（内容管理里合并成一个界面） */
+function interestTabs(active) {
+  return `<div class="tabs">
+    <button class="tab" data-act="interest-tab" data-tab="interestSection" data-on="${active !== "interestPost"}">兴趣分区</button>
+    <button class="tab" data-act="interest-tab" data-tab="interestPost" data-on="${active === "interestPost"}">兴趣帖子</button>
+  </div>`;
+}
+
+/* ============================================================
+   首页（总览）
+   ============================================================ */
+/* 每个板块一行一条，超高的部分收起来，点「展开查看全部」摊开 */
+function boardHtml(id, title, icon, count, itemsHtml, emptyText) {
+  return `<section class="board" data-board="${id}">
+    <div class="board-head">
+      <h2>${ic(icon)}${title}<span class="cnt">${count}</span></h2>
+      <button class="btn outline sm" data-act="board-expand" data-board="${id}">展开查看全部</button>
+    </div>
+    <div class="board-list">${itemsHtml || `<div class="empty">${emptyText}</div>`}</div>
+  </section>`;
+}
+const boardItem = (thumb, title, meta, panel, q) =>
+  `<div class="bitem" data-nav="${panel}" ${q ? `data-act="find-post" data-q="${esc(q)}"` : ""}>
+    <div class="bthumb">${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy">` : ic("article")}</div>
+    <div class="bbody"><div class="bt">${esc(title)}</div><div class="bm">${meta}</div></div>
+    ${ic("chevron-right")}
+  </div>`;
+
 async function buildDash() {
-  const s = await api("/api/summary");
-  const c = s.counts || {};
-  const card = (n, label, icon, panel) =>
+  const [posts, projects, videos, novels, resources, secs, iposts] = await Promise.all([
+    api(ENTITIES.post.list).catch(() => []),
+    api(ENTITIES.project.list).catch(() => []),
+    api(ENTITIES.video.list).catch(() => []),
+    api(ENTITIES.novel.list).catch(() => []),
+    api(ENTITIES.resource.list).catch(() => []),
+    api(ENTITIES.interestSection.list).catch(() => []),
+    api(ENTITIES.interestPost.list).catch(() => []),
+  ]);
+  const chapters = novels.reduce((n, x) => n + ((x.chapters || []).length || 0), 0);
+  const c = {
+    posts: posts.length,
+    projects: projects.length,
+    videos: videos.length,
+    novels: novels.length,
+    chapters,
+    resources: resources.length,
+    secs: secs.length,
+    iposts: iposts.length,
+  };
+  const stat = (n, label, icon, panel) =>
     `<div class="stat" data-nav="${panel}"><div class="n">${n ?? 0}</div><div class="l">${ic(icon)}${label}</div></div>`;
+
   return `
     <div class="stats" style="margin-bottom:18px">
-      ${card(c.posts, "篇文章", "article", "adm-post")}
-      ${card(c.projects, "个作品", "library-books", "adm-project")}
-      ${card(c.videos, "个视频", "movie", "adm-video")}
-      ${card(c.novels, "部小说", "book-2", "adm-novel")}
-      ${card(c.resources, "条资源", "link", "adm-resource")}
+      ${stat(c.posts, "篇文章", "article", "adm-post")}
+      ${stat(c.projects, "个作品", "library-books", "adm-project")}
+      ${stat(c.videos, "个视频", "movie", "adm-video")}
+      ${stat(c.novels, "部小说", "book-2", "adm-novel")}
+      ${stat(c.chapters, "个章节", "list-alt", "adm-novel")}
+      ${stat(c.resources, "条资源", "link", "adm-resource")}
+      ${stat(c.secs, "个兴趣分区", "library-books", "adm-interest")}
+      ${stat(c.iposts, "条兴趣帖子", "article", "adm-interest")}
     </div>
+    ${boardHtml("posts", "我的文章", "article", `${c.posts} 篇`,
+      posts
+        .map((p) =>
+          boardItem(p.image, p.title, `<span>${esc(p.category || "")}</span><span>${esc(p.published || "")}</span>`, "adm-post"),
+        )
+        .join(""),
+      "还没有文章",
+    )}
+    ${boardHtml("projects", "我的作品", "library-books", `${c.projects} 个`,
+      projects
+        .map((p) =>
+          boardItem(p.cover, p.title, `<span>${esc(p.type === "game" ? "游戏" : "应用")}</span><span>${esc(p.platform || "")}</span>`, "adm-project"),
+        )
+        .join(""),
+      "还没有作品",
+    )}
+    ${boardHtml("videos", "我的视频", "movie", `${c.videos} 个`,
+      videos
+        .map((v) => boardItem(v.cover, v.title, `<span>${esc(v.bvid || "")}</span><span>${esc(v.published || "")}</span>`, "adm-video"))
+        .join(""),
+      "还没有视频",
+    )}
+    ${boardHtml("novels", "我的小说", "book-2", `${c.novels} 部 · ${c.chapters} 章`,
+      novels
+        .map((n) =>
+          boardItem(n.cover, n.title, `<span>${esc(n.status || "")}</span><span>${(n.chapters || []).length} 章</span>`, "adm-novel"),
+        )
+        .join(""),
+      "还没有小说",
+    )}
+    ${boardHtml("resources", "我的资源", "link", `${c.resources} 条`,
+      resources
+        .map((r) => boardItem(r.cover, r.title, `<span>${esc(r.category || "")}</span>`, "adm-resource"))
+        .join(""),
+      "还没有资源",
+    )}
+    ${boardHtml("secs", "我的兴趣分区", "library-books", `${c.secs} 个`,
+      secs
+        .map((s) => boardItem(s.cover, s.name, `<span>${esc(s.type || "")}</span><span>${esc(s.description || "")}</span>`, "adm-interest"))
+        .join(""),
+      "还没有兴趣分区",
+    )}
+    ${boardHtml("iposts", "我的兴趣帖子", "article", `${c.iposts} 条`,
+      iposts
+        .map((p) => boardItem(null, p.title, `<span>${esc(p.date || "")}</span><span>${p.featured ? "文章" : ""}</span>`, "adm-interest"))
+        .join(""),
+      "还没有兴趣帖子",
+    )}
     <div class="card">
       <h2>${ic("rocket-launch")}最近一次部署</h2>
       <p class="sub">推送后会自动构建并发布到 Cloudflare Pages</p>
@@ -590,26 +700,6 @@ async function buildDash() {
         <button class="btn tonal" data-nav="deploy">${ic("upload")}去推送</button>
         <button class="btn outline" data-act="refresh-deploy">${ic("refresh")}刷新状态</button>
       </div>
-    </div>
-    <div class="card">
-      <h2>${ic("history")}最近的文章</h2>
-      <p class="sub">点击任意一条可以直接去管理页搜索它</p>
-      <div class="list">
-        ${(s.recent || []).map((p) => `<div class="item" data-act="find-post" data-q="${esc(p.title)}" style="cursor:pointer">
-          <div class="thumb">${ic("article")}</div>
-          <div class="body"><div class="t">${esc(p.title)}</div>
-            <div class="m"><span>${esc(p.category)}</span><span>${esc(p.published || "")}</span></div></div>
-          <div class="acts">${ic("chevron-right")}</div>
-        </div>`).join("") || `<div class="empty">还没有文章</div>`}
-      </div>
-    </div>
-    <div class="card">
-      <h2>${ic("sell")}分类与标签</h2>
-      <p class="sub">点击标签可以直接跳到「管理博客文章」并带上搜索词</p>
-      <div class="sec-title">分类文件夹</div>
-      <div class="tags">${(s.categories || []).map((x) => `<span class="tag" data-act="find-post" data-q="${esc(x)}">${esc(x)}</span>`).join("") || "<span class='muted'>无</span>"}</div>
-      <div class="sec-title">全部标签（${(s.tags || []).length}）</div>
-      <div class="tags">${(s.tags || []).map((x) => `<span class="tag" data-act="find-post" data-q="${esc(x)}">${esc(x)}</span>`).join("") || "<span class='muted'>无</span>"}</div>
     </div>`;
 }
 
@@ -667,6 +757,10 @@ function buildSectionPicker() {
 }
 
 async function buildPublish(key) {
+  return tabsHtml("pub", key) + (await buildPublishBody(key));
+}
+
+async function buildPublishBody(key) {
   await loadRefs();
   const ent = ENTITIES[key];
   // 兴趣帖子：没选分区就先出卡片墙；选了才出表单
@@ -728,6 +822,14 @@ function updateCounts(root) {
    管理面板（搜索 + 列表 + 编辑弹窗 + 删除）
    ============================================================ */
 async function buildManage(key) {
+  if (key === "interest") {
+    const tab = STATE.interestTab === "interestPost" ? "interestPost" : "interestSection";
+    return interestTabs(tab) + (await buildManageBody(tab));
+  }
+  return tabsHtml("adm", key) + (await buildManageBody(key));
+}
+
+async function buildManageBody(key) {
   await loadRefs();
   const ent = ENTITIES[key];
   const items = await api(ent.list);
@@ -1084,7 +1186,18 @@ document.addEventListener("click", async (e) => {
   try {
     if (act === "close-modal") return closeDialog();
     if (act === "reload") { toast("已刷新"); return go(STATE.panel); }
-    /* ---- 原文件编辑 ---- */
+    /* ---- 兴趣合并界面：切换页签 ---- */
+    if (act === "interest-tab") { STATE.interestTab = t.dataset.tab; return go("adm-interest"); }
+    /* ---- 首页板块：展开/收起 ---- */
+    if (act === "board-expand") {
+      const board = t.closest(".board");
+      if (board) {
+        board.classList.toggle("expanded");
+        t.textContent = board.classList.contains("expanded") ? "收起" : "展开查看全部";
+      }
+      return;
+    }
+    /* ---- 原文件编辑 ----
     if (act === "open-file") return openFile(t.dataset.file);
     if (act === "save-file") return saveFile(t);
     /* ---- 兴趣帖子：分区卡片墙 ---- */

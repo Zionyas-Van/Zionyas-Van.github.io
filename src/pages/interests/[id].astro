@@ -192,8 +192,9 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
     pointer-events: none;
     background: linear-gradient(to bottom, transparent, var(--card-bg) 85%);
   }
-  /* 卡片状态下的图片不做放大预览，点哪都是打开全文 */
-  .post-clamp img {
+  /* 卡片状态下的图片不做放大预览，点哪都是打开全文（:global 必须加：
+     图片是 set:html 塞进来的，不带 scope 属性） */
+  :global(.post-clamp img) {
     pointer-events: none;
     cursor: pointer;
   }
