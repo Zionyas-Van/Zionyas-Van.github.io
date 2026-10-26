@@ -1,4 +1,4 @@
----
+﻿---
 import { Icon } from "astro-icon/components";
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import { INTEREST_TYPE_FIELDS, INTEREST_TYPE_META, interestSections } from "../../data/interests";
@@ -149,7 +149,7 @@ const lastDate = posts.length ? String(posts[0].date || "") : "";
             <!-- 正文限高：超出部分收起来，点「阅读全部」或卡片任意处看全文 -->
             <div class="post-clamp" data-clamp>
               {p.content && (
-                <div class="custom-md text-[13.5px] !max-w-none mt-2" set:html={renderPostMarkdown(p.content)} />
+                <div class="ip-body mt-2" set:html={renderPostMarkdown(p.content)} />
               )}
               {(p.screenshots || []).length > 0 && (
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">

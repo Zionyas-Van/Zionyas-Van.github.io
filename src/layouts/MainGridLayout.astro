@@ -1,4 +1,4 @@
----
+﻿---
 import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
 import MobileBottomNav from "@components/MobileBottomNav.astro";
@@ -125,7 +125,7 @@ const mainPanelTop = siteConfig.banner.enable
                 <Icon name="material-symbols:close-rounded" class="text-[1.2rem]" />
               </button>
             </div>
-            <div id="pp-body" class="pp-body custom-md"></div>
+            <div id="pp-body" class="pp-body ip-body"></div>
             <div class="pp-foot">
               <a id="pp-section" href="/interests/">查看所在分区 →</a>
             </div>
@@ -1313,7 +1313,7 @@ const mainPanelTop = siteConfig.banner.enable
 
       // 分区页里的帖子：正文就在卡片里面，直接拿现成的 HTML，不用另外存一份
       if (card.hasAttribute("data-preview-self")) {
-        const md = card.querySelector(".custom-md");
+        const md = card.querySelector(".ip-body") || card.querySelector(".custom-md");
         if (titleEl) titleEl.textContent = card.dataset.ppTitle || "";
         if (metaEl) metaEl.textContent = card.dataset.ppMeta || "";
         if (bodyEl) {
@@ -1615,7 +1615,7 @@ const mainPanelTop = siteConfig.banner.enable
     }
   }
 
-  /* 帖子全文预览弹窗：面板用卡片色，正文用 custom-md（和博客文章页同一套排版） */
+  /* 帖子全文预览弹窗：面板用卡片色，正文用 .ip-body（跟帖子卡片同一套排版） */
   #post-preview {
     position: fixed;
     inset: 0;
@@ -1703,6 +1703,144 @@ const mainPanelTop = siteConfig.banner.enable
     #post-preview .pp-panel {
       max-height: 90vh;
     }
+  }
+
+  /* ===== 兴趣帖子的 Markdown 正文（列表卡片与预览弹窗共用一套排版） =====
+     custom-md 那套是给博客长文用的（字号偏大、依赖 .anchor / expressive-code），
+     塞进 13px 左右的帖子卡片会散架，所以单独给一份紧凑版。 */
+  .ip-body {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--content-meta, #55525f);
+    overflow-wrap: anywhere;
+  }
+  .ip-body > :first-child {
+    margin-top: 0;
+  }
+  .ip-body > :last-child {
+    margin-bottom: 0;
+  }
+  .ip-body p {
+    margin: 0.6em 0;
+  }
+  .ip-body h1,
+  .ip-body h2,
+  .ip-body h3,
+  .ip-body h4,
+  .ip-body h5,
+  .ip-body h6 {
+    margin: 1.1em 0 0.45em;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--deep-text, #1b1a20);
+  }
+  .ip-body h1 {
+    font-size: 1.35em;
+  }
+  .ip-body h2 {
+    font-size: 1.22em;
+  }
+  .ip-body h3 {
+    font-size: 1.1em;
+  }
+  .ip-body h4,
+  .ip-body h5,
+  .ip-body h6 {
+    font-size: 1em;
+  }
+  .ip-body ul,
+  .ip-body ol {
+    margin: 0.6em 0;
+    padding-left: 1.35em;
+  }
+  .ip-body ul {
+    list-style: disc;
+  }
+  .ip-body ol {
+    list-style: decimal;
+  }
+  .ip-body li {
+    margin: 0.25em 0;
+  }
+  .ip-body li::marker {
+    color: var(--primary);
+  }
+  .ip-body strong {
+    font-weight: 700;
+    color: var(--deep-text, #1b1a20);
+  }
+  .ip-body em {
+    font-style: italic;
+  }
+  .ip-body a {
+    color: var(--primary);
+    text-decoration: underline dashed;
+    text-underline-offset: 3px;
+  }
+  .ip-body a:hover {
+    text-decoration-style: solid;
+  }
+  .ip-body blockquote {
+    margin: 0.75em 0;
+    padding: 0.3em 0.2em 0.3em 0.85em;
+    border-left: 3px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+    background: color-mix(in oklab, var(--primary) 7%, transparent);
+  }
+  .ip-body blockquote p {
+    margin: 0.3em 0;
+  }
+  .ip-body img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.8em 0;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(18, 16, 32, 0.1);
+  }
+  .ip-body img[data-zoom] {
+    cursor: zoom-in;
+  }
+  .ip-body p:has(> img:only-child) img {
+    margin: 0.6em 0;
+  }
+  .ip-body hr {
+    margin: 1.2em 0;
+    border: none;
+    border-top: 1px dashed rgba(128, 128, 128, 0.3);
+  }
+  .ip-body code {
+    padding: 0.1em 0.35em;
+    border-radius: 6px;
+    background: rgba(128, 128, 128, 0.14);
+    font-family: "JetBrains Mono Variable", ui-monospace, Consolas, monospace;
+    font-size: 0.92em;
+  }
+  .ip-body pre {
+    margin: 0.7em 0;
+    padding: 0.8em 1em;
+    border-radius: 10px;
+    overflow-x: auto;
+    background: rgba(128, 128, 128, 0.12);
+  }
+  .ip-body pre code {
+    padding: 0;
+    background: none;
+  }
+  .ip-body table {
+    width: 100%;
+    margin: 0.7em 0;
+    border-collapse: collapse;
+    font-size: 0.95em;
+  }
+  .ip-body th,
+  .ip-body td {
+    padding: 0.4em 0.6em;
+    border: 1px solid rgba(128, 128, 128, 0.22);
+    text-align: left;
+  }
+  .ip-body th {
+    background: rgba(128, 128, 128, 0.08);
   }
 
   /* 图片放大预览 */
