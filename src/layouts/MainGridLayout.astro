@@ -1705,6 +1705,34 @@ const mainPanelTop = siteConfig.banner.enable
     }
   }
 
+  /* ===== 横向卡片滚动条（首页「我的兴趣」这类滑栏） =====
+     桌面：6px 圆角主题色细条，悬停加深；手机：直接隐藏（卡片露出半张就是可滑动的暗示） */
+  .hscroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--primary) 28%, transparent) transparent;
+  }
+  .hscroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  .hscroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .hscroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--primary) 26%, transparent);
+  }
+  .hscroll:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--primary) 46%, transparent);
+  }
+  @media (max-width: 767px) {
+    .hscroll {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .hscroll::-webkit-scrollbar {
+      display: none;
+    }
+  }
   /* ===== 兴趣帖子的 Markdown 正文（列表卡片与预览弹窗共用一套排版） =====
      custom-md 那套是给博客长文用的（字号偏大、依赖 .anchor / expressive-code），
      塞进 13px 左右的帖子卡片会散架，所以单独给一份紧凑版。 */

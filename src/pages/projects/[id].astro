@@ -1,4 +1,4 @@
----
+﻿---
 import Comments from "@components/Comments.astro";
 import type { GetStaticPaths } from "astro";
 import { Icon } from "astro-icon/components";
@@ -106,7 +106,7 @@ const others = projects
   {project.screenshots.length > 0 && (
     <div class="onload-animation mb-8">
       <h2 class="text-lg font-bold text-90 mb-3 px-1">预览</h2>
-      <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+      <div class="hscroll flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
         {project.screenshots.map((src) => (
           <div data-tilt
                class="flex-shrink-0 w-[76vw] md:w-96 aspect-video rounded-2xl overflow-hidden

@@ -1,4 +1,4 @@
----
+﻿---
 // ============================================
 // 首页 · 主舞台 + 侧边栏 + 移动端专属 UI
 // ============================================
@@ -338,7 +338,7 @@ const formatNewsDate = (d: unknown) => {
               <Icon name="material-symbols:chevron-right-rounded" class="text-[1rem]" />
             </a>
           </div>
-          <div class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width: thin;">
+          <div class="hscroll flex gap-3 overflow-x-auto pb-2">
             {interestSections.slice(0, 8).map((sec) => (
               <a
                 href={`/interests/${sec.id}/`}
