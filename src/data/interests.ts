@@ -179,7 +179,7 @@ export const interestPosts: InterestPost[] = [
     date: "2026-07-08",
     rating: 10,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sp5oaexkpneazDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sp5ob49kpoqleDIYPAIDyAqayAGxzDdU0Dqe=.png"],
-    content: "小时候被表哥带着玩GTA3，从此一发不可收拾，彻底迷上GTA系列。\n期盼了10年的GTA5终于在今天拿下，也算是圆了儿时的梦了😊",
+    content: "小时候被表哥带着玩GTA3，从此一发不可收拾，彻底迷上GTA系列。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sp5oaexkpneazDIYPAIDyAqayAGxzDdU0Dqe=.png)\n期盼了10年的GTA5终于在今天拿下，也算是圆了儿时的梦了😊\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sp5ob49kpoqleDIYPAIDyAqayAGxzDdU0Dqe=.png)",
   },
   {
     id: "ip-1792293530128",
