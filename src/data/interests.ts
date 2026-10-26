@@ -206,7 +206,7 @@ export const interestPosts: InterestPost[] = [
     minutes: 3048,
     rating: 9,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rifugr7kpeh88DIYPAIDyAqayAGxzDdU0Dqe=.jpg", "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qq64v155315daDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy3ikjqphj2mdDIYPAIDyAqayAGxzDdU0Dqe=.png"],
-    content: "目前为止在steam上单次最高花销，比gta5还贵。\n希望能回本。",
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rifugr7kpeh88DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n一直想入手一个 CS 优先账号，我也不知道自己是出于什么理由，今天居然真的拿出103元拿下了：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy3ikjqphj2mdDIYPAIDyAqayAGxzDdU0Dqe=.png)\n突然有些后悔，可惜这个不支持退款。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qq64v155315daDIYPAIDyAqayAGxzDdU0Dqe=.png)\n",
   },
   {
     id: "ip-1792296408244",
@@ -279,7 +279,7 @@ export const interestPosts: InterestPost[] = [
     date: "2026-10-22",
     minutes: 3246,
     screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy7d2x7ujn8f8DIYPAIDyAqayAGxzDdU0Dqe=.jpg", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uinb7tlpses9cDIYPAIDyAqayAGxzDdU0Dqe=.jpg", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dlnm5ts4aitva61znbDIYPAIDyAqayAGxzDdU0Dqe=.jpg"],
-    content: "周奖励只有一个7角的箱子和2角的枪皮，没一个想要的，干脆选了个鸡蛋。\n快点孵化吧我亲爱的小鸡。",
+    content: "周奖励只有一个7角的箱子和2角的枪皮，没一个想要的，干脆选了个鸡蛋。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uinb7tlpses9cDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n听别人说这个选这个鸡蛋非常不划算，小鸡孵出来后还要继续消耗两个奖励换鸡饲料。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dlnm5ts4aitva61znbDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n算了，选都选了，快点孵化吧我亲爱的小鸡。",
   },
   {
     id: "ip-1792685024148",
