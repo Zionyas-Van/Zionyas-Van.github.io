@@ -346,6 +346,7 @@ export const interestPosts: InterestPost[] = [
     date: "2026-10-24",
     minutes: 30,
     rating: 9,
+    featured: true,
     content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66tpkq52jhsDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n\n## **Frostrail 雪国列车 Demo版初次游玩体验**\n\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy7l8shuvpybkDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n\n游戏一开始就出生在一个阴森的小屋里，面前不知道是壁炉还是什么。整个游戏的画风有点像像素的味道，不知道是为什么。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj122y8q3ac7oDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n进入候车厅后，正中央的大树上就绑着一个怪物，这个游戏把他叫“亡魂”，用木棍做成简易木棒两下就能让他去世。\n随后搜了搜候车厅就准备上车了：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0jzl1aiq4l5DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqaix6uagxbe5DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n列车核心车厢里有一个大壁炉，这个不像是上世纪蒸汽火车的炉子，更不像现代火车，我感觉它长得好像一个心脏。\n把木棍放进去就可以燃烧了，让我们启程吧！\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uinjmihq4h2r8DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66ut6q538gmDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n",
   },
   {
@@ -405,5 +406,14 @@ export const interestPosts: InterestPost[] = [
     date: "2026-07-11",
     minutes: 1020,
     content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0l000dlnm5pwfdd9buyk9stDIYPAIDyAqayAGxzDdU0Dqe=.jpg)",
+  },
+  {
+    id: "ip-1793030930479",
+    sectionId: "gta-v",
+    title: "来补进度了",
+    date: "2026-10-26",
+    minutes: 3654,
+    rating: 9,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy7sx7tv76ca9DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\nCS2的小鸡迟迟不孵化，每周任务也打完了，懒得等，于是想着来 GTA5 补一补进度。虽然我已经通关了，但游戏进度才 64% 。\n怪胎任务我一个也没有做，刚切换到崔佛就发现他在干坏事：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqarqwjasjzqrDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n在赶路的途中还意外撞见了一个中国人，一直在喊“救命啊”。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0thf3aukrctDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n赶到怪胎地点后，才发现这个任务有多无聊：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj1d2otqew6gcDIYPAIDyAqayAGxzDdU0Dqe=.jpg)",
   }
 ];
