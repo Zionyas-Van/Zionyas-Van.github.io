@@ -415,5 +415,31 @@ export const interestPosts: InterestPost[] = [
     minutes: 3654,
     rating: 9,
     content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy7sx7tv76ca9DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\nCS2的小鸡迟迟不孵化，每周任务也打完了，懒得等，于是想着来 GTA5 补一补进度。虽然我已经通关了，但游戏进度才 64% 。\n怪胎任务我一个也没有做，刚切换到崔佛就发现他在干坏事：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqarqwjasjzqrDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n在赶路的途中还意外撞见了一个中国人，一直在喊“救命啊”。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0thf3aukrctDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n赶到怪胎地点后，才发现这个任务有多无聊：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj1d2otqew6gcDIYPAIDyAqayAGxzDdU0Dqe=.jpg)",
+  },
+  {
+    id: "ip-1793118735550",
+    sectionId: "cs2",
+    title: "我的小鸡终于出生了",
+    date: "2026-10-27",
+    minutes: 3342,
+    rating: 9,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0l000dlnm5pwfni82vdavxuDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n今天刚一上线，就发现小鸡生长弹窗，等了一个星期，终于是长大了。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5sy86tmlvechiqDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n放大一看，发现这只小鸡的表情很凶，不愧是枪战游戏里的鸡，连眼神都不一样，于是就给想给ta取一个“剑”作名字，最后选择了叫ta小煎。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj1jq0xqm1e50DIYPAIDyAqayAGxzDdU0Dqe=.jpg)",
+  },
+  {
+    id: "ip-1793118878535",
+    sectionId: "gta-v",
+    title: "“人生中第一场”铁人三项在GTA里完成了",
+    date: "2026-10-27",
+    minutes: 3708,
+    rating: 9,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0m000dlnm5ry0z2geb1zs1vDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n先是游泳，然后骑自行车，最后跑向重点，全程体力一点不掉，不知道为什么。最后也是毫无疑问地拿到了第一名：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r65scr9vfkdo3DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n",
+  },
+  {
+    id: "ip-1793119211276",
+    sectionId: "gta-v",
+    title: "这不是20世纪地中国人吗",
+    date: "2026-10-27",
+    minutes: 3708,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqax9h7azvzwuDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n依旧不知道是第多少次在这个地方出场，昨天接了个特别麻烦的怪胎任务，今天去崔佛老家找了一个好玩的，说是什么民兵要抓偷渡的非法移民，莫名其妙就把主角拉上当司机了，开车的途中，看他们说的台词：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj1jv3sqm7r07DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n“都是一些吃力不讨好、报酬低的工作”\n我一想，这说的不是20世纪远渡美国的中国人吗\n",
   }
 ];
