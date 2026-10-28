@@ -168,6 +168,13 @@ export const interestSections: InterestSection[] = [
     type: "game",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sq66tpkq52jhsDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
     description: "雪国列车。",
+  },
+  {
+    id: "theforest",
+    name: "森林",
+    type: "game",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r67vk5pxm8y4vDIYPAIDyAqayAGxzDdU0Dqe=.jpg",
+    description: "THE FOREST.",
   }
 ];
 
@@ -441,5 +448,13 @@ export const interestPosts: InterestPost[] = [
     date: "2026-10-27",
     minutes: 3708,
     content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qqax9h7azvzwuDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n依旧不知道是第多少次在这个地方出场，昨天接了个特别麻烦的怪胎任务，今天去崔佛老家找了一个好玩的，说是什么民兵要抓偷渡的非法移民，莫名其妙就把主角拉上当司机了，开车的途中，看他们说的台词：\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0n000dlnm5rj1jv3sqm7r07DIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n“都是一些吃力不讨好、报酬低的工作”\n我一想，这说的不是20世纪远渡美国的中国人吗\n",
+  },
+  {
+    id: "ip-1793206957898",
+    sectionId: "theforest",
+    title: "开局第一件事就是赶紧把房子做好",
+    date: "2026-10-28",
+    minutes: 372,
+    content: "![](https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r67vfm4xm576tDIYPAIDyAqayAGxzDdU0Dqe=.jpg)\n特别害怕森林里的野人，每次都要先把房子赶紧做好才有安全感。\n![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5syadvfoxl32xtDIYPAIDyAqayAGxzDdU0Dqe=.jpg)",
   }
 ];
