@@ -72,5 +72,21 @@ export const projects: Project[] = [
       { label: "源码", url: "https://zionyasvan.lanzouq.com/ie6Rv4ajn7dc" }
     ],
     featured: true,
+  },
+  {
+    id: "com-deepthink-monet",
+    title: "DeepThink Monet",
+    description: "你的莫奈 DeepSeek API 第三方客户端",
+    longDescription: "欢迎始终 DeepThink",
+    cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uizo1gg6v8akfDIYPAIDyAqayAGxzDdU0Dqe=.png",
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qr54l1qr86hsbDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uizo9kp6vmjj0DIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5synfpl2bmh3tcDIYPAIDyAqayAGxzDdU0Dqe=.png", "![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dlnm5tsfxcqdr8vmp1DIYPAIDyAqayAGxzDdU0Dqe=.png)"],
+    type: "software",
+    tags: ["AI"],
+    platform: "Android",
+    status: "开发中",
+    downloadLinks: [
+
+    ],
+    featured: false,
   }
 ];
