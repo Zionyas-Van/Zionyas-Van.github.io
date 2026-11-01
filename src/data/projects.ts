@@ -77,9 +77,9 @@ export const projects: Project[] = [
     id: "com-deepthink-monet",
     title: "DeepThink Monet",
     description: "你的莫奈 DeepSeek API 第三方客户端",
-    longDescription: "欢迎始终 DeepThink",
+    longDescription: "DeepThink Monet 只是一个第三方 DeepSeek API 客户端。它本身不提供 AI 服务，也不在任何服务器上保存你的对话。\n\nDeepThink 开发团队与 DeepSeek、杭州深度求索公司没有任何从属关系。AI 能力来自 DeepSeek 开放平台的 API，额度与计费均以 DeepSeek 平台为准。\n\n你的 API Key 只保存在本地，请求直接发往 api.deepseek.com。",
     cover: "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uizo1gg6v8akfDIYPAIDyAqayAGxzDdU0Dqe=.png",
-    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qr54l1qr86hsbDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uizo9kp6vmjj0DIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0l000dlnm5synfpl2bmh3tcDIYPAIDyAqayAGxzDdU0Dqe=.png", "![](https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0m000dlnm5tsfxcqdr8vmp1DIYPAIDyAqayAGxzDdU0Dqe=.png)"],
+    screenshots: ["https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0n000dlnm5sqmpey86yg3e1DIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/yk6baz03t0l000dlnm5r6lstiebpotcmDIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ynf1no03t0m000dlnm5qr55h81r9lu26DIYPAIDyAqayAGxzDdU0Dqe=.png", "https://1815356055.cdn.123clouddisk.com/1815356055/ymjew503t0n000dlnm5uizp9556x1fjvDIYPAIDyAqayAGxzDdU0Dqe=.png"],
     type: "software",
     tags: ["AI"],
     platform: "Android",
@@ -87,6 +87,6 @@ export const projects: Project[] = [
     downloadLinks: [
 
     ],
-    featured: false,
+    featured: true,
   }
 ];
