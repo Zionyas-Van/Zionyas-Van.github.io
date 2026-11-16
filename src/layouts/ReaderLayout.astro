@@ -1,4 +1,4 @@
----
+﻿---
 // ============================================================
 // 沉浸式阅读布局（只给小说章节页用）
 // 刻意不使用 MainGridLayout：那里有顶栏、侧栏、分类筛选栏、移动端底栏。
@@ -40,10 +40,12 @@ const {
 } = Astro.props;
 
 const base = `/novels/${novelId}/`;
+// 当前是第几章（手机端左下角「1/131」、底部进度条都要用）
+const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug));
 ---
 
 <Layout title={pageTitle} description={description}>
-	<div id="reader-root">
+	<div id="reader-root" data-base={base}>
 		<div id="toc" hidden></div>
 
 		<!-- ==================== 顶部工具栏 ==================== -->
@@ -77,8 +79,43 @@ const base = `/novels/${novelId}/`;
 			</div>
 		</header>
 
-		<!-- ==================== 目录抽屉 ==================== -->
-		<div id="reader-toc-mask" class="toc-mask" aria-hidden="true"></div>
+		<!-- ===== 手机端默认态：左上角返回 + 书名，左下角进度，右下角时间 ===== -->
+		<div id="rd-min" class="rd-min" aria-hidden="true">
+			<a class="rd-min-back" href={base} data-no-swup aria-label="返回小说详情">
+				<Icon name="material-symbols:arrow-back-rounded" />
+			</a>
+			<span class="rd-min-novel">{novelTitle}</span>
+			<div class="rd-min-foot">
+				<span class="rd-min-pos">{chapterIdx + 1}/{chapters.length}</span>
+				<span class="rd-min-clock" id="rd-clock"></span>
+			</div>
+		</div>
+
+		<!-- ===== 手机端工具态：底部进度条 + 目录 + 日夜 ===== -->
+		<div id="rd-bottom" class="rd-bottom">
+			<input
+				id="rd-progress"
+				type="range"
+				min="1"
+				max={chapters.length}
+				step="1"
+				value={chapterIdx + 1}
+				aria-label="章节进度"
+				data-slugs={JSON.stringify(chapters.map((c) => c.slug))}
+			/>
+			<div class="rd-bottom-row">
+				<button type="button" class="rd-tool" id="rd-toc-btn">
+					<Icon name="material-symbols:list-rounded" />
+					<span>目录</span>
+				</button>
+				<button type="button" class="rd-tool" id="rd-theme-btn">
+					<Icon name="material-symbols:wb-sunny-outline-rounded" />
+					<span>日间/夜间</span>
+				</button>
+			</div>
+		</div>
+
+		<!-- ==================== 目录抽屉 ==================== -->		<div id="reader-toc-mask" class="toc-mask" aria-hidden="true"></div>
 		<aside id="reader-toc" class="toc-panel" aria-hidden="true">
 			<div class="toc-head">
 				<b>{novelTitle}</b>
@@ -338,16 +375,160 @@ const base = `/novels/${novelId}/`;
 		text-decoration: underline;
 	}
 
+	/* 手机端专用元素在桌面端不显示 */
+	.rd-min,
+	.rd-bottom {
+		display: none;
+	}
+
+	/* ==================== 手机端（专业阅读器风格） ====================
+	   默认态：只有四角信息（左返回+书名 / 左下进度 / 右下时间），正文铺满；
+	   点空白 → 顶部工具栏 + 底部进度条/目录/日夜，再点空白收起。
+	   桌面端完全不受影响：下面这段整体包在 max-width:767px 里。 */
 	@media (max-width: 767px) {
-		.rb-title {
+		/* 默认不显示顶部工具栏 */
+		#reader-root:not(.rd-toolbar) .reader-bar {
+			transform: translateY(-100%);
+			opacity: 0;
+			pointer-events: none;
+		}
+		.reader-bar {
+			justify-content: space-between;
+			padding: 0 0.4rem;
+			padding-top: env(safe-area-inset-top, 0px);
+			height: calc(var(--bar-h) + env(safe-area-inset-top, 0px));
+		}
+		/* 目录按钮移到底部工具栏，顶部只留返回 + 字号 */
+		.rb-group:first-child #rb-toc {
 			display: none;
 		}
-		.reader-article {
-			padding: 1.1rem 1.05rem 5rem;
-			line-height: 1.95;
+		#reader-main {
+			padding-top: 0;
 		}
-		#rb-font {
-			width: 72px;
+		.reader-article {
+			padding: 3.2rem 1.15rem 5rem;
+		}
+		/* 手机端不显示章节大标题（书名在左上角） */
+		#reader-title {
+			display: none;
+		}
+		/* 中文段落首行缩进两个汉字（JSON 里没缩进，这里补上） */
+		.reader-article p {
+			text-indent: 2em;
+			margin: 0.95em 0;
+		}
+		.reader-article p:has(> img:only-child) {
+			text-indent: 0;
+		}
+
+		/* 四角信息层 */
+		.rd-min {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 30;
+			pointer-events: none;
+		}
+		#reader-root.rd-toolbar .rd-min {
+			display: none;
+		}
+		.rd-min-back {
+			pointer-events: auto;
+			position: absolute;
+			top: calc(env(safe-area-inset-top, 0px) + 4px);
+			left: 4px;
+			width: 42px;
+			height: 42px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--content-meta, #6b7280);
+			opacity: 0.7;
+			-webkit-tap-highlight-color: transparent;
+		}
+		.rd-min-novel {
+			position: absolute;
+			top: calc(env(safe-area-inset-top, 0px) + 15px);
+			left: 46px;
+			right: 14px;
+			font-size: 12.5px;
+			color: var(--content-meta, #8a8a8a);
+			opacity: 0.62;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.rd-min-foot {
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+			display: flex;
+			justify-content: space-between;
+			padding: 0 16px;
+			font-size: 12px;
+			color: var(--content-meta, #8a8a8a);
+			opacity: 0.55;
+			font-variant-numeric: tabular-nums;
+		}
+
+		/* 底部工具栏 */
+		.rd-bottom {
+			display: block;
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 41;
+			padding: 12px 18px calc(env(safe-area-inset-bottom, 0px) + 12px);
+			background: var(--card-bg);
+			border-top: 1px solid rgba(128, 128, 128, 0.12);
+			transform: translateY(110%);
+			opacity: 0;
+			pointer-events: none;
+			transition: transform 0.25s ease, opacity 0.25s ease;
+		}
+		#reader-root.rd-toolbar .rd-bottom {
+			transform: none;
+			opacity: 1;
+			pointer-events: auto;
+		}
+		#rd-progress {
+			width: 100%;
+			height: 28px;
+			accent-color: var(--primary);
+			background: transparent;
+			cursor: pointer;
+		}
+		.rd-bottom-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-around;
+			gap: 12px;
+			margin-top: 2px;
+		}
+		.rd-tool {
+			flex: 1;
+			height: 42px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 7px;
+			border: none;
+			border-radius: 12px;
+			background: color-mix(in oklab, var(--primary) 8%, transparent);
+			color: var(--primary);
+			font-size: 13.5px;
+			font-weight: 600;
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+		}
+		.rd-tool:active {
+			background: color-mix(in oklab, var(--primary) 16%, transparent);
+		}
+		/* 工具栏展开时给正文让出底部空间 */
+		#reader-root.rd-toolbar .reader-article {
+			padding-bottom: 8.5rem;
 		}
 	}
 </style>
@@ -361,6 +542,8 @@ const base = `/novels/${novelId}/`;
 	const fontInput = document.getElementById("rb-font") as HTMLInputElement | null;
 	const tocPanel = document.getElementById("reader-toc");
 	const tocMask = document.getElementById("reader-toc-mask");
+	// 手机端走另一套交互（四角信息 + 点按出工具栏），桌面保持原样
+	const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
 
 	function applyFont(px: number) {
 		const v = Math.min(36, Math.max(16, Math.round(px)));
@@ -411,8 +594,51 @@ const base = `/novels/${novelId}/`;
 			if (!t) return;
 			if (t.closest("a, button, input, img, .reader-pager")) return;
 			if (window.getSelection && String(window.getSelection()).trim().length > 0) return;
-			bar.classList.toggle("hidden-bar");
+			// 手机端：默认只有四角信息，点一下亮出工具栏，再点收起
+			if (isMobile()) root.classList.toggle("rd-toolbar");
+			else bar.classList.toggle("hidden-bar");
 		});
+
+		/* ===== 手机端专用：时钟 / 进度条 / 目录 / 日夜 ===== */
+		if (isMobile()) {
+			const clockEl = document.getElementById("rd-clock");
+			const tick = () => {
+				if (!clockEl) return;
+				const d = new Date();
+				clockEl.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+			};
+			tick();
+			setInterval(tick, 20000);
+
+			const prog = document.getElementById("rd-progress") as HTMLInputElement | null;
+			prog?.addEventListener("change", () => {
+				let slugs: string[] = [];
+				try {
+					slugs = JSON.parse(prog.dataset.slugs || "[]");
+				} catch {
+					/* 数据坏了就当没点 */
+				}
+				const slug = slugs[Number(prog.value) - 1];
+				if (slug) location.href = `${root.dataset.base || ""}${slug}/`;
+			});
+
+			const toggleToc = () => {
+				const open = !tocPanel?.classList.contains("on");
+				tocPanel?.classList.toggle("on", open);
+				tocMask?.classList.toggle("on", open);
+				tocPanel?.setAttribute("aria-hidden", open ? "false" : "true");
+			};
+			document.getElementById("rd-toc-btn")?.addEventListener("click", toggleToc);
+
+			document.getElementById("rd-theme-btn")?.addEventListener("click", () => {
+				const dark = document.documentElement.classList.toggle("dark");
+				try {
+					localStorage.setItem("theme", dark ? "dark" : "light");
+				} catch {
+					/* 隐私模式可能写不了 */
+				}
+			});
+		}
 
 		document.addEventListener("keydown", (e) => {
 			if (e.key === "Escape") closeToc();
