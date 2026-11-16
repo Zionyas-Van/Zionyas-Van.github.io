@@ -93,6 +93,7 @@ const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug)
 
 		<!-- ===== 手机端工具态：底部进度条 + 目录 + 日夜 ===== -->
 		<div id="rd-bottom" class="rd-bottom">
+			<div class="rd-prog-row">
 			<input
 				id="rd-progress"
 				type="range"
@@ -103,6 +104,8 @@ const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug)
 				aria-label="章节进度"
 				data-slugs={JSON.stringify(chapters.map((c) => c.slug))}
 			/>
+				<span class="rd-prog-num" id="rd-prog-num">{chapterIdx + 1}/{chapters.length}</span>
+			</div>
 			<div class="rd-bottom-row">
 				<button type="button" class="rd-tool" id="rd-toc-btn">
 					<Icon name="material-symbols:list-rounded" />
@@ -350,6 +353,13 @@ const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug)
 		color: var(--deep-text, var(--content-meta));
 		letter-spacing: 0.01em;
 	}
+	/* 段落：渲染时已经切好 <p>，给回正常的段间距 */
+	.reader-article p {
+		margin: 0.85em 0;
+	}
+	.reader-article p:first-child {
+		margin-top: 0;
+	}
 	#reader-title {
 		font-size: 1.5em;
 		font-weight: 700;
@@ -394,13 +404,39 @@ const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug)
 		}
 		.reader-bar {
 			justify-content: space-between;
-			padding: 0 0.4rem;
+			padding: 0 0.75rem;
 			padding-top: env(safe-area-inset-top, 0px);
 			height: calc(var(--bar-h) + env(safe-area-inset-top, 0px));
+			border-bottom: none;
+			background: var(--card-bg);
+			box-shadow: 0 8px 24px rgba(18, 16, 32, 0.1);
 		}
 		/* 目录按钮移到底部工具栏，顶部只留返回 + 字号 */
 		.rb-group:first-child #rb-toc {
 			display: none;
+		}
+		/* 手机端不用滑杆，改成两个圆形 A− / A+ 按钮 */
+		#rb-font {
+			display: none;
+		}
+		.rb-font {
+			gap: 8px;
+		}
+		.rb-step {
+			width: 34px;
+			height: 34px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 999px;
+			background: color-mix(in oklab, var(--primary) 9%, transparent);
+			color: var(--primary);
+			font-size: 12.5px;
+			font-weight: 700;
+			-webkit-tap-highlight-color: transparent;
+		}
+		.rb-step:active {
+			background: color-mix(in oklab, var(--primary) 18%, transparent);
 		}
 		#reader-main {
 			padding-top: 0;
@@ -480,51 +516,103 @@ const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug)
 			right: 0;
 			bottom: 0;
 			z-index: 41;
-			padding: 12px 18px calc(env(safe-area-inset-bottom, 0px) + 12px);
+			padding: 18px 20px calc(env(safe-area-inset-bottom, 0px) + 14px);
 			background: var(--card-bg);
-			border-top: 1px solid rgba(128, 128, 128, 0.12);
+			border-radius: 22px 22px 0 0;
+			box-shadow: 0 -10px 34px rgba(18, 16, 32, 0.16);
 			transform: translateY(110%);
 			opacity: 0;
 			pointer-events: none;
-			transition: transform 0.25s ease, opacity 0.25s ease;
+			transition: transform 0.26s ease, opacity 0.26s ease;
 		}
 		#reader-root.rd-toolbar .rd-bottom {
 			transform: none;
 			opacity: 1;
 			pointer-events: auto;
 		}
+		.rd-prog-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+		.rd-prog-num {
+			flex: none;
+			font-size: 11.5px;
+			font-variant-numeric: tabular-nums;
+			color: var(--content-meta, #8a8a8a);
+		}
+		/* 进度条：4px 圆角轨道 + 主题色填充 + 白色描边滑块 */
 		#rd-progress {
+			-webkit-appearance: none;
+			appearance: none;
+			display: block;
+			flex: 1;
 			width: 100%;
-			height: 28px;
-			accent-color: var(--primary);
-			background: transparent;
+			height: 4px;
+			margin: 0;
+			border: none;
+			border-radius: 999px;
+			outline: none;
 			cursor: pointer;
+			background: linear-gradient(
+				to right,
+				var(--primary) 0%,
+				var(--primary) var(--pct, 0%),
+				rgba(128, 128, 128, 0.22) var(--pct, 0%),
+				rgba(128, 128, 128, 0.22) 100%
+			);
+		}
+		#rd-progress::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: #fff;
+			border: 2px solid var(--primary);
+			box-shadow: 0 1px 5px rgba(18, 16, 32, 0.25);
+			margin-top: -6px;
+		}
+		#rd-progress::-moz-range-thumb {
+			width: 14px;
+			height: 14px;
+			border-radius: 50%;
+			background: #fff;
+			border: 2px solid var(--primary);
+			box-shadow: 0 1px 5px rgba(18, 16, 32, 0.25);
+		}
+		#rd-progress::-moz-range-track {
+			height: 4px;
+			border-radius: 999px;
+			background: transparent;
 		}
 		.rd-bottom-row {
 			display: flex;
 			align-items: center;
-			justify-content: space-around;
-			gap: 12px;
-			margin-top: 2px;
+			gap: 8px;
+			margin-top: 14px;
 		}
 		.rd-tool {
 			flex: 1;
-			height: 42px;
-			display: inline-flex;
+			display: flex;
+			flex-direction: column;
 			align-items: center;
-			justify-content: center;
-			gap: 7px;
+			gap: 5px;
+			padding: 6px 0;
 			border: none;
-			border-radius: 12px;
-			background: color-mix(in oklab, var(--primary) 8%, transparent);
-			color: var(--primary);
-			font-size: 13.5px;
-			font-weight: 600;
+			background: transparent;
+			color: var(--content-meta, #6b7280);
+			font-size: 11.5px;
 			cursor: pointer;
+			border-radius: 12px;
 			-webkit-tap-highlight-color: transparent;
 		}
+		.rd-tool svg {
+			font-size: 1.35rem;
+		}
 		.rd-tool:active {
-			background: color-mix(in oklab, var(--primary) 16%, transparent);
+			color: var(--primary);
+			background: color-mix(in oklab, var(--primary) 8%, transparent);
 		}
 		/* 工具栏展开时给正文让出底部空间 */
 		#reader-root.rd-toolbar .reader-article {
@@ -611,6 +699,19 @@ const chapterIdx = Math.max(0, chapters.findIndex((c) => c.slug === currentSlug)
 			setInterval(tick, 20000);
 
 			const prog = document.getElementById("rd-progress") as HTMLInputElement | null;
+			const progNum = document.getElementById("rd-prog-num");
+			// 进度条填充比例（CSS 用 --pct 画主题色进度）
+			const paintProg = () => {
+				if (!prog) return;
+				const min = Number(prog.min || 1);
+				const max = Number(prog.max || 1);
+				const v = Number(prog.value || min);
+				const pct = max > min ? ((v - min) / (max - min)) * 100 : 100;
+				prog.style.setProperty("--pct", `${pct}%`);
+				if (progNum) progNum.textContent = `${v}/${max}`;
+			};
+			paintProg();
+			prog?.addEventListener("input", paintProg);
 			prog?.addEventListener("change", () => {
 				let slugs: string[] = [];
 				try {

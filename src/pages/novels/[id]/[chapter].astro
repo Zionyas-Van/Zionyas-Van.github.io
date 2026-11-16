@@ -1,4 +1,4 @@
-﻿---
+---
 import type { GetStaticPaths } from "astro";
 import MarkdownIt from "markdown-it";
 import { novels } from "../../../data/novels";
@@ -26,12 +26,19 @@ const prevChapter = chapterIndex > 0 ? novel.chapters[chapterIndex - 1] : null;
 const nextChapter =
 	chapterIndex < novel.chapters.length - 1 ? novel.chapters[chapterIndex + 1] : null;
 
-const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
+const md = new MarkdownIt({ html: false, breaks: false, linkify: true });
 const unescaped = String(ch.content || "")
 	.replace(/\\n/g, "\n")
 	.replace(/\\"/g, '"')
 	.replace(/\\\\/g, "\\");
-const renderedContent = md.render(unescaped);
+// 每段单独渲染成 <p>：数据里有的是 \n\n、有的只有单个 \n，
+// 交给 markdown 的 breaks 会挤成一大段（首行缩进也就只有第一行生效），这里统一按空行/换行切段。
+const renderedContent = unescaped
+	.split(/\n\s*\n|\n/)
+	.map((line) => line.trim())
+	.filter(Boolean)
+	.map((para) => md.render(para).trim())
+	.join("\n");
 
 const chapters = novel.chapters.map((c) => ({ slug: c.slug, title: c.title }));
 ---
